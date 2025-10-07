@@ -3,14 +3,31 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import Form from './components/Form'
+import Home from './views/Home'
+import Navigation from './views/Navigation'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import Contact from './views/Contact'
 
 function App() {
-  //const [count, setCount] = useState(0)
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const handleClick = ()=>{
+    navigate('/contact')
+  }
 
   return (
     <>
+    <Navigation/>
+    <Routes>
+      <Route path="/home" element={<Home/>}/>
+      <Route path="/contact" element={<Contact/>}/>
+    </Routes>
+    
     <p>hacer todolist</p>
     <Form/>
+    <button onClick={handleClick}>ir a contactos</button>
+    <p>La ruta actual en donde estamos es: {location.pathname}</p>
     </>
   )
 }
