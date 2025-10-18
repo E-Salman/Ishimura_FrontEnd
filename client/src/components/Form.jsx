@@ -1,5 +1,5 @@
 import { useState } from "react"
-import Todo from './Todo'//probar borrar
+import Todo from './Todo'
 const Form = () => {
     /*const [todos, setTodos] = useState([
         {todo: 'Todo 1'},
