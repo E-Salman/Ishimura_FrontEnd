@@ -3,6 +3,7 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import Form from './components/Form'
+import MarcasPage from './components/MarcasPage'
 import Home from './views/Home'
 import Navigation from './views/Navigation'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
@@ -22,12 +23,8 @@ function App() {
     <Routes>
       <Route path="/home" element={<Home/>}/>
       <Route path="/contact" element={<Contact/>}/>
+      <Route path="/marcas" element={<MarcasPage/>}/>
     </Routes>
-    
-    <p>hacer todolist</p>
-    <Form/>
-    <button onClick={handleClick}>ir a contactos</button>
-    <p>La ruta actual en donde estamos es: {location.pathname}</p>
     </>
   )
 }

@@ -10,6 +10,9 @@ const Navigation = () => {
                 <li>
                     <Link to='/contact'>Contacto</Link>
                 </li>
+                <li>
+                    <Link to='/marcas'>Marcas</Link>
+                </li>
             </ul>
         </nav>
         </>
