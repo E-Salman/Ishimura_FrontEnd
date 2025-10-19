@@ -1,35 +1,27 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import Form from './components/Form'
-import Home from './views/Home'
-import Navigation from './views/Navigation'
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
-import Contact from './views/Contact'
+import { Routes, Route, Navigate } from "react-router-dom";
+import Navigation from "./views/Navigation";
+import Home from "./views/Home";
+import Contact from "./views/Contact";
+import Login from "./views/Login";
 
-function App() {
-  const navigate = useNavigate()
-  const location = useLocation()
 
-  const handleClick = ()=>{
-    navigate('/contact')
-  }
-
+export default function App() {
   return (
-    <>
-    <Navigation/>
-    <Routes>
-      <Route path="/home" element={<Home/>}/>
-      <Route path="/contact" element={<Contact/>}/>
-    </Routes>
-    
-    <p>hacer todolist</p>
-    <Form/>
-    <button onClick={handleClick}>ir a contactos</button>
-    <p>La ruta actual en donde estamos es: {location.pathname}</p>
-    </>
-  )
-}
+    <div className="min-h-screen w-full bg-background-dark text-white font-display">
+      {/* Navbar (se muestra en todas las páginas) */}
+      <Navigation />
 
-export default App
+      {/* Rutas */}
+      <Routes>
+        {/* redirigir raíz a /home */}
+        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/login" element={<Login />} />
+
+        {/* 404 simple */}
+        <Route path="*" element={<div className="p-8">404 — Not found</div>} />
+      </Routes>
+    </div>
+  );
+}
