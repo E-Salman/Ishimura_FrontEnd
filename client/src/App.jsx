@@ -7,26 +7,31 @@ import Home from './views/Home'
 import Navigation from './views/Navigation'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import Contact from './views/Contact'
+import NavBar from './components/NavBar'
+import CardList from './components/CardList'
+import ColeccionableDestacado from './components/ColeccionableDestacado'
 
 function App() {
   const navigate = useNavigate()
   const location = useLocation()
 
   const handleClick = ()=>{
-    navigate('/contact')
+    navigate('/home')
   }
 
   return (
     <>
-    <Navigation/>
+    <NavBar/>
+    {/*<Navigation/>*/}
     <Routes>
       <Route path="/home" element={<Home/>}/>
       <Route path="/contact" element={<Contact/>}/>
     </Routes>
-    
+    {/*<CardList/>*/}
+    <ColeccionableDestacado colId={1}/>
     <p>hacer todolist</p>
     <Form/>
-    <button onClick={handleClick}>ir a contactos</button>
+    <button onClick={handleClick}>ir a home</button>
     <p>La ruta actual en donde estamos es: {location.pathname}</p>
     </>
   )
