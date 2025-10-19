@@ -1,15 +1,42 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import Navigation from "./views/Navigation";
-import Home from "./views/Home";
-import Contact from "./views/Contact";
-import Login from "./views/Login";
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import './App.css'
+import Form from './components/Form'
+import Home from './views/Home'
+import Navigation from './views/Navigation'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import Contact from './views/Contact'
+import NavBar from './components/NavBar'
+import CardList from './components/CardList'
+import ColeccionableDestacado from './components/ColeccionableDestacado'
 
+function App() {
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const handleClick = ()=>{
+    navigate('/home')
+  }
 
 export default function App() {
   return (
-    <div className="min-h-screen w-full bg-background-dark text-white font-display">
-      {/* Navbar (se muestra en todas las páginas) */}
-      <Navigation />
+    <>
+    <NavBar/>
+    {/*<Navigation/>*/}
+    <Routes>
+      <Route path="/home" element={<Home/>}/>
+      <Route path="/contact" element={<Contact/>}/>
+    </Routes>
+    {/*<CardList/>*/}
+    <ColeccionableDestacado colId={1}/>
+    <p>hacer todolist</p>
+    <Form/>
+    <button onClick={handleClick}>ir a home</button>
+    <p>La ruta actual en donde estamos es: {location.pathname}</p>
+    </>
+  )
+}
 
       {/* Rutas */}
       <Routes>
