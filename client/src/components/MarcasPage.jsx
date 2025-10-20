@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import MarcasGrid from "./MarcasGrid";
+import MarcasGrid from "./MarcasGridFixed";
 import { getBaseUrl, getMarcas, getMarcaFirstImageUrl } from "../lib/api";
 
 export default function MarcasPage() {
