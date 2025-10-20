@@ -40,7 +40,7 @@ const ColeccionableDestacado = ({ colId }) => {
         };
         fetchData();
         return () => {
-      if (imagen) URLColeccionable.revokeObjectURL(imagen);
+    if (imagen) URLColeccionable.revokeObjectURL(imagen);
     };
     }, [colId]); //Se vuelve a correr este useEffect cada vez que colId cambie
 

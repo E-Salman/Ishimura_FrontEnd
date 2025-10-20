@@ -12,6 +12,7 @@ const NavBar = ({ todo }) => {
                     <nav className="hidden items-center gap-8 md:flex">
                         <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/home">Home</NavLink>
                         <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/marcas">Marcas</NavLink>
+                        <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/coleccionables">Coleccionables</NavLink>
                         <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/new-arrivals">New Arrivals</NavLink>
                         <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/sales">Sales</NavLink>
                     </nav>
