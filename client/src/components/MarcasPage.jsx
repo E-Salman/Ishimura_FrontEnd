@@ -63,7 +63,7 @@ export default function MarcasPage() {
           <p className="mb-4 text-sm text-red-400">Error al cargar marcas: {error}</p>
         )}
         {loading && <p className="mb-4 text-sm text-gray-400">Cargando marcas...</p>}
-        <MarcasGrid marcas={marcas} onSelect={(marca) => console.log(marca)} />
+        <MarcasGrid marcas={marcas} onSelect={({ marca, linea }) => console.log('selección', { marca, linea })} />
       </div>
     </main>
   );

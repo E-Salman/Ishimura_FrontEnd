@@ -21,3 +21,25 @@ export async function getMarcaFirstImageUrl(marcaId, signal) {
     return 'https://placehold.co/800x600/png?text=Marca';
   }
 }
+
+export async function getLineasByMarca(marcaId, signal) {
+  // Endpoint principal visto en tu backend
+  try {
+    const res = await fetch(`${BASE}/listarColeLineas/lineas/marca/${marcaId}`, { signal });
+    if (res.ok) {
+      const json = await res.json();
+      return Array.isArray(json) ? json : [];
+    }
+  } catch (_) {
+    // continuar con intento alternativo
+  }
+  // Alternativa por querystring si cambian rutas
+  try {
+    const res = await fetch(`${BASE}/lineas?marcaId=${encodeURIComponent(marcaId)}`, { signal });
+    if (res.ok) {
+      const json = await res.json();
+      return Array.isArray(json) ? json : [];
+    }
+  } catch (_) {}
+  return [];
+}

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import Form from './components/Form'
 import MarcasPage from './components/MarcasPage'
 import Home from './views/Home'
 import Navigation from './views/Navigation'
@@ -31,10 +30,6 @@ function App() {
     </Routes>
     {/*<CardList/>*/}
     <ColeccionableDestacado colId={1}/>
-    <p>hacer todolist</p>
-    <Form/>
-    <button onClick={handleClick}>ir a home</button>
-    <p>La ruta actual en donde estamos es: {location.pathname}</p>
     </>
   )
 }
