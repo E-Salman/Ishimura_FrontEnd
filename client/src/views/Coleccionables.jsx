@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
-import { getBaseUrl, getMarcas, getLineasByMarca, getColeccionables, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist } from '../lib/api';
+import { getBaseUrl, getMarcas, getLineasByMarca, getColeccionables, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist, getPricePreview } from '../lib/api';
 
 const SORTS = [
   { id: 'alpha-desc', label: 'Alfabético Z→A' }, // default
@@ -132,25 +132,37 @@ export default function ColeccionablesView() {
         setLoading(true);
         setError(null);
         const data = await getColeccionables({ marcaId: marcaId || null, lineaId: lineaId || null }, controller.signal);
-        // Completar precio/imágenes si faltan
+        // Completar precio con preview (promos) + detalle/imágenes si faltan
         const completed = await Promise.all(
           data.map(async (it) => {
-            let enriched = it;
+            let enriched = { ...it };
+            // Intentar obtener preview de precio (detecta promo)
+            try {
+              const q = await getPricePreview(it.id, { qty: 1 }, controller.signal);
+              const lista = Number(q?.precioLista ?? q?.lista ?? enriched?.precio ?? 0);
+              const efectivo = Number(q?.precioEfectivo ?? q?.efectivo ?? enriched?.precio ?? 0);
+              const hasPromo = (Number(q?.discount ?? 0) > 0) || (efectivo > 0 && lista > 0 && efectivo < lista) || Boolean(q?.promocionId);
+              if (hasPromo) {
+                enriched.precio = efectivo || enriched.precio || null;
+                enriched.precioAnterior = (lista && efectivo && efectivo < lista) ? lista : (enriched.precioAnterior ?? null);
+              }
+            } catch (_) {}
+
+            // Completar precio desde detalle si sigue faltando
             if (enriched?.precio == null) {
               try {
                 const det = await getColeccionableDetalle(it.id, controller.signal);
-                enriched = {
-                  ...enriched,
-                  precio: det?.precio ?? enriched?.precio ?? null,
-                  descripcion: enriched?.descripcion || det?.descripcion || '',
-                };
+                enriched.precio = det?.precio ?? enriched?.precio ?? null;
+                if (!enriched.descripcion) enriched.descripcion = det?.descripcion || '';
               } catch (_) {}
             }
+
+            // Completar imagen
             if (!enriched.imagen) {
               try {
                 const url = await getColeccionableFirstImageUrl(it.id, controller.signal);
                 if (url.startsWith('blob:')) revoked.push(url);
-                enriched = { ...enriched, imagen: url };
+                enriched.imagen = url;
               } catch (_) {}
             }
             return enriched;
