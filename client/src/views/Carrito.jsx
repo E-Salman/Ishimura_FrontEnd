@@ -13,6 +13,7 @@ const Carrito = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
+        console.log(data)
         setCarrito(data);
         calcularTotal(data);
       } catch (error) {

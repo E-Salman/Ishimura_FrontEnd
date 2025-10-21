@@ -30,10 +30,10 @@ const Footer = () => {
                     </a>
                 </div>
                 <p className="mt-8 text-center text-sm text-white/60">
-                    © 2024 Action Figure Emporium. All rights reserved.
+                    © 2025 Ishimura Collectibles. All rights reserved.
                 </p>
             </div>
         </footer>
     )
 }
-
+export default Footer
