@@ -9,6 +9,7 @@ import ColeccionableDestacado from './components/ColeccionableDestacado'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Coleccionables from './views/Coleccionables'
 import NewArrivals from './views/NewArrivals'
+import Promotions from './views/Promotions'
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/marcas" element={<MarcasPage />} />
         <Route path="/coleccionables" element={<Coleccionables />} />
         <Route path="/new-arrivals" element={<NewArrivals />} />
+        <Route path="/sales" element={<Promotions />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/carrito" element={<Carrito />} />
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />

@@ -255,3 +255,12 @@ export async function getNewArrivals({ limit = 12 } = {}, signal) {
     return [];
   }
 }
+
+// Pricing preview for a coleccionable. Returns
+// { precioLista, precioEfectivo, discount, promocionId, promotionType }
+export async function getPricePreview(coleccionableId, { qty = 1 } = {}, signal) {
+  const url = `${BASE}/precio/preview?coleccionableId=${encodeURIComponent(coleccionableId)}&qty=${encodeURIComponent(qty)}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
