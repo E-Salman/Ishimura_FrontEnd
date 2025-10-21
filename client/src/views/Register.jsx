@@ -58,7 +58,7 @@ fetch(URLregister, {
       } catch {
       }
 
-      if (res.status === 422) {
+      if (res.status === 422 || res.status === 500) {
         throw new Error("Este email ya está registrado.");
       }
 
