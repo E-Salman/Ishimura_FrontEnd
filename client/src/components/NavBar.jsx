@@ -87,12 +87,20 @@ const NavBar = () => {
             Home
           </NavLink>
           <NavLink
-            to="/categories"
+            to="/marcas"
             className={({ isActive }) =>
               `${linkBase} ${isActive ? linkActive : linkInactive}`
             }
           >
-            Categories
+            Marcas
+          </NavLink>
+          <NavLink
+            to="/coleccionables"
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : linkInactive}`
+            }
+          >
+            Coleccionables
           </NavLink>
           <NavLink
             to="/new-arrivals"
@@ -100,7 +108,7 @@ const NavBar = () => {
               `${linkBase} ${isActive ? linkActive : linkInactive}`
             }
           >
-            New Arrivals
+            Nuevo
           </NavLink>
           <NavLink
             to="/sales"
@@ -108,7 +116,7 @@ const NavBar = () => {
               `${linkBase} ${isActive ? linkActive : linkInactive}`
             }
           >
-            Sales
+            Promociones
           </NavLink>
         </nav>
       </div>
@@ -122,8 +130,8 @@ const NavBar = () => {
           </span>
           <input
             className="block w-full rounded-full border-none bg-primary/20 py-2 pl-10 pr-3 text-sm
-                       text-white placeholder:text-white/40
-                       dark:text-black dark:placeholder:text-black/50 dark:bg-primary/10"
+                      text-white placeholder:text-white/40
+                      dark:text-black dark:placeholder:text-black/50 dark:bg-primary/10"
             placeholder="Search for figures..."
             type="text"
           />
@@ -150,7 +158,7 @@ const NavBar = () => {
           <NavLink
             to="/login"
             className="rounded-lg bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30 transition-colors
-                       dark:text-black dark:hover:bg-primary/25"
+                      dark:text-black dark:hover:bg-primary/25"
           >
             Login
           </NavLink>
@@ -176,7 +184,7 @@ const NavBar = () => {
               <div
                 role="menu"
                 className="absolute right-0 mt-2 w-64 rounded-xl border border-white/10 dark:border-black/10
-                           bg-[#0f1715]/80 dark:bg-white/80 backdrop-blur-md shadow-lg z-50 overflow-hidden"
+                          bg-[#0f1715]/80 dark:bg-white/80 backdrop-blur-md shadow-lg z-50 overflow-hidden"
               >
                 <div className="px-4 py-3">
                   <p className="text-xs uppercase tracking-wide text-white/60 dark:text-black/60">
@@ -191,8 +199,8 @@ const NavBar = () => {
                   onClick={handleLogout}
                   role="menuitem"
                   className="w-full text-left px-4 py-3 text-sm font-semibold
-                             text-red-300 hover:text-red-200 hover:bg-white/5
-                             dark:text-red-600 dark:hover:text-red-700 dark:hover:bg-black/5"
+                            text-red-300 hover:text-red-200 hover:bg-white/5
+                            dark:text-red-600 dark:hover:text-red-700 dark:hover:bg-black/5"
                 >
                   Logout
                 </button>

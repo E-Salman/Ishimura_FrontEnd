@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MarcasCard from "./MarcasCard";
 import { getLineasByMarca } from "../lib/api";
 
 export default function MarcasGrid({ marcas = [], onSelect }) {
   const [openId, setOpenId] = useState(null);
   const [lineasByMarca, setLineasByMarca] = useState({});
+  const [openPlacement, setOpenPlacement] = useState("bottom"); // 'bottom' | 'top'
+  const cardRefs = useRef({});
 
   useEffect(() => {
     if (!openId) return;
@@ -22,7 +24,21 @@ export default function MarcasGrid({ marcas = [], onSelect }) {
   }
 
   const handleToggle = (marca) => {
-    setOpenId((prev) => (prev === marca.id ? null : marca.id));
+    if (openId === marca.id) {
+      setOpenId(null);
+      return;
+    }
+    const el = cardRefs.current[marca.id];
+    if (el && typeof window !== "undefined") {
+      const rect = el.getBoundingClientRect();
+      const viewportH = window.innerHeight || document.documentElement.clientHeight || 0;
+      const estimatedMenuH = 180; // altura aproximada del menú
+      const shouldOpenUp = rect.bottom + estimatedMenuH > viewportH && rect.top > estimatedMenuH;
+      setOpenPlacement(shouldOpenUp ? "top" : "bottom");
+    } else {
+      setOpenPlacement("bottom");
+    }
+    setOpenId(marca.id);
   };
 
   const handleSelectLinea = (marca, linea) => {
@@ -35,7 +51,13 @@ export default function MarcasGrid({ marcas = [], onSelect }) {
       {marcas.map((m) => {
         const state = lineasByMarca[m.id] || { status: "idle", items: [] };
         return (
-          <div key={m.id} className="space-y-2">
+          <div
+            key={m.id}
+            ref={(el) => {
+              if (el) cardRefs.current[m.id] = el;
+            }}
+            className="relative"
+          >
             <MarcasCard
               title={m.title}
               description={m.description}
@@ -43,7 +65,13 @@ export default function MarcasGrid({ marcas = [], onSelect }) {
               onClick={() => handleToggle(m)}
             />
             {openId === m.id && (
-              <div className="mt-2 text-sm">
+              <div
+                className={`absolute left-0 right-0 z-50 text-sm ${
+                  openPlacement === "top"
+                    ? "bottom-full mb-2 dropdown-enter-up"
+                    : "top-full mt-2 dropdown-enter"
+                }`}
+              >
                 {state.status === "loading" && <p className="text-white/60">Cargando opciones...</p>}
                 {state.status === "error" && (
                   <p className="text-red-400">Error al cargar líneas: {state.error}</p>
@@ -52,7 +80,7 @@ export default function MarcasGrid({ marcas = [], onSelect }) {
                   <div className="flex flex-col items-start gap-2">
                     <button
                       type="button"
-                      className="px-3 py-1 bg-transparent text-primary hover:bg-transparent focus:outline-none"
+                      className="px-3 py-1 bg-black text-primary hover:bg-transparent focus:outline-none"
                       onClick={() => handleSelectLinea(m, { id: null, nombre: "Todas" })}
                     >
                       Todas
@@ -61,7 +89,7 @@ export default function MarcasGrid({ marcas = [], onSelect }) {
                       <button
                         type="button"
                         key={l.id ?? l.lineaId}
-                        className="px-3 py-1 bg-transparent text-primary hover:bg-transparent focus:outline-none"
+                        className="px-3 py-1 bg-black text-primary hover:bg-transparent focus:outline-none"
                         onClick={() => handleSelectLinea(m, l)}
                       >
                         {l.nombre ?? l.name ?? l.titulo ?? `Línea ${l.id}`}

@@ -43,6 +43,8 @@
               primary: "#4FFFCF",
               "background-light": "#f8f7f5",
               "background-dark": "#000000",
+              // Verde pantano para paneles/dropdowns
+              swamp: "#0F3C34",
             },
             fontFamily: {
               display: ["Space Grotesk"],
@@ -57,6 +59,19 @@
         },
       };
     </script>
+    <style>
+      /* Simple dropdown animations for the marcas menu */
+      .dropdown-enter { animation: dropdown-in 160ms ease-out; }
+      .dropdown-enter-up { animation: dropdown-in-up 160ms ease-out; }
+      @keyframes dropdown-in {
+        from { opacity: 0; transform: translateY(8px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @keyframes dropdown-in-up {
+        from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+    </style>
   </head>
 
 <body class="bg-background-dark text-white font-display dark:bg-background-light dark:text-black">

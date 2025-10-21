@@ -14,6 +14,9 @@ import HomeCarousel from "./components/HomeCarousel";
 import DetalleColeccionable from "./views/DetalleColeccionable";
 import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
 import Footer from './components/Footer'
+import Coleccionables from "./views/Coleccionables";
+import NewArrivals from "./views/NewArrivals";
+import Promotions from "./views/Promotions";
 
 function App() {
   const navigate = useNavigate();
@@ -33,7 +36,9 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/coleccionable/:id" element={<DetalleColeccionable />} />
         <Route path="/marcas" element={<MarcasPage />} />
-        <Route path="/carrito" element={<Carrito />} />
+        <Route path="/coleccionables" element={<Coleccionables />} />
+        <Route path="/new-arrivals" element={<NewArrivals />} />
+        <Route path="/sales" element={<Promotions />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/confirmar-compra" element={<ConfirmarCompra />} />
         <Route path="/login" element={<Login />} />
