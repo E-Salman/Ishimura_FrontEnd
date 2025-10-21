@@ -1,7 +1,7 @@
 // src/views/Register.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx"; // 👈 NUEVO
+import { useAuth } from "../context/AuthContext.jsx"; 
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -16,7 +16,7 @@ export default function Register() {
   const [okMsg, setOkMsg] = useState("");
 
   const navigate = useNavigate();
-  const { login } = useAuth(); // 👈 NUEVO: para guardar sesión
+  const { login } = useAuth(); 
 
   const URLregister = "http://localhost:4002/api/v1/auth/register";
 
@@ -37,45 +37,56 @@ export default function Register() {
     }
 
     setLoading(true);
-    fetch(URLregister, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nombre: form.nombre,
-        apellido: form.apellido,
-        direccion: form.direccion,
-        email: form.email,
-        password: form.password,
-        rol: "USER"
-      }),
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          let msg = `HTTP ${res.status}`;
-          try {
-            const j = await res.json();
-            if (j?.message) msg = j.message;
-          } catch {}
-          throw new Error(msg);
-        }
-        return res.json().catch(() => ({})); 
-      })
-      .then((data) => {
-      
-        const token = data?.token || data?.jwt || data?.access_token;
-        if (token) {
-          login({ email: form.email, token }); 
-          setOkMsg("¡Cuenta creada!");
-          setTimeout(() => navigate("/home"), 700);
-        } else {
-          
-          setTimeout(() => navigate("/login"), 700);
-        }
-      })
-      .catch((err) => setError(err.message || "Error al registrarse"))
-      .finally(() => setLoading(false));
-  };
+fetch(URLregister, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    nombre: form.nombre,
+    apellido: form.apellido,
+    direccion: form.direccion,
+    email: form.email,
+    password: form.password,
+    rol: "USER",
+  }),
+})
+  .then(async (res) => {
+    if (!res.ok) {
+      let msg = "";
+      try {
+        const j = await res.json();
+        if (j?.message) msg = j.message;
+      } catch {
+      }
 
+      if (res.status === 422) {
+        throw new Error("Este email ya está registrado.");
+      }
+
+      if (msg) {
+        throw new Error(msg);
+      }
+      throw new Error(`Error (${res.status})`);
+    }
+
+    return res.json().catch(() => ({}));
+  })
+  .then((data) => {
+    const token = data?.token || data?.jwt || data?.access_token;
+
+    if (token) {
+      login({ email: form.email, token });
+      setOkMsg("¡Cuenta creada!");
+      setTimeout(() => navigate("/home"), 700);
+    } else {
+      setOkMsg("¡Cuenta creada! Iniciá sesión.");
+      setTimeout(() => navigate("/login"), 700);
+    }
+  })
+  .catch((err) => {
+    setError(err.message || "Error al registrarse");
+  })
+  .finally(() => setLoading(false));
+}
   return (
     <div
       className="flex min-h-screen items-center justify-center
