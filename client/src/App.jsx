@@ -31,7 +31,6 @@ function App() {
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />
       </Routes>
-      </Routes>
       <footer className="border-t border-primary/20">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-center">
