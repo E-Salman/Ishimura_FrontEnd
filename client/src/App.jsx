@@ -25,7 +25,6 @@ function App() {
   return (
     <>
       <NavBar />
-      {/* <Navigation /> */}
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home />} />
