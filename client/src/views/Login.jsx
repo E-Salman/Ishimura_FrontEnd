@@ -40,7 +40,7 @@ export default function Login() {
       // leemos el body como texto para tolerar backends que no devuelven JSON
       const raw = await res.text();
       let data = {};
-      try { data = raw ? JSON.parse(raw) : {}; } catch {}
+      try { data = raw ? JSON.parse(raw) : {}; } catch { }
 
       if (!res.ok) {
         const msg =
@@ -50,6 +50,8 @@ export default function Login() {
 
       const token = data?.token || data?.access_token || data?.jwt;
       if (!token) throw new Error("El servidor no devolvió token.");
+      
+      localStorage.setItem("token", token)
 
       login({ email: trimmedEmail, token });
       setError("");
@@ -95,10 +97,10 @@ export default function Login() {
     errorCount === 0
       ? "◝(ᵔᗜᵔ)◜"
       : errorCount === 1
-      ? "(╥﹏╥)"
-      : errorCount === 2
-      ? "<(ꐦㅍ _ㅍ)>"
-      : "∘ ∘ ∘ ( °ヮ° )";
+        ? "(╥﹏╥)"
+        : errorCount === 2
+          ? "<(ꐦㅍ _ㅍ)>"
+          : "∘ ∘ ∘ ( °ヮ° )";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background-dark text-white dark:bg-background-light dark:text-black">

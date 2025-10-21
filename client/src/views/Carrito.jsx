@@ -14,10 +14,9 @@ const Carrito = () => {
         const response = await fetch("http://localhost:4002/carrito", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         if (!response.ok) throw new Error("Error al obtener carrito");
-
         const data = await response.json();
+        console.log(data)
         setCarrito(data);
         calcularTotal(data);
       } catch (error) {
@@ -26,7 +25,6 @@ const Carrito = () => {
         setLoading(false);
       }
     };
-
     fetchCarrito();
   }, []);
 

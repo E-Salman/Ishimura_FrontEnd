@@ -21,7 +21,7 @@ const HomeCarousel = () => {
     return Array.from(numbers);
   };
 
-  const randomIds = getUniqueRandoms(5, 1, 10);
+  const randomIds = getUniqueRandoms(5, 1, 22);
 
   useEffect(() => {
     const fetchData = async () => {
