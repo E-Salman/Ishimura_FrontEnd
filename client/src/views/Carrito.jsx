@@ -9,7 +9,7 @@ const Carrito = () => {
     const fetchCarrito = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:8080/api/carrito", {
+        const response = await fetch("http://localhost:4002/carrito", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
@@ -26,14 +26,17 @@ const Carrito = () => {
   }, []);
 
   const calcularTotal = (items) => {
-    const total = items.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+    const total = items.reduce(
+      (acc, item) => acc + (item.coleccionable?.precio || 0) * item.cantidad,
+      0
+    );
     setTotal(total);
   };
 
   const eliminarDelCarrito = async (idProducto) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:8080/api/carrito/${idProducto}`, {
+      await fetch(`http://localhost:4002/carrito/${idProducto}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -56,10 +59,17 @@ const Carrito = () => {
       <div className="carrito-lista">
         {carrito.map((item) => (
           <div key={item.id} className="carrito-item">
-            <img src={item.imagenUrl} alt={item.nombre} width="100" />
+            <img
+              src={
+                item.coleccionable?.imagenes?.[0]?.url ||
+                "https://via.placeholder.com/100"
+              }
+              alt={item.coleccionable?.nombre || "Producto"}
+              width="100"
+            />
             <div className="carrito-info">
-              <h3>{item.nombre}</h3>
-              <p>Precio: ${item.precio}</p>
+              <h3>{item.coleccionable?.nombre}</h3>
+              <p>Precio: ${item.coleccionable?.precio}</p>
               <p>Cantidad: {item.cantidad}</p>
               <button onClick={() => eliminarDelCarrito(item.id)}>Eliminar</button>
             </div>
