@@ -13,6 +13,7 @@ import ForgotPassword from "./views/ForgotPassword";
 import HomeCarousel from "./components/HomeCarousel";
 import DetalleColeccionable from "./views/DetalleColeccionable";
 import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
+import CrearColeccionable from "./views/CrearColeccionable";
 import Footer from './components/Footer'
 import Coleccionables from "./views/Coleccionables";
 import NewArrivals from "./views/NewArrivals";
@@ -44,6 +45,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin/crear-coleccionable" element={<CrearColeccionable />} />
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />
       </Routes>
       <Footer/>

@@ -1,8 +1,29 @@
 import ColeccionableDestacado from "../components/ColeccionableDestacado";
 import HomeCarousel from "../components/HomeCarousel";
 import { NavLink } from "react-router-dom";
+import { useMemo } from "react";
+import { useAuth } from "../context/authcontext.jsx";
+
+function isAdminFromToken(token) {
+    if (!token) return false;
+    try {
+        const [, payload] = token.split('.');
+        const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+        const values = [json?.roles, json?.authorities, json?.authority, json?.scope, json?.scopes, json?.rol]
+            .flat()
+            .filter(Boolean)
+            .map((x) => (typeof x === 'string' ? x : x?.authority || x?.name || ''));
+        return values.some((v) => /ADMIN/i.test(String(v)));
+    } catch (_) {
+        return false;
+    }
+}
 
 const Home = () => {
+    const { user } = useAuth?.() || { user: null };
+    const token = useMemo(() => user?.token || localStorage.getItem('ishimura_token') || localStorage.getItem('token') || null, [user]);
+    const isAdmin = useMemo(() => isAdminFromToken(token), [token]);
+
     return (
         <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
             <div className="flex h-full grow flex-col">
@@ -30,6 +51,16 @@ const Home = () => {
                                     </NavLink>
                                 ))}
                             </div>
+                            {isAdmin && (
+                                <div className="mt-8 flex justify-center">
+                                    <NavLink
+                                        to="/admin/crear-coleccionable"
+                                        className="rounded-md bg-primary px-5 py-2 text-sm font-bold text-black hover:bg-primary/90"
+                                    >
+                                        Agregar Coleccionable
+                                    </NavLink>
+                                </div>
+                            )}
                         </section>                                                
                     </div>
                 </main>

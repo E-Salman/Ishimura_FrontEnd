@@ -162,7 +162,6 @@ export default function CrearColeccionable() {
   return (
     <div className="relative mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="text-4xl font-black text-primary">Crear Coleccionable</h1>
-      <p className="mt-2 text-white/70">Completa los datos mínimos. Podrás subir imágenes luego.</p>
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
       {okMsg && <p className="mt-4 text-sm text-emerald-400">{okMsg}</p>}
