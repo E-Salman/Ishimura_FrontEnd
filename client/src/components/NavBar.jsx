@@ -69,9 +69,9 @@ const NavBar = () => {
 
         <nav className="hidden md:flex items-center gap-8">
           <NavLink to="/home" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Home</NavLink>
-          <NavLink to="/categories" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Categories</NavLink>
-          <NavLink to="/new-arrivals" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>New Arrivals</NavLink>
-          <NavLink to="/sales" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Sales</NavLink>
+          <NavLink to="/marcas" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Marcas</NavLink>
+          <NavLink to="/new-arrivals" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Nuevo</NavLink>
+          <NavLink to="/sales" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Promociones</NavLink>
         </nav>
       </div>
 

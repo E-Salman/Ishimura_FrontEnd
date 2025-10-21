@@ -13,6 +13,9 @@ import ForgotPassword from "./views/ForgotPassword";
 import HomeCarousel from "./components/HomeCarousel";
 import DetalleColeccionable from "./views/DetalleColeccionable";
 import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
+import Coleccionables from "./views/Coleccionables";
+import NewArrivals from "./views/NewArrivals";
+import Promotions from "./views/Promotions";
 
 function App() {
   const navigate = useNavigate();
