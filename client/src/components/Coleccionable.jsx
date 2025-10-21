@@ -1,11 +1,8 @@
 const Coleccionable = ({id, descripcion, nombre, precio, linea_id})=>{
     return(
-        <>
-        <p>ID:{id}</p>        
-        <h1>{nombre}</h1>        
-        <p>{descripcion}</p>
-        <p>{precio}</p>
-        <p>{linea_id}</p>
+        <>   
+        <h3 className="font-bold text-white">{nombre}</h3>        
+        <p className="text-sm text-white/60">{descripcion}</p>
         </>
     )
 }
