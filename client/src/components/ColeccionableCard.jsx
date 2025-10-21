@@ -29,6 +29,7 @@ export default function ColeccionableCard({
   imageUrl,
   src,
   onAddToCart,
+  onAddToWishlist,
   onClick,
   className = '',
   addToCartText = 'Add to Cart',
@@ -68,6 +69,15 @@ export default function ColeccionableCard({
             </div>
           )}
           <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10" />
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onAddToWishlist?.({ id, nombre: displayTitle, precio: currentPrice }); }}
+            className="absolute right-2 top-2 rounded-full bg-black/60 p-2 text-white ring-1 ring-white/20 backdrop-blur-sm transition hover:text-primary hover:ring-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/60"
+            aria-label="Agregar a la wishlist"
+            title="Agregar a la wishlist"
+          >
+            <span className="material-symbols-outlined">favorite_border</span>
+          </button>
         </div>
       </button>
 
@@ -90,13 +100,26 @@ export default function ColeccionableCard({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => onAddToCart?.({ id, nombre: displayTitle, precio: currentPrice })}
-          className="mt-4 w-full rounded-full bg-primary px-6 py-3 text-center text-sm font-bold text-black transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50"
-        >
-          {addToCartText}
-        </button>
+        <div className="mt-4 flex gap-3">
+          <button
+            type="button"
+            onClick={() => onAddToWishlist?.({ id, nombre: displayTitle, precio: currentPrice })}
+            className="flex-1 rounded-md border border-primary/40 bg-transparent px-4 py-2 text-center text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            title="Agregar a la wishlist"
+          >
+            <span className="inline-flex items-center justify-center gap-2">
+              <span className="material-symbols-outlined text-sm">favorite</span>
+              Wishlist
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onAddToCart?.({ id, nombre: displayTitle, precio: currentPrice })}
+            className="flex-1 rounded-md bg-primary px-4 py-2 text-center text-xs font-bold text-black transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            {addToCartText}
+          </button>
+        </div>
       </div>
     </article>
   );

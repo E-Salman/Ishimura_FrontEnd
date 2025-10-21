@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
-import { getNewArrivals, getColeccionableFirstImageUrl, getColeccionableDetalle } from '../lib/api';
+import { getNewArrivals, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist } from '../lib/api';
 
 
 // cambiar tema de que agarramos el new arrival por id
@@ -69,7 +69,12 @@ export default function NewArrivals() {
 
       {!loading && (
         <div className="mt-12">
-          <ColeccionablesGrid items={items} />
+          <ColeccionablesGrid
+            items={items}
+            onAddToWishlist={async ({ id }) => {
+              try { await addToWishlist(id); } catch (_) {}
+            }}
+          />
         </div>
       )}
     </div>

@@ -21,8 +21,8 @@ export default function App() {
         <Route path="/marcas" element={<MarcasPage />} />
         <Route path="/coleccionables" element={<Coleccionables />} />
         <Route path="/new-arrivals" element={<NewArrivals />} />
-        <Route path="/carrito" element={<Carrito />} />
         <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/carrito" element={<Carrito />} />
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />
       </Routes>
       {/*<CardList/>*/}

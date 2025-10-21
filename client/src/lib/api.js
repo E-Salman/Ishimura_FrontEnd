@@ -160,6 +160,36 @@ export async function getColeccionableDetalle(coleccionableId, signal) {
   return res.json();
 }
 
+// Intenta agregar un coleccionable a la wishlist.
+// Prueba varios patrones de endpoint:
+// - POST /wishlist  { coleccionableId }
+// - POST /wishlist/{id}
+// - POST /wishlist?coleccionableId={id}
+// - POST /wishlist/agregar/{id}
+export async function addToWishlist(coleccionableId, signal) {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+  const commonHeaders = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const attempts = [
+    () => fetch(`${BASE}/wishlist`, { method: 'POST', headers: commonHeaders, body: JSON.stringify({ coleccionableId }), signal }),
+    () => fetch(`${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`, { method: 'POST', headers: commonHeaders, signal }),
+    () => fetch(`${BASE}/wishlist?coleccionableId=${encodeURIComponent(coleccionableId)}`, { method: 'POST', headers: commonHeaders, signal }),
+    () => fetch(`${BASE}/wishlist/agregar/${encodeURIComponent(coleccionableId)}`, { method: 'POST', headers: commonHeaders, signal }),
+  ];
+
+  for (const req of attempts) {
+    try {
+      const res = await req();
+      if (res.ok) return true;
+      if (res.status === 409) return true; // ya existe
+    } catch (_) {}
+  }
+  return false;
+}
+
 // Devuelve los últimos coleccionables ingresados o reingresados (restock) cuando sea posible.
 // Estrategia:
 // 1) Intentar /catalogo (ordenar por fecha si hay campo temporal; si no, por id desc)

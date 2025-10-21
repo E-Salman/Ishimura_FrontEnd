@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
-import { getBaseUrl, getMarcas, getLineasByMarca, getColeccionables, getColeccionableFirstImageUrl, getColeccionableDetalle } from '../lib/api';
+import { getBaseUrl, getMarcas, getLineasByMarca, getColeccionables, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist } from '../lib/api';
 
 const SORTS = [
   { id: 'alpha-desc', label: 'Alfabético Z→A' }, // default
@@ -187,6 +187,15 @@ export default function ColeccionablesView() {
     }
   }, [items, sort]);
 
+  const handleAddToWishlist = async ({ id, nombre }) => {
+    try {
+      const ok = await addToWishlist(id);
+      if (!ok) console.warn('No se pudo agregar a la wishlist');
+    } catch (e) {
+      console.warn('Wishlist error', e);
+    }
+  };
+
   return (
     <div className="relative mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="mb-6 text-3xl font-black text-primary">Coleccionables</h1>
@@ -327,7 +336,12 @@ export default function ColeccionablesView() {
         <p className="mb-4 text-sm text-white/60">Cargando…</p>
       )}
 
-      {!loading && <ColeccionablesGrid items={sortedItems} />}
+      {!loading && (
+        <ColeccionablesGrid
+          items={sortedItems}
+          onAddToWishlist={handleAddToWishlist}
+        />
+      )}
     </div>
   );
 }

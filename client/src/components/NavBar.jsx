@@ -35,9 +35,11 @@ const NavBar = ({ todo }) => {
                     </label>
                 </div>
                 <NavLink to="/wishlist">
+                <NavLink to="/wishlist">
                     <button className="rounded-full bg-primary/20 p-2 text-white hover:bg-primary/30">
                         <span className="material-symbols-outlined">favorite_border</span>
                     </button>
+                </NavLink>
                 </NavLink>
                 <NavLink to="/carrito">
                     <button className="rounded-full bg-primary/20 p-2 text-white hover:bg-primary/30">

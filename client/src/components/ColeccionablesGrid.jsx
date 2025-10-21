@@ -1,7 +1,7 @@
 import ColeccionableCard from './ColeccionableCard';
 
 // Grid simple para reutilizar el card en listas y secciones
-export default function ColeccionablesGrid({ items = [], onAddToCart, onItemClick, className = '' }) {
+export default function ColeccionablesGrid({ items = [], onAddToCart, onAddToWishlist, onItemClick, className = '' }) {
   if (!Array.isArray(items) || items.length === 0) {
     return <p className="text-white/60">No hay coleccionables.</p>;
   }
@@ -20,10 +20,10 @@ export default function ColeccionablesGrid({ items = [], onAddToCart, onItemClic
           precioAnterior={it.precioAnterior ?? it.listPrice}
           imagen={it.imagen ?? it.imageUrl ?? it.image}
           onAddToCart={onAddToCart}
+          onAddToWishlist={onAddToWishlist}
           onClick={() => onItemClick?.(it)}
         />
       ))}
     </div>
   );
 }
-
