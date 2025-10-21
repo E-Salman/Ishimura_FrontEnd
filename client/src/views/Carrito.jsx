@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Carrito = () => {
   const [carrito, setCarrito] = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCarrito = async () => {
@@ -12,6 +14,9 @@ const Carrito = () => {
         const response = await fetch("http://localhost:4002/carrito", {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        if (!response.ok) throw new Error("Error al obtener carrito");
+
         const data = await response.json();
         console.log(data)
         setCarrito(data);
@@ -41,6 +46,7 @@ const Carrito = () => {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+
       const nuevoCarrito = carrito.filter((item) => item.id !== idProducto);
       setCarrito(nuevoCarrito);
       calcularTotal(nuevoCarrito);
@@ -49,8 +55,11 @@ const Carrito = () => {
     }
   };
 
-  if (loading) return <p>Cargando carrito...</p>;
+  const confirmarCompra = () => {
+    navigate("/confirmar-compra", { state: { carrito } });
+  };
 
+  if (loading) return <p>Cargando carrito...</p>;
   if (carrito.length === 0)
     return <p style={{ textAlign: "center" }}>Tu carrito está vacío</p>;
 
@@ -78,9 +87,13 @@ const Carrito = () => {
         ))}
       </div>
       <h3>Total: ${total}</h3>
-      <button className="confirmar-btn">Confirmar Compra</button>
+
+      <button onClick={confirmarCompra} className="confirmar-btn">
+        Confirmar Compra
+      </button>
     </div>
   );
 };
 
 export default Carrito;
+
