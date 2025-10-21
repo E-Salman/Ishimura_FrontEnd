@@ -6,6 +6,10 @@ import Carrito from './views/Carrito'
 import Wishlist from './views/Wishlist'
 import NavBar from './components/NavBar'
 import ColeccionableDestacado from './components/ColeccionableDestacado'
+import Login from './views/Login'
+import Register from "./views/Register";
+import ForgotPassword from "./views/ForgotPassword";
+
 import HomeCarousel from './components/HomeCarousel'
 import DetalleColeccionable from './views/DetalleColeccionable'
 import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
@@ -19,7 +23,7 @@ function App() {
   }
 
   return (
-    <>
+
       <NavBar />
       {/*<Navigation/>*/}      
       <Routes>
@@ -30,6 +34,9 @@ function App() {
         <Route path="/marcas" element={<MarcasPage />} />
         <Route path="/carrito" element={<Carrito />} />
         <Route path="/wishlist" element={<Wishlist />} />
+         <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />
       </Routes>
       <footer className="border-t border-primary/20">
