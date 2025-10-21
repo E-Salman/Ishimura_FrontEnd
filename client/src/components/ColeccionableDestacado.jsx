@@ -24,15 +24,14 @@ const ColeccionableDestacado = ({ colId }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                console.log("antesde cualquier fetch")
-                const res1 = await fetch(URLColeccionable);//options
+                const res1 = await fetch(URLColeccionable, options);
                 const coleccionableData = await res1.json();
                 setColeccionable(coleccionableData);
 
                 const res2 = await fetch(URLImagen);
                 const blob = await res2.blob();
-                const urlBlob = URL.createObjectURL(blob);
-                setImagen(urlBlob);
+                const imagenBlob = URL.createObjectURL(blob);
+                setImagen(imagenBlob);
             }
             catch (err) {
                 console.error("Error al obtener los datos", err)
@@ -40,8 +39,8 @@ const ColeccionableDestacado = ({ colId }) => {
         };
         fetchData();
         return () => {
-    if (imagen) URLColeccionable.revokeObjectURL(imagen);
-    };
+            if (imagen) URL.revokeObjectURL(imagen);
+        };
     }, [colId]); //Se vuelve a correr este useEffect cada vez que colId cambie
 
     /*
@@ -60,14 +59,6 @@ const ColeccionableDestacado = ({ colId }) => {
 
     return (
         <div style={{ textAlign: 'left' }}>
-            <Coleccionable
-                key={coleccionable.id}
-                id={coleccionable.id}
-                nombre={coleccionable.nombre}
-                descripcion={coleccionable.descripcion}
-                precio={coleccionable.precio}
-                linea_id={coleccionable.linea_id}
-            />
             {
                 imagen ? (
                     <img
@@ -83,6 +74,14 @@ const ColeccionableDestacado = ({ colId }) => {
                 ) : (
                     <p>Loading image...</p>
                 )}
+            <Coleccionable
+                key={coleccionable.id}
+                id={coleccionable.id}
+                nombre={coleccionable.nombre}
+                descripcion={coleccionable.descripcion}
+                precio={coleccionable.precio}
+                linea_id={coleccionable.linea_id}
+            />
         </div>
     )
 

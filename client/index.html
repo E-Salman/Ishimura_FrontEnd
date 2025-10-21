@@ -5,11 +5,9 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ishimura Collectibles</title>
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
+
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;700"
@@ -18,6 +16,23 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
     />
+
+<script>
+  // Oscuro por defecto
+  (function () {
+    const saved = localStorage.getItem("theme");
+    const shouldUseDark = saved ? saved === "dark" : true; // 👈 default dark
+    if (shouldUseDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  })();
+</script>
+
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
       tailwind.config = {
@@ -58,8 +73,10 @@
       }
     </style>
   </head>
-  <body class="bg-background-dark font-display">
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-  </html>
+
+<body class="bg-background-dark text-white font-display dark:bg-background-light dark:text-black">
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>
