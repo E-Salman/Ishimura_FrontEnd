@@ -48,7 +48,7 @@ export default function Login() {
         throw new Error(msg);
       }
 
-      const token = data?.token || data?.access_token || data?.jwt;
+      const token = data?.accessToken || data?.token || data?.access_token || data?.jwt;
       if (!token) throw new Error("El servidor no devolvió token.");
       
       localStorage.setItem("token", token)
