@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { getNewArrivals, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist, getPricePreview } from '../lib/api';
 
@@ -6,6 +7,7 @@ import { getNewArrivals, getColeccionableFirstImageUrl, getColeccionableDetalle,
 // cambiar tema de que agarramos el new arrival por id
 
 export default function NewArrivals() {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -83,6 +85,7 @@ export default function NewArrivals() {
             onAddToWishlist={async ({ id }) => {
               try { await addToWishlist(id); } catch (_) {}
             }}
+            onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
           />
         </div>
       )}

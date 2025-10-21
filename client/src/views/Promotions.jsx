@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { getColeccionables, getPricePreview, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist } from '../lib/api';
 
 export default function Promotions() {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -93,10 +95,10 @@ export default function Promotions() {
           <ColeccionablesGrid
             items={items}
             onAddToWishlist={async ({ id }) => { try { await addToWishlist(id); } catch (_) {} }}
+            onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
           />
         </div>
       )}
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { getBaseUrl, getMarcas, getLineasByMarca, getColeccionables, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist, getPricePreview } from '../lib/api';
 
@@ -11,6 +11,7 @@ const SORTS = [
 ];
 
 export default function ColeccionablesView() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialMarca = searchParams.get('marcaId');
   const initialLinea = searchParams.get('lineaId');
@@ -352,6 +353,7 @@ export default function ColeccionablesView() {
         <ColeccionablesGrid
           items={sortedItems}
           onAddToWishlist={handleAddToWishlist}
+          onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
         />
       )}
     </div>
