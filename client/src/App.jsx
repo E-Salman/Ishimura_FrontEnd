@@ -45,6 +45,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />
+        <Route path="/carrito" element={<Carrito />} />
       </Routes>
       <Footer/>
     </>
