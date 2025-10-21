@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
-import { getBaseUrl, getMarcas, getLineasByMarca, getColeccionables, getColeccionableFirstImageUrl } from '../lib/api';
+import { getBaseUrl, getMarcas, getLineasByMarca, getColeccionables, getColeccionableFirstImageUrl, getColeccionableDetalle } from '../lib/api';
 
 const SORTS = [
   { id: 'alpha-desc', label: 'Alfabético Z→A' }, // default
@@ -132,17 +132,28 @@ export default function ColeccionablesView() {
         setLoading(true);
         setError(null);
         const data = await getColeccionables({ marcaId: marcaId || null, lineaId: lineaId || null }, controller.signal);
-        // If items lack images, fetch first image
+        // Completar precio/imágenes si faltan
         const completed = await Promise.all(
           data.map(async (it) => {
-            if (it.imagen) return it;
-            try {
-              const url = await getColeccionableFirstImageUrl(it.id, controller.signal);
-              if (url.startsWith('blob:')) revoked.push(url);
-              return { ...it, imagen: url };
-            } catch (_) {
-              return it;
+            let enriched = it;
+            if (enriched?.precio == null) {
+              try {
+                const det = await getColeccionableDetalle(it.id, controller.signal);
+                enriched = {
+                  ...enriched,
+                  precio: det?.precio ?? enriched?.precio ?? null,
+                  descripcion: enriched?.descripcion || det?.descripcion || '',
+                };
+              } catch (_) {}
             }
+            if (!enriched.imagen) {
+              try {
+                const url = await getColeccionableFirstImageUrl(it.id, controller.signal);
+                if (url.startsWith('blob:')) revoked.push(url);
+                enriched = { ...enriched, imagen: url };
+              } catch (_) {}
+            }
+            return enriched;
           })
         );
         setItems(completed);

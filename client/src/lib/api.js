@@ -153,3 +153,75 @@ export async function getColeccionableFirstImageUrl(coleccionableId, signal) {
     return 'https://placehold.co/800x600/png?text=Coleccionable';
   }
 }
+
+export async function getColeccionableDetalle(coleccionableId, signal) {
+  const res = await fetch(`${BASE}/coleccionable/${coleccionableId}`, { signal });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// Devuelve los últimos coleccionables ingresados o reingresados (restock) cuando sea posible.
+// Estrategia:
+// 1) Intentar /catalogo (ordenar por fecha si hay campo temporal; si no, por id desc)
+// 2) Si /catalogo no es accesible (403), usar todos los coleccionables y ordenar por id desc
+export async function getNewArrivals({ limit = 12 } = {}, signal) {
+  function parseTime(v) {
+    if (!v) return null;
+    const t = Date.parse(v);
+    return Number.isNaN(t) ? null : t;
+  }
+
+  // 1) catálogo
+  try {
+    const res = await fetch(`${BASE}/catalogo`, { signal });
+    if (res.ok) {
+      const json = await res.json();
+      let arr = Array.isArray(json) ? json : null;
+      if (!arr && json && typeof json === 'object') {
+        const candidates = [json.content, json.items, json.data, json.lista, json.catalogo, json.results, json.rows, json.values];
+        for (const c of candidates) { if (Array.isArray(c)) { arr = c; break; } }
+        if (!arr) try { arr = Object.values(json); } catch (_) {}
+      }
+      if (!Array.isArray(arr)) arr = [];
+      const mapped = arr.map((raw) => {
+        const it = raw?.coleccionable ?? raw;
+        const time =
+          parseTime(raw?.fecha) ?? parseTime(raw?.fechaIngreso) ?? parseTime(raw?.fechaAlta) ??
+          parseTime(raw?.createdAt) ?? parseTime(raw?.updatedAt) ?? parseTime(raw?.lastUpdated) ??
+          parseTime(it?.createdAt) ?? parseTime(it?.updatedAt) ?? null;
+        return {
+          id: it?.id ?? it?._id ?? it?.coleccionableId ?? it?.coleccionableID ?? crypto.randomUUID?.() ?? String(Math.random()),
+          nombre: it?.nombre ?? it?.name ?? it?.title ?? 'Coleccionable',
+          descripcion: it?.descripcion ?? it?.description ?? '',
+          precio: it?.precio ?? it?.price ?? null,
+          precioAnterior: it?.precioAnterior ?? it?.listPrice ?? null,
+          imagen: it?.imagen ?? it?.imageUrl ?? it?.image ?? null,
+          lineaId: it?.linea_id ?? it?.lineaId ?? (typeof it?.linea === 'object' ? it?.linea?.id : it?.linea) ?? null,
+          marcaId: it?.marca_id ?? it?.marcaId ?? (typeof it?.marca === 'object' ? it?.marca?.id : it?.marca) ?? null,
+          _time: time,
+        };
+      });
+      mapped.sort((a, b) => {
+        const ta = a._time ?? 0; const tb = b._time ?? 0;
+        if (ta !== tb) return tb - ta;
+        const ida = Number(a.id); const idb = Number(b.id);
+        if (!Number.isNaN(idb) && !Number.isNaN(ida)) return idb - ida;
+        return 0;
+      });
+      return mapped.slice(0, limit).map(({ _time, ...rest }) => rest);
+    }
+  } catch (_) {}
+
+  // 2) fallback: todos los coleccionables, ordenar por id desc
+  try {
+    const all = await getColeccionables({}, signal);
+    const sorted = [...all].sort((a, b) => {
+      const ida = Number(a.id); const idb = Number(b.id);
+      if (!Number.isNaN(idb) && !Number.isNaN(ida)) return idb - ida;
+      return String(b.nombre || '').localeCompare(String(a?.nombre || ''), 'es', { sensitivity: 'base' });
+    });
+    return sorted.slice(0, limit);
+  } catch (_) {
+    return [];
+  }
+}

@@ -38,6 +38,7 @@ export default function ColeccionableCard({
   const currentPrice = price ?? precio;
   const oldPrice = listPrice ?? precioAnterior;
   const imgSrc = image ?? imageUrl ?? imagen ?? src;
+  const priceStr = currentPrice != null ? formatPrice(currentPrice, currency ?? moneda) : null;
 
   return (
     <article
@@ -79,7 +80,7 @@ export default function ColeccionableCard({
         <div className="mt-4 flex items-baseline gap-3">
           {currentPrice != null && (
             <span className="text-xl font-extrabold leading-none text-emerald-400">
-              {formatPrice(currentPrice, currency ?? moneda)}
+              {priceStr}
             </span>
           )}
           {oldPrice != null && (
@@ -100,4 +101,3 @@ export default function ColeccionableCard({
     </article>
   );
 }
-
