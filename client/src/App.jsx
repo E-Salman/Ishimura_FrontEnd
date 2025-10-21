@@ -10,6 +10,10 @@ import Contact from './views/Contact'
 import NavBar from './components/NavBar'
 import CardList from './components/CardList'
 import ColeccionableDestacado from './components/ColeccionableDestacado'
+import Login from './views/Login'
+import Register from "./views/Register";
+import ForgotPassword from "./views/ForgotPassword";
+
 
 function App() {
   const navigate = useNavigate()
@@ -19,7 +23,6 @@ function App() {
     navigate('/home')
   }
 
-export default function App() {
   return (
     <>
     <NavBar/>
@@ -27,6 +30,10 @@ export default function App() {
     <Routes>
       <Route path="/home" element={<Home/>}/>
       <Route path="/contact" element={<Contact/>}/>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+
     </Routes>
     {/*<CardList/>*/}
     <ColeccionableDestacado colId={1}/>
@@ -38,17 +45,4 @@ export default function App() {
   )
 }
 
-      {/* Rutas */}
-      <Routes>
-        {/* redirigir raíz a /home */}
-        <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/login" element={<Login />} />
-
-        {/* 404 simple */}
-        <Route path="*" element={<div className="p-8">404 — Not found</div>} />
-      </Routes>
-    </div>
-  );
-}
+export default App

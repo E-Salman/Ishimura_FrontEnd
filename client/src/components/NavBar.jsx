@@ -1,53 +1,171 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from "react-router-dom";
+import ThemeToggle from "./ThemeToggle";
+import { useAuth } from "../context/AuthContext.jsx";
+import logo from "../../../assets/images/logoishimura.png";
+import { useEffect, useRef, useState } from "react";
 
-const NavBar = ({ todo }) => {
-    return (
-        <header className="flex items-center justify-between whitespace-nowrap border-b border-primary/20 px-10 py-4 text-white">
-            <div className="flex items-center gap-8">
-                <div className="flex items-center gap-3 text-primary">
-                    <span className="material-symbols-outlined text-3xl">sports_volleyball</span>
-                    <h2 className="text-xl font-bold text-white">Action Figure Emporium</h2>
-                </div>
-                <nav className="hidden items-center gap-8 md:flex">
-                    <nav className="hidden items-center gap-8 md:flex">
-                        <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/home">Home</NavLink>
-                        <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/categories">Categories</NavLink>
-                        <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/new-arrivals">New Arrivals</NavLink>
-                        <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/sales">Sales</NavLink>
-                    </nav>
-
-                </nav>
-            </div>
-
-            <div className="flex flex-1 items-center justify-end gap-4">
-                <div className="hidden lg:flex lg:w-64">
-                    <label className="relative block w-full">
-                        <span className="sr-only">Search</span>
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white/40">
-                            <span className="material-symbols-outlined">search</span>
-                        </span>
-                        <input
-                            className="block w-full rounded-full border-none bg-primary/20 py-2 pl-10 pr-3 text-sm text-white placeholder:text-white/40"
-                            placeholder="Search for figures..."
-                            type="text"
-                        />
-                    </label>
-                </div>
-                <button className="rounded-full bg-primary/20 p-2 text-white hover:bg-primary/30">
-                    <span className="material-symbols-outlined">favorite_border</span>
-                </button>
-                <button className="rounded-full bg-primary/20 p-2 text-white hover:bg-primary/30">
-                    <span className="material-symbols-outlined">shopping_cart</span>
-                </button>
-                <div
-                    className="aspect-square size-10 rounded-full bg-cover bg-center bg-no-repeat"
-                    style={{
-                        backgroundImage:
-                            'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCVhGgHAs8y3INGCPEO7UQGgMw_FaK-5DyeQTf8TM__Kb3s6Z1X9ECxzSvxah-gNbl_Ci_k5m6RAe88Lu2MQZLK2YthWt4LLt9X_qeXpLemv8v7LUBDpvbJFap1qja0xU3XCy2ppX3UmD0zqr8mBIELwqvq4osdrZYJLVqJnqYlwUg7SF-hTMuJONXVZcmcpz7B8i9WGGfiIONWuGMo3pKDdjUhEmeBBLH6T-_kbtab6SaywEJzBULrR5spN3TjQzMI_CbUrT2_-FI");',
-                    }}
-                ></div>
-            </div>
-        </header>
-    )
+function AvatarInitial({ email }) {
+  const initial = (email?.[0] || "?").toUpperCase();
+  return (
+    <div
+      className="w-10 h-10 rounded-full bg-white/10 dark:bg-black/20
+                 text-[#4FFFCF] flex items-center justify-center font-bold
+                 ring-1 ring-white/10 select-none"
+      title={email}
+    >
+      {initial}
+    </div>
+  );
 }
-export default NavBar
+
+const linkBase = "text-sm font-medium transition-colors";
+const linkInactive = "text-white/60 hover:text-primary dark:text-black/60 dark:hover:text-primary";
+const linkActive = "text-primary";
+
+const NavBar = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // estado del dropdown del avatar
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  const handleLogout = () => {
+    logout();
+    setOpen(false);
+    navigate("/");
+  };
+
+  // cerrar con click afuera o ESC
+  useEffect(() => {
+    const onClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  return (
+    <header
+      className="
+        grid grid-cols-[auto_1fr_auto] items-center
+        gap-4 md:gap-8
+        whitespace-nowrap border-b border-primary/10
+        pl-2 pr-6 py-4 w-full
+        text-white dark:text-black
+      "
+    >
+      {/* IZQUIERDA: logo + links */}
+      <div className="flex items-center gap-10">
+        <div className="flex items-center gap-3 text-primary">
+          <img src={logo} alt="Ishimura Logo" className="w-10 h-10 object-contain" />
+          <h2 className="text-xl font-bold tracking-wide">ISHIMURA COLLECTIBLES</h2>
+        </div>
+
+        <nav className="hidden md:flex items-center gap-8">
+          <NavLink to="/home" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Home</NavLink>
+          <NavLink to="/categories" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Categories</NavLink>
+          <NavLink to="/new-arrivals" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>New Arrivals</NavLink>
+          <NavLink to="/sales" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Sales</NavLink>
+        </nav>
+      </div>
+
+      {/* CENTRO: buscador */}
+      <div className="hidden lg:flex justify-center">
+        <label className="relative block w-full max-w-[34rem]">
+          <span className="sr-only">Search</span>
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white/40 dark:text-black/40">
+            <span className="material-symbols-outlined">search</span>
+          </span>
+          <input
+            className="block w-full rounded-full border-none bg-primary/20 py-2 pl-10 pr-3 text-sm
+                       text-white placeholder:text-white/40
+                       dark:text-black dark:placeholder:text-black/50 dark:bg-primary/10"
+            placeholder="Search for figures..."
+            type="text"
+          />
+        </label>
+      </div>
+
+      {/* DERECHA: fav, cart, login/avatar + theme */}
+      <div className="flex items-center justify-end gap-3">
+        <button className="flex items-center justify-center rounded-full bg-primary/20 size-10 text-white hover:bg-primary/30 dark:text-black dark:hover:bg-primary/25">
+        <span className="material-symbols-outlined text-[22px]">favorite_border</span>
+        </button>
+
+        <button className="flex items-center justify-center rounded-full bg-primary/20 size-10 text-white hover:bg-primary/30 dark:text-black dark:hover:bg-primary/25">
+        <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
+        </button>
+
+        {!user ? (
+          <NavLink
+            to="/login"
+            className="rounded-lg bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30 transition-colors
+                       dark:text-black dark:hover:bg-primary/25"
+          >
+            Login
+          </NavLink>
+        ) : (
+          <div className="relative" ref={menuRef}>
+            <button
+              aria-haspopup="menu"
+              aria-expanded={open}
+              onClick={() => setOpen((v) => !v)}
+              className="focus:outline-none"
+              title={user.email}
+            >
+              <AvatarInitial email={user.email} />
+            </button>
+
+            {open && (
+              <div
+                role="menu"
+                className="absolute right-0 mt-2 w-64 rounded-xl border border-white/10 dark:border-black/10
+                           bg-[#0f1715] dark:bg-white shadow-lg z-50 overflow-hidden"
+              >
+                <div className="px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide text-white/60 dark:text-black/60">
+                    Signed in as
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white dark:text-black break-all">
+                    {user.email}
+                  </p>
+                </div>
+                <div className="h-px bg-white/10 dark:bg-black/10" />
+                <button
+                  onClick={handleLogout}
+                  role="menuitem"
+                  className="w-full text-left px-4 py-3 text-sm font-semibold
+                             text-red-300 hover:text-red-200 hover:bg-white/5
+                             dark:text-red-600 dark:hover:text-red-700 dark:hover:bg-black/5"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div
+  className="
+    grid place-items-center size-10 rounded-full
+    bg-primary/20 hover:bg-primary/30
+    dark:bg-primary/10 dark:hover:bg-primary/25
+    [&>*]:m-0 [&>*]:p-0 [&>*]:size-10 [&>*]:grid [&>*]:place-items-center
+    [&_*]:text-[22px]
+  "
+>
+  <ThemeToggle />
+</div>
+
+      </div>
+    </header>
+  );
+};
+
+export default NavBar;
