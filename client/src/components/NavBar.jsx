@@ -11,7 +11,7 @@ const NavBar = ({ todo }) => {
                 <nav className="hidden items-center gap-8 md:flex">
                     <nav className="hidden items-center gap-8 md:flex">
                         <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/home">Home</NavLink>
-                        <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/categories">Categories</NavLink>
+                        <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/marcas">Marcas</NavLink>
                         <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/new-arrivals">New Arrivals</NavLink>
                         <NavLink className="text-sm font-medium text-white/60 hover:text-primary" to="/sales">Sales</NavLink>
                     </nav>
@@ -33,12 +33,16 @@ const NavBar = ({ todo }) => {
                         />
                     </label>
                 </div>
-                <button className="rounded-full bg-primary/20 p-2 text-white hover:bg-primary/30">
-                    <span className="material-symbols-outlined">favorite_border</span>
-                </button>
-                <button className="rounded-full bg-primary/20 p-2 text-white hover:bg-primary/30">
-                    <span className="material-symbols-outlined">shopping_cart</span>
-                </button>
+                <NavLink to="/wishlist">
+                    <button className="rounded-full bg-primary/20 p-2 text-white hover:bg-primary/30">
+                        <span className="material-symbols-outlined">favorite_border</span>
+                    </button>
+                </NavLink>
+                <NavLink to="/carrito">
+                    <button className="rounded-full bg-primary/20 p-2 text-white hover:bg-primary/30">
+                        <span className="material-symbols-outlined">shopping_cart</span>
+                    </button>
+                </NavLink>
                 <div
                     className="aspect-square size-10 rounded-full bg-cover bg-center bg-no-repeat"
                     style={{

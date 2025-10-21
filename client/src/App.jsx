@@ -1,14 +1,10 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
-import Form from './components/Form'
+import MarcasPage from './components/MarcasPage'
 import Home from './views/Home'
-import Navigation from './views/Navigation'
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import Contact from './views/Contact'
+import Carrito from './views/Carrito'
+import Wishlist from './views/Wishlist'
 import NavBar from './components/NavBar'
-import CardList from './components/CardList'
 import ColeccionableDestacado from './components/ColeccionableDestacado'
 import HomeCarousel from './components/HomeCarousel'
 import DetalleColeccionable from './views/DetalleColeccionable'
@@ -30,6 +26,11 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/" element={<HomeCarousel />} />
         <Route path="/coleccionable/:id" element={<DetalleColeccionable />} />
+        <Route path="/marcas" element={<MarcasPage />} />
+        <Route path="/carrito" element={<Carrito />} />
+        <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="*" element={<div className="p-8">404 - Not found</div>} />
+      </Routes>
       </Routes>
       <footer className="border-t border-primary/20">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -68,5 +69,3 @@ function App() {
     </>
   )
 }
-
-export default App
