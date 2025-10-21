@@ -8,6 +8,7 @@ import NavBar from './components/NavBar'
 import ColeccionableDestacado from './components/ColeccionableDestacado'
 import HomeCarousel from './components/HomeCarousel'
 import DetalleColeccionable from './views/DetalleColeccionable'
+import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
 
 function App() {
   const navigate = useNavigate()
@@ -20,11 +21,11 @@ function App() {
   return (
     <>
       <NavBar />
-      {/*<Navigation/>*/}
+      {/*<Navigation/>*/}      
       <Routes>
         <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/" element={<HomeCarousel />} />
         <Route path="/coleccionable/:id" element={<DetalleColeccionable />} />
         <Route path="/marcas" element={<MarcasPage />} />
         <Route path="/carrito" element={<Carrito />} />
@@ -68,3 +69,4 @@ function App() {
     </>
   )
 }
+export default App
