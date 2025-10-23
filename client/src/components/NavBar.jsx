@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuth } from "../context/authcontext.jsx";
 import logo from "../../../assets/images/logoishimura.png";
 import { useEffect, useRef, useState } from "react";
 

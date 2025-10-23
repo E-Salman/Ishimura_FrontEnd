@@ -40,6 +40,7 @@ function App() {
         <Route path="/coleccionables" element={<Coleccionables />} />
         <Route path="/new-arrivals" element={<NewArrivals />} />
         <Route path="/sales" element={<Promotions />} />
+        <Route path="/carrito" element={<Carrito />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/confirmar-compra" element={<ConfirmarCompra />} />
         <Route path="/login" element={<Login />} />
