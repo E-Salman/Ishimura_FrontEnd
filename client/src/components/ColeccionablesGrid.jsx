@@ -19,6 +19,7 @@ export default function ColeccionablesGrid({ items = [], onAddToCart, onAddToWis
           precio={it.precio ?? it.price}
           precioAnterior={it.precioAnterior ?? it.listPrice}
           imagen={it.imagen ?? it.imageUrl ?? it.image}
+          stock={it.stock}
           onAddToCart={onAddToCart}
           onAddToWishlist={onAddToWishlist}
           onClick={() => onItemClick?.(it)}

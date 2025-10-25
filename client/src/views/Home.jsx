@@ -5,23 +5,43 @@ import { useMemo } from "react";
 import { useAuth } from "../context/authcontext.jsx";
 
 function isAdminFromToken(token) {
-    if (!token) return false;
-    try {
-        const [, payload] = token.split('.');
-        const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-        const values = [json?.roles, json?.authorities, json?.authority, json?.scope, json?.scopes, json?.rol]
-            .flat()
-            .filter(Boolean)
-            .map((x) => (typeof x === 'string' ? x : x?.authority || x?.name || ''));
-        return values.some((v) => /ADMIN/i.test(String(v)));
-    } catch (_) {
-        return false;
-    }
+  if (!token) return false;
+  try {
+    const [, raw] = String(token).split(".");
+    if (!raw) return false;
+    // B64url -> B64 + padding seguro
+    let b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    const json = JSON.parse(atob(b64));
+
+    // Reunir todas las posibles llaves de rol/permisos
+    const buckets = [
+      json?.roles,
+      json?.role,
+      json?.authorities,
+      json?.authority,
+      json?.scope,
+      json?.scopes,
+      json?.rol,
+      json?.perms,
+      json?.permissions,
+    ]
+      .flat()
+      .filter(Boolean)
+      .map((x) => (typeof x === "string" ? x : x?.authority || x?.name || x?.value || ""));
+
+    return buckets.some((v) => /ADMIN/i.test(String(v)));
+  } catch {
+    return false;
+  }
 }
 
 const Home = () => {
     const { user } = useAuth?.() || { user: null };
-    const token = useMemo(() => user?.token || localStorage.getItem('ishimura_token') || localStorage.getItem('token') || null, [user]);
+    const token = useMemo(
+        () => user?.token || localStorage.getItem('ishimura_token') || localStorage.getItem('token') || null,
+        [user]
+    );
     const isAdmin = useMemo(() => isAdminFromToken(token), [token]);
 
     return (
@@ -51,7 +71,7 @@ const Home = () => {
                                     </NavLink>
                                 ))}
                             </div>
-                            {isAdmin && (
+                            {false && (
                                 <div className="mt-8 flex justify-center">
                                     <NavLink
                                         to="/admin/crear-coleccionable"

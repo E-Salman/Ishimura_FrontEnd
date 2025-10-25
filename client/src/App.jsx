@@ -17,6 +17,7 @@ import CrearColeccionable from "./views/CrearColeccionable";
 import Footer from './components/Footer'
 import Coleccionables from "./views/Coleccionables";
 import NewArrivals from "./views/NewArrivals";
+import AdminPanel from "./views/AdminPanel";
 import Promotions from "./views/Promotions";
 
 function App() {
@@ -47,6 +48,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/admin/crear-coleccionable" element={<CrearColeccionable />} />
+        <Route path="/admin" element={<AdminPanel />} />
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />
       </Routes>
       <Footer/>
