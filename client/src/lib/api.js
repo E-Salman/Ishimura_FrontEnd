@@ -84,6 +84,9 @@ export async function getColeccionables({ marcaId = null, lineaId = null } = {},
             precio: it?.precio ?? it?.price ?? it?.precioActual ?? null,
             precioAnterior: it?.precioAnterior ?? it?.listPrice ?? it?.precioLista ?? null,
             imagen: it?.imagen ?? it?.imageUrl ?? it?.image ?? null,
+            // Si viene de /catalogo agregará raw.stock y raw.firstImageId
+            stock: raw?.stock ?? it?.stock ?? null,
+            firstImageId: raw?.firstImageId ?? raw?.firstimageid ?? null,
             lineaId:
               it?.linea_id ?? it?.lineaId ?? it?.lineaID ??
               (typeof it?.linea === 'object' ? it?.linea?.id : it?.linea) ?? null,
@@ -263,4 +266,37 @@ export async function getPricePreview(coleccionableId, { qty = 1 } = {}, signal)
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
+}
+
+// Subida de imágenes para un coleccionable.
+// Intenta variantes comunes de endpoint y nombre de campo.
+// - POST /coleccionable/{id}/imagenes   (multipart, field: files[] | file | imagen | image | archivo)
+// - POST /coleccionable/{id}/imagen
+// Devuelve un objeto con { ok: boolean, tried: Attempt[], firstOk: Attempt | null }
+export async function uploadColeccionableImages(coleccionableId, files, { token, signal } = {}) {
+  // Backend confirmado: POST /imagenes con campos multipart { file, idColeccionable }
+  // Sube uno por request. Devuelve OK si todas subieron.
+  const tried = [];
+  if (!Array.isArray(files) || files.length === 0) return { ok: true, tried, firstOk: null };
+
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const url = `${BASE}/imagenes`;
+
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    const form = new FormData();
+    form.append('file', f, f.name);
+    form.append('idColeccionable', String(coleccionableId));
+    try {
+      const res = await fetch(url, { method: 'POST', body: form, headers, signal });
+      tried.push({ url, index: i, status: res.status, ok: res.ok });
+      if (!res.ok) {
+        return { ok: false, tried, firstOk: tried.find(t => t.ok) || null };
+      }
+    } catch (e) {
+      tried.push({ url, index: i, status: 0, ok: false, error: String(e?.message || e) });
+      return { ok: false, tried, firstOk: tried.find(t => t.ok) || null };
+    }
+  }
+  return { ok: true, tried, firstOk: tried.find(t => t.ok) || null };
 }

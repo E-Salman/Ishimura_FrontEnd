@@ -28,6 +28,7 @@ export default function ColeccionableCard({
   image,
   imageUrl,
   src,
+  stock,
   onAddToCart,
   onAddToWishlist,
   onClick,
@@ -40,6 +41,7 @@ export default function ColeccionableCard({
   const oldPrice = listPrice ?? precioAnterior;
   const imgSrc = image ?? imageUrl ?? imagen ?? src;
   const priceStr = currentPrice != null ? formatPrice(currentPrice, currency ?? moneda) : null;
+  const outOfStock = Number(stock) <= 0;
 
   return (
     <article
@@ -66,6 +68,13 @@ export default function ColeccionableCard({
           ) : (
             <div className="flex h-full w-full items-center justify-center text-white/40">
               No image
+            </div>
+          )}
+          {Number(stock) <= 0 && (
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute left-[-25%] top-1/2 h-14 md:h-16 w-[150%] -translate-y-1/2 -rotate-12 bg-red-600/80 text-center font-extrabold uppercase tracking-widest text-white shadow-lg">
+                <div className="grid h-full place-items-center">Sin stock</div>
+              </div>
             </div>
           )}
           <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10" />
@@ -114,10 +123,16 @@ export default function ColeccionableCard({
           </button>
           <button
             type="button"
-            onClick={() => onAddToCart?.({ id, nombre: displayTitle, precio: currentPrice })}
-            className="flex-1 rounded-md bg-primary px-4 py-2 text-center text-xs font-bold text-black transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            disabled={outOfStock}
+            onClick={() => !outOfStock && onAddToCart?.({ id, nombre: displayTitle, precio: currentPrice })}
+            className={
+              "flex-1 rounded-md px-4 py-2 text-center text-xs font-bold transition-colors focus:outline-none " +
+              (outOfStock
+                ? "bg-white/10 text-white/60 cursor-not-allowed"
+                : "bg-primary text-black hover:bg-primary/90 focus:ring-2 focus:ring-primary/50")
+            }
           >
-            {addToCartText}
+            {outOfStock ? "Sin stock" : addToCartText}
           </button>
         </div>
       </div>
