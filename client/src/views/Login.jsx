@@ -44,14 +44,15 @@ export default function Login() {
 
       if (!res.ok) {
         const msg =
-          data?.message || data?.error || data?.detail || raw || `HTTP ${res.status}`;
-        throw new Error(msg);
+          data?.detail || data?.message || data?.error || data?.title || raw || `HTTP ${res.status}`;
+        throw new Error(String(msg || '').trim());
       }
 
-      const token = data?.token || data?.access_token || data?.jwt;
+      const token = data?.token || data?.access_token || data?.jwt || data?.accessToken;
       if (!token) throw new Error("El servidor no devolvió token.");
       
       localStorage.setItem("token", token)
+      try { localStorage.setItem("ishimura_token", token); } catch {}
 
       login({ email: trimmedEmail, token });
       setError("");
@@ -59,12 +60,18 @@ export default function Login() {
       navigate("/home");
     } catch (err) {
 
-      const msg = (err?.message || "").toLowerCase();
+      const msgRaw = String(err?.message || "").trim();
+      const msg = msgRaw.toLowerCase();
 
       const isCredencialesInvalidas =
         msg.includes("unauthorized") ||
+        msg.includes("no autorizado") ||
+        msg.includes("se requiere autentic") ||
         msg.includes("forbidden") ||
         msg.includes("bad credentials") ||
+        msg.includes("credenciales") ||
+        msg.includes("usuario no encontrado") ||
+        msg.includes("jwt") ||
         msg.includes("authentication required") ||
         msg.includes("invalid") ||
         msg.includes("401");
@@ -84,8 +91,8 @@ export default function Login() {
         setError("Servicio no disponible. Intentá más tarde.");
         setErrorCount((n) => n + 1);
       } else {
-        setError("");
-        console.error("Login error (oculto):", err);
+        setError(msgRaw || "Error al iniciar sesión.");
+        setErrorCount((n) => n + 1);
       }
     } finally {
       setLoading(false);
