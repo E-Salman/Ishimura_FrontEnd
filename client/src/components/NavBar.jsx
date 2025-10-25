@@ -87,10 +87,15 @@ const NavBar = () => {
     };
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+const handleLogout = () => {
+  try {
+    logout();            // limpia contexto + localStorage
+  } finally {
+    setOpen(false);      // cierra el menú
+    navigate("/login", { replace: true }); // redirección segura
+  }
+};
+
 
   // SEARCH STATE
   const [q, setQ] = useState("");
