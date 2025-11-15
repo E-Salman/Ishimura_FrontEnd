@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
-import { getBaseUrl, getMarcas, getLineasByMarca, getColeccionables, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist, getPricePreview } from '../lib/api';
+import { getBaseUrl, getMarcas, getLineasByMarca, getColeccionables, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist, getPricePreview, addToCart, getWishlist, removeFromWishlist } from '../lib/api';
 
 const SORTS = [
   { id: 'alpha-desc', label: 'Alfabético Z→A' }, // default
@@ -34,6 +34,7 @@ export default function ColeccionablesView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [q, setQ] = useState(initialQ);
+  const [wishlist, setWishlist] = useState([]);
   useEffect(() => { setQ(searchParams.get('q') || ''); }, [searchParams]);
 
   // Load marcas at start
@@ -49,6 +50,22 @@ export default function ColeccionablesView() {
       })
       .catch(() => {})
       .finally(() => {});
+    return () => controller.abort();
+  }, []);
+
+  // Load wishlist once
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadWishlist() {
+      try {
+        const data = await getWishlist(controller.signal);
+        const list = Array.isArray(data) ? data : [];
+        setWishlist(list);
+      } catch (_) {
+        // ignorar errores de wishlist para no romper la UX
+      }
+    }
+    loadWishlist();
     return () => controller.abort();
   }, []);
 
@@ -266,10 +283,23 @@ export default function ColeccionablesView() {
     }
   }, [filteredItems, sort]);
 
-  const handleAddToWishlist = async ({ id, nombre }) => {
+  const wishlistIdSet = useMemo(
+    () => new Set(wishlist.map((w) => String(w.coleccionableId))),
+    [wishlist]
+  );
+
+  const handleAddToWishlist = async ({ id }) => {
     try {
       const ok = await addToWishlist(id);
-      if (!ok) console.warn('No se pudo agregar a la wishlist');
+      if (ok) {
+        try {
+          const data = await getWishlist();
+          const list = Array.isArray(data) ? data : [];
+          setWishlist(list);
+        } catch (_) {}
+      } else {
+        console.warn('No se pudo agregar a la wishlist');
+      }
     } catch (e) {
       console.warn('Wishlist error', e);
     }
@@ -417,8 +447,33 @@ export default function ColeccionablesView() {
 
       {!loading && (
         <ColeccionablesGrid
-          items={sortedItems}
+          items={sortedItems.map((it) => ({
+            ...it,
+            inWishlist: wishlistIdSet.has(String(it.id)),
+          }))}
           onAddToWishlist={handleAddToWishlist}
+          onAddToCart={async ({ id }) => {
+            const row = wishlist.find(
+              (w) => String(w.coleccionableId) === String(id)
+            );
+            try {
+              await addToCart(id, { cantidad: 1 });
+            } catch (e) {
+              console.warn('Cart error', e);
+              const msg = String(e?.message || '');
+              // Si no hay token, no tocamos la wishlist
+              if (msg.includes('No auth token')) {
+                return;
+              }
+            }
+            if (row) {
+              try {
+                await removeFromWishlist(row.id);
+              } catch (_) {}
+              setWishlist((prev) => prev.filter((w) => w.id !== row.id));
+            }
+          }}
+          addToCartText="Agregar al carrito"
           onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
         />
       )}

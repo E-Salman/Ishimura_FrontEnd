@@ -5,6 +5,15 @@ export function getBaseUrl() {
   return BASE;
 }
 
+export function getAuthToken() {
+  if (typeof localStorage === 'undefined') return null;
+  return (
+    localStorage.getItem('ishimura_token') ||
+    localStorage.getItem('token') ||
+    null
+  );
+}
+
 export async function getMarcas(signal) {
   const res = await fetch(`${BASE}/marcas`, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -78,7 +87,7 @@ export async function getColeccionables({ marcaId = null, lineaId = null } = {},
         return arr.map((raw) => {
           const it = raw?.coleccionable ?? raw; // si viene desde /catalogo podría venir envuelto
           return {
-            id: it?.id ?? it?._id ?? it?.coleccionableId ?? it?.coleccionableID ?? crypto.randomUUID?.() ?? String(Math.random()),
+            id: raw?.coleccionableId ?? raw?.coleccionableID ?? it?.id ?? it?._id ?? it?.coleccionableId ?? it?.coleccionableID ?? crypto.randomUUID?.() ?? String(Math.random()),
             nombre: it?.nombre ?? it?.name ?? it?.title ?? 'Coleccionable',
             descripcion: it?.descripcion ?? it?.description ?? '',
             precio: it?.precio ?? it?.price ?? it?.precioActual ?? null,
@@ -163,17 +172,83 @@ export async function getColeccionableDetalle(coleccionableId, signal) {
   return res.json();
 }
 
+// Carrito --------------------------------------------------------------------
+
+export async function getCart(signal) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
+  const res = await fetch(`${BASE}/carrito`, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function addToCart(coleccionableId, { cantidad = 1 } = {}, signal) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
+  const url = `${BASE}/carrito/${encodeURIComponent(
+    coleccionableId
+  )}?cantidad=${encodeURIComponent(cantidad)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function updateCartItemQuantity(itemId, cantidad, signal) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
+  const url = `${BASE}/carrito/${encodeURIComponent(
+    itemId
+  )}?cantidad=${encodeURIComponent(cantidad)}`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+  if (res.status === 204) return null;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function removeCartItem(itemId, signal) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
+  const res = await fetch(`${BASE}/carrito/${encodeURIComponent(itemId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+  if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
+}
+
+export async function clearCart(signal) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
+  const res = await fetch(`${BASE}/carrito/vaciar`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+  if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
+}
+
+// Wishlist -------------------------------------------------------------------
+
 // Intenta agregar un coleccionable a la wishlist.
-// Prueba varios patrones de endpoint:
-// - POST /wishlist  { coleccionableId }
-// - POST /wishlist/{id}
-// - POST /wishlist?coleccionableId={id}
-// - POST /wishlist/agregar/{id}
+// Backend actual: POST /wishlist/{coleccionableId}
+// Mantiene intentos alternativos por compatibilidad.
 export async function addToWishlist(coleccionableId, signal) {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
   const commonHeaders = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    Authorization: `Bearer ${token}`,
   };
 
   const attempts = [
@@ -191,6 +266,39 @@ export async function addToWishlist(coleccionableId, signal) {
     } catch (_) {}
   }
   return false;
+}
+
+export async function getWishlist(signal) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
+  const res = await fetch(`${BASE}/wishlist`, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function removeFromWishlist(itemId, signal) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
+  const res = await fetch(`${BASE}/wishlist/${encodeURIComponent(itemId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+  if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
+}
+
+export async function clearWishlist(signal) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
+  const res = await fetch(`${BASE}/wishlist/vaciar`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+  if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
 }
 
 // Devuelve los últimos coleccionables ingresados o reingresados (restock) cuando sea posible.
@@ -264,6 +372,24 @@ export async function getNewArrivals({ limit = 12 } = {}, signal) {
 export async function getPricePreview(coleccionableId, { qty = 1 } = {}, signal) {
   const url = `${BASE}/precio/preview?coleccionableId=${encodeURIComponent(coleccionableId)}&qty=${encodeURIComponent(qty)}`;
   const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// Órdenes --------------------------------------------------------------------
+
+export async function createOrder(dto, signal) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
+  const res = await fetch(`${BASE}/ordenes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(dto),
+    signal,
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }

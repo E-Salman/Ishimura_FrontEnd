@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
-import { getNewArrivals, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist, getPricePreview } from '../lib/api';
-
-
-// cambiar tema de que agarramos el new arrival por id
+import { getNewArrivals, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist, getPricePreview, addToCart, getWishlist, removeFromWishlist } from '../lib/api';
 
 export default function NewArrivals() {
   const navigate = useNavigate();
@@ -68,11 +65,34 @@ export default function NewArrivals() {
     };
   }, []);
 
+  const moveFromWishlistToCart = async (coleccionableId) => {
+    try {
+      await addToCart(coleccionableId, { cantidad: 1 });
+    } catch (e) {
+      console.warn("Cart error", e);
+      const msg = String(e?.message || "");
+      // Si no hay token, no seguimos para no desincronizar
+      if (msg.includes("No auth token")) {
+        return;
+      }
+    }
+    try {
+      const data = await getWishlist();
+      const list = Array.isArray(data) ? data : [];
+      const row = list.find(
+        (w) => String(w.coleccionableId) === String(coleccionableId)
+      );
+      if (row) {
+        await removeFromWishlist(row.id);
+      }
+    } catch (_) {}
+  };
+
   return (
     <div className="relative mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="text-center">
         <h1 className="text-4xl font-black tracking-tight text-primary sm:text-5xl md:text-6xl">Nuevo</h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">¡¡¡Explora los ultimos producctos que llegaron a Ishimura!!!</p>
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">Explorá los últimos productos que llegaron a Ishimura.</p>
       </div>
 
       {error && <p className="mt-8 text-center text-sm text-red-400">Error al cargar novedades: {error}</p>}
@@ -85,6 +105,8 @@ export default function NewArrivals() {
             onAddToWishlist={async ({ id }) => {
               try { await addToWishlist(id); } catch (_) {}
             }}
+            onAddToCart={({ id }) => moveFromWishlistToCart(id)}
+            addToCartText="Agregar al carrito"
             onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
           />
         </div>

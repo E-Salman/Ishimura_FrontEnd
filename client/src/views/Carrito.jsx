@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  getCart,
+  removeCartItem,
+  updateCartItemQuantity,
+} from "../lib/api";
+import ColeccionablesGrid from "../components/ColeccionablesGrid";
 
 const Carrito = () => {
   const [carrito, setCarrito] = useState([]);
@@ -10,13 +16,7 @@ const Carrito = () => {
   useEffect(() => {
     const fetchCarrito = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:4002/carrito", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!response.ok) throw new Error("Error al obtener carrito");
-        const data = await response.json();
-        console.log(data)
+        const data = await getCart();
         setCarrito(data);
         calcularTotal(data);
       } catch (error) {
@@ -29,26 +29,40 @@ const Carrito = () => {
   }, []);
 
   const calcularTotal = (items) => {
-    const total = items.reduce(
-      (acc, item) => acc + (item.coleccionable?.precio || 0) * item.cantidad,
+    const totalCalculado = items.reduce(
+      (acc, item) => acc + (item.precio || 0) * (item.cantidad || 0),
       0
     );
-    setTotal(total);
+    setTotal(totalCalculado);
   };
 
   const eliminarDelCarrito = async (idProducto) => {
     try {
-      const token = localStorage.getItem("token");
-      await fetch(`http://localhost:4002/carrito/${idProducto}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      await removeCartItem(idProducto);
       const nuevoCarrito = carrito.filter((item) => item.id !== idProducto);
       setCarrito(nuevoCarrito);
       calcularTotal(nuevoCarrito);
     } catch (error) {
       console.error("Error al eliminar producto:", error);
+    }
+  };
+
+  const cambiarCantidad = async (rowId, nuevaCantidad) => {
+    try {
+      if (nuevaCantidad <= 0) {
+        await eliminarDelCarrito(rowId);
+        return;
+      }
+      const updated = await updateCartItemQuantity(rowId, nuevaCantidad);
+      setCarrito((prev) => {
+        const next = prev.map((it) =>
+          it.id === rowId ? { ...it, cantidad: updated?.cantidad ?? nuevaCantidad } : it
+        );
+        calcularTotal(next);
+        return next;
+      });
+    } catch (error) {
+      console.error("Error al actualizar cantidad:", error);
     }
   };
 
@@ -58,39 +72,64 @@ const Carrito = () => {
 
   if (loading) return <p>Cargando carrito...</p>;
   if (carrito.length === 0)
-    return <p style={{ textAlign: "center" }}>Tu carrito está vacío</p>;
+    return (
+      <main className="flex-1">
+        <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <h1 className="mb-6 text-3xl font-black text-primary">Mi Carrito</h1>
+          <p className="text-center text-sm text-white/70">
+            Tu carrito está vacío
+          </p>
+        </div>
+      </main>
+    );
+
+  const itemsForGrid = carrito.map((item) => ({
+    id: item.coleccionableId,
+    nombre: item.nombre,
+    descripcion: `Cantidad: ${item.cantidad}`,
+    precio: item.precio,
+    imagen: item.imagenUrl || item.imagenurl || null,
+    stock: 1,
+    cantidad: item.cantidad,
+    _rowId: item.id,
+  }));
 
   return (
-    <div className="carrito-container">
-      <h2>Mi Carrito</h2>
-      <div className="carrito-lista">
-        {carrito.map((item) => (
-          <div key={item.id} className="carrito-item">
-            <img
-              src={
-                item.coleccionable?.imagenes?.[0]?.url ||
-                "https://via.placeholder.com/100"
-              }
-              alt={item.coleccionable?.nombre || "Producto"}
-              width="100"
-            />
-            <div className="carrito-info">
-              <h3>{item.coleccionable?.nombre}</h3>
-              <p>Precio: ${item.coleccionable?.precio}</p>
-              <p>Cantidad: {item.cantidad}</p>
-              <button onClick={() => eliminarDelCarrito(item.id)}>Eliminar</button>
-            </div>
-          </div>
-        ))}
+    <div className="relative mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-black text-primary">Mi Carrito</h1>
+        <div className="text-right text-white">
+          <span className="text-sm uppercase text-white/60">Total</span>
+          <div className="text-2xl font-extrabold">${total.toFixed(2)}</div>
+        </div>
       </div>
-      <h3>Total: ${total}</h3>
 
-      <button onClick={confirmarCompra} className="confirmar-btn">
-        Confirmar Compra
-      </button>
+      <ColeccionablesGrid
+        items={itemsForGrid}
+        onAddToCart={({ id }) => {
+          const row = carrito.find(
+            (it) => String(it.coleccionableId) === String(id)
+          );
+          if (row) eliminarDelCarrito(row.id);
+        }}
+        addToCartText="Eliminar"
+        addToCartClassName="bg-red-600 text-white hover:bg-red-500 focus:ring-2 focus:ring-red-500/50"
+        onQuantityChange={(it, cantidad) => cambiarCantidad(it._rowId, cantidad)}
+        onItemClick={(it) => navigate(`/coleccionable/${it.id}`)}
+        className="mb-8"
+        showWishlistButton={false}
+      />
+
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={confirmarCompra}
+          className="rounded-md bg-primary px-6 py-3 text-sm font-bold text-black hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50"
+        >
+          Confirmar compra
+        </button>
+      </div>
     </div>
   );
 };
 
 export default Carrito;
-

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MarcasGrid from "./MarcasGridFixed";
+import MarcasGrid from "./MarcasGrid";
 import { getBaseUrl, getMarcas, getMarcaFirstImageUrl } from "../lib/api";
 
 export default function MarcasPage() {
