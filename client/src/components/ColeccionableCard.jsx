@@ -1,12 +1,15 @@
 // Componente presentacional reutilizable para un coleccionable en formato tarjeta
 // No depende de configuración adicional: usa Tailwind por CDN ya cargado en index.html
 
-function formatPrice(value, currency = 'USD') {
-  if (value == null || value === '') return '';
-  const num = typeof value === 'string' ? Number(value) : value;
+function formatPrice(value, currency = "USD") {
+  if (value == null || value === "") return "";
+  const num = typeof value === "string" ? Number(value) : value;
   if (Number.isNaN(num)) return String(value);
   try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+    }).format(num);
   } catch (_) {
     return `$${num.toFixed?.(2) ?? num}`;
   }
@@ -22,8 +25,8 @@ export default function ColeccionableCard({
   price,
   precioAnterior,
   listPrice,
-  moneda = 'USD',
-  currency = 'USD',
+  moneda = "USD",
+  currency = "USD",
   imagen,
   image,
   imageUrl,
@@ -32,22 +35,38 @@ export default function ColeccionableCard({
   onAddToCart,
   onAddToWishlist,
   onClick,
-  className = '',
-  addToCartText = 'Add to Cart',
+  className = "",
+  addToCartText = "Add to Cart",
+  addToCartClassName,
+  inWishlist = false,
+  showWishlistButton = true,
+  quantity,
+  onQuantityChange,
+  secondaryText,
+  secondaryClassName,
+  onSecondaryClick,
 }) {
-  const displayTitle = title ?? nombre ?? 'Coleccionable';
-  const displayDesc = description ?? descripcion ?? '';
+  const displayTitle = title ?? nombre ?? "Coleccionable";
+  const displayDesc = description ?? descripcion ?? "";
   const currentPrice = price ?? precio;
   const oldPrice = listPrice ?? precioAnterior;
   const imgSrc = image ?? imageUrl ?? imagen ?? src;
-  const priceStr = currentPrice != null ? formatPrice(currentPrice, currency ?? moneda) : null;
+  const priceStr =
+    currentPrice != null ? formatPrice(currentPrice, currency ?? moneda) : null;
   const outOfStock = Number(stock) <= 0;
+  const baseAddClass =
+    "flex-1 rounded-md px-4 py-2 text-center text-xs font-bold transition-colors focus:outline-none ";
+  const enabledAddClass =
+    addToCartClassName ||
+    "bg-primary text-black hover:bg-primary/90 focus:ring-2 focus:ring-primary/50";
+  const disabledAddClass = "bg-white/10 text-white/60 cursor-not-allowed";
+  const heartIcon = inWishlist ? "favorite" : "favorite_border";
 
   return (
     <article
       className={
-        'group overflow-hidden rounded-xl border border-white/10 bg-black/80 shadow-sm ring-1 ring-white/5 backdrop-blur-sm ' +
-        'transition hover:border-primary/40 ' +
+        "group overflow-hidden rounded-xl border border-white/10 bg-black/80 shadow-sm ring-1 ring-white/5 backdrop-blur-sm " +
+        "transition hover:border-primary/40 " +
         className
       }
     >
@@ -78,22 +97,15 @@ export default function ColeccionableCard({
             </div>
           )}
           <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10" />
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onAddToWishlist?.({ id, nombre: displayTitle, precio: currentPrice }); }}
-            className="absolute right-2 top-2 rounded-full bg-black/60 p-2 text-white ring-1 ring-white/20 backdrop-blur-sm transition hover:text-primary hover:ring-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/60"
-            aria-label="Agregar a la wishlist"
-            title="Agregar a la wishlist"
-          >
-            <span className="material-symbols-outlined">favorite_border</span>
-          </button>
         </div>
       </button>
 
       <div className="p-5">
         <h3 className="text-lg font-extrabold text-white">{displayTitle}</h3>
         {displayDesc ? (
-          <p className="mt-1 line-clamp-2 text-sm text-white/60">{displayDesc}</p>
+          <p className="mt-1 line-clamp-2 text-sm text-white/60">
+            {displayDesc}
+          </p>
         ) : null}
 
         <div className="mt-4 flex items-baseline gap-3">
@@ -109,27 +121,75 @@ export default function ColeccionableCard({
           )}
         </div>
 
-        <div className="mt-4 flex gap-3">
-          <button
-            type="button"
-            onClick={() => onAddToWishlist?.({ id, nombre: displayTitle, precio: currentPrice })}
-            className="flex-1 rounded-md border border-primary/40 bg-transparent px-4 py-2 text-center text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40"
-            title="Agregar a la wishlist"
-          >
-            <span className="inline-flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-sm">favorite</span>
-              Wishlist
+        {typeof quantity === "number" && onQuantityChange && (
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              type="button"
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-sm font-bold text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+            >
+              -
+            </button>
+            <span className="min-w-[2.5rem] rounded-md bg-white/5 px-3 py-1 text-center text-sm text-white">
+              {quantity}
             </span>
-          </button>
+            <button
+              type="button"
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-sm font-bold text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              onClick={() => onQuantityChange(quantity + 1)}
+            >
+              +
+            </button>
+          </div>
+        )}
+
+        <div className="mt-4 flex gap-3">
+          {secondaryText ? (
+            <button
+              type="button"
+              onClick={onSecondaryClick}
+              className={
+                "flex-1 rounded-md px-4 py-2 text-center text-xs font-semibold transition-colors focus:outline-none " +
+                (secondaryClassName ||
+                  "border border-white/20 bg-transparent text-white hover:bg-white/10")
+              }
+            >
+              {secondaryText}
+            </button>
+          ) : (
+            showWishlistButton && (
+              <button
+                type="button"
+                onClick={() =>
+                  onAddToWishlist?.({
+                    id,
+                    nombre: displayTitle,
+                    precio: currentPrice,
+                  })
+                }
+                className="flex-1 rounded-md border border-primary/40 bg-transparent px-4 py-2 text-center text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                title="Agregar a la wishlist"
+              >
+                <span className="inline-flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined text-sm">
+                    {heartIcon}
+                  </span>
+                  Wishlist
+                </span>
+              </button>
+            )
+          )}
           <button
             type="button"
             disabled={outOfStock}
-            onClick={() => !outOfStock && onAddToCart?.({ id, nombre: displayTitle, precio: currentPrice })}
+            onClick={() =>
+              !outOfStock &&
+              onAddToCart?.({ id, nombre: displayTitle, precio: currentPrice })
+            }
             className={
-              "flex-1 rounded-md px-4 py-2 text-center text-xs font-bold transition-colors focus:outline-none " +
-              (outOfStock
-                ? "bg-white/10 text-white/60 cursor-not-allowed"
-                : "bg-primary text-black hover:bg-primary/90 focus:ring-2 focus:ring-primary/50")
+              baseAddClass +
+              (outOfStock ? disabledAddClass : enabledAddClass) +
+              (showWishlistButton ? "" : " w-full")
             }
           >
             {outOfStock ? "Sin stock" : addToCartText}

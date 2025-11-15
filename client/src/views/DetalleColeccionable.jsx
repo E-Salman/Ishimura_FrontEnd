@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import {
+  getColeccionableDetalle,
+  getColeccionableFirstImageUrl,
+  addToCart,
+  addToWishlist,
+  getWishlist,
+  removeFromWishlist,
+} from "../lib/api";
 
 const DetalleColeccionable = () => {
   const { id } = useParams();
@@ -8,21 +16,17 @@ const DetalleColeccionable = () => {
   const [mensaje, setMensaje] = useState("");
   const navigate = useNavigate();
 
-  const URLBase = "http://localhost:4002/coleccionable/";
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res1 = await fetch(`${URLBase}${id}`);
-        const data = await res1.json();
+        const data = await getColeccionableDetalle(id);
         setColeccionable(data);
 
-        // Imagen principal
-        const res2 = await fetch(`${URLBase}${id}/imagenes/0`);
-        if (res2.ok) {
-          const blob = await res2.blob();
-          const urlBlob = URL.createObjectURL(blob);
-          setImagen(urlBlob);
+        try {
+          const url = await getColeccionableFirstImageUrl(id);
+          setImagen(url);
+        } catch (_) {
+          // imagen opcional
         }
       } catch (err) {
         console.error("Error fetching data", err);
@@ -34,58 +38,56 @@ const DetalleColeccionable = () => {
     return () => {
       if (imagen) URL.revokeObjectURL(imagen);
     };
-  }, [id]);
+  }, [id, imagen]);
 
   const agregarAlCarrito = async () => {
+    let skipWishlist = false;
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
+      await addToCart(id, { cantidad: 1 });
+      setMensaje("Producto agregado al carrito");
+      setTimeout(() => setMensaje(""), 2000);
+    } catch (error) {
+      console.error("Error al agregar al carrito:", error);
+      const msg = String(error?.message || "");
+      if (msg.includes("No auth token")) {
         alert("Debes iniciar sesión para agregar al carrito.");
-        return;
-      }
-
-      const response = await fetch(
-        `http://localhost:4002/carrito/${id}?cantidad=1`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.ok) {
-        setMensaje("Producto agregado al carrito");
-        setTimeout(() => setMensaje(""), 2000);
+        skipWishlist = true;
       } else {
         setMensaje("No se pudo agregar al carrito");
       }
-    } catch (error) {
-      console.error("Error al agregar al carrito:", error);
-      setMensaje("Error de conexión con el servidor");
     }
+
+    if (skipWishlist) return;
+
+    try {
+      const data = await getWishlist();
+      const list = Array.isArray(data) ? data : [];
+      const row = list.find(
+        (w) => String(w.coleccionableId) === String(id)
+      );
+      if (row) {
+        await removeFromWishlist(row.id);
+      }
+    } catch (_) {}
   };
 
   const agregarAWishlist = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Debes iniciar sesión para usar la wishlist.");
-        return;
-      }
-
-      const response = await fetch(`http://localhost:4002/wishlist/${id}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
+      const ok = await addToWishlist(id);
+      if (ok) {
         setMensaje("Agregado a tu wishlist");
-        setTimeout(() => setMensaje(""), 2000);
       } else {
-        setMensaje("Ya está en tu wishlist");
+        setMensaje("No se pudo agregar a la wishlist");
       }
+      setTimeout(() => setMensaje(""), 2000);
     } catch (error) {
       console.error("Error al agregar a wishlist:", error);
-      setMensaje("Error de conexión con el servidor");
+      const msg = String(error?.message || "");
+      if (msg.includes("No auth token")) {
+        alert("Debes iniciar sesión para usar la wishlist.");
+      } else {
+        setMensaje("Error de conexión con el servidor");
+      }
     }
   };
 
@@ -101,7 +103,7 @@ const DetalleColeccionable = () => {
             onClick={() => navigate(-1)}
             className="absolute top-4 left-4 px-4 py-2 bg-[rgb(79_255_207_/var(--tw-bg-opacity,1))] bg-accent text-background-dark font-semibold rounded-lg hover:bg-accent/90 transition-colors z-20"
           >
-            ← Back
+            ������? Back
           </button>
 
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12 text-[rgb(79_255_207_/var(--tw-text-opacity,1))]">
