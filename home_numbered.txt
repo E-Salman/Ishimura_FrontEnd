@@ -1,0 +1,72 @@
+   1: import ColeccionableDestacado from "../components/ColeccionableDestacado";
+   2: import HomeCarousel from "../components/HomeCarousel";
+   3: import { NavLink } from "react-router-dom";
+   4: import { useMemo } from "react";
+   5: import { useAuth } from "../context/authcontext.jsx";
+   6: 
+   7: function isAdminFromToken(token) {
+   8:     if (!token) return false;
+   9:     try {
+  10:         const [, payload] = token.split('.');
+  11:         const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+  12:         const values = [json?.roles, json?.authorities, json?.authority, json?.scope, json?.scopes, json?.rol]
+  13:             .flat()
+  14:             .filter(Boolean)
+  15:             .map((x) => (typeof x === 'string' ? x : x?.authority || x?.name || ''));
+  16:         return values.some((v) => /ADMIN/i.test(String(v)));
+  17:     } catch (_) {
+  18:         return false;
+  19:     }
+  20: }
+  21: 
+  22: const Home = () => {
+  23:     const { user } = useAuth?.() || { user: null };
+  24:     const token = useMemo(() => user?.token || localStorage.getItem('ishimura_token') || localStorage.getItem('token') || null, [user]);
+  25:     const isAdmin = useMemo(() => isAdminFromToken(token), [token]);
+  26: 
+  27:     return (
+  28:         <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+  29:             <div className="flex h-full grow flex-col">
+  30:                 <main className="flex flex-1 justify-center px-4 py-8 sm:px-6 lg:px-8">
+  31:                     <div className="w-full max-w-7xl">
+  32:                         <div className="relative flex min-h-[500px] items-center justify-center rounded-xl bg-cover bg-center p-8 text-center text-white" style={{ backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.8) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAQC9BJKb4Xkbrt2eKzXz359C1ONzqzkHYJ-BWy1WWFMwIF-CQE4VmPZuNCoCvHpC7a5mZTrAaqoQ8TgRIxnYRQpVtNVEq7eTRkfLiODp_FRPJd0H4a44iGo9gR2FxFpYw-i8PAZRNqNtG7Qv3tLhOg93GhRwrFqUZNXfM2QPpsJWmSDHLHo46aEO-C-uI8CSuhNvQU1hK2W_q37UFI82cOQCfswIldz5RXrIZlYdOlyxTyueHar4B4bMrbY0EwDstMLhZ8RukUBXs");' }}>
+  33:                             <div className="flex flex-col items-center gap-4">
+  34:                                 <HomeCarousel />
+  35:                             </div>
+  36:                         </div>
+  37: 
+  38:                         <section className="py-12">
+  39:                             <h2 className="mb-6 text-2xl font-bold text-[rgb(79_255_207_/var(--tw-bg-opacity,1))]">Figuras Destacadas</h2>
+  40:                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+  41:                                 {[1, 2, 3, 4].map((id) => (
+  42:                                     <NavLink
+  43:                                         key={id}
+  44:                                         to={`/coleccionable/${id}`}
+  45:                                         className="group mx-auto w-full max-w-[250px] transition-transform duration-300 hover:scale-105"
+  46:                                         state={{ id }} // You can pass extra data if needed
+  47:                                     >
+  48:                                         <div className="overflow-hidden rounded-lg aspect-[3/4]">
+  49:                                             <ColeccionableDestacado colId={id} />
+  50:                                         </div>
+  51:                                     </NavLink>
+  52:                                 ))}
+  53:                             </div>
+  54:                             {isAdmin && (
+  55:                                 <div className="mt-8 flex justify-center">
+  56:                                     <NavLink
+  57:                                         to="/admin/crear-coleccionable"
+  58:                                         className="rounded-md bg-primary px-5 py-2 text-sm font-bold text-black hover:bg-primary/90"
+  59:                                     >
+  60:                                         Agregar Coleccionable
+  61:                                     </NavLink>
+  62:                                 </div>
+  63:                             )}
+  64:                         </section>                                                
+  65:                     </div>
+  66:                 </main>
+  67:                 
+  68:             </div>
+  69:         </div>
+  70:     )
+  71: }
+  72: export default Home;

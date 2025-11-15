@@ -1,7 +1,20 @@
 import ColeccionableCard from './ColeccionableCard';
 
 // Grid simple para reutilizar el card en listas y secciones
-export default function ColeccionablesGrid({ items = [], onAddToCart, onAddToWishlist, onItemClick, className = '' }) {
+export default function ColeccionablesGrid({
+  items = [],
+  onAddToCart,
+  onAddToWishlist,
+  onItemClick,
+  className = '',
+  addToCartText,
+  addToCartClassName,
+   onQuantityChange,
+   showWishlistButton = true,
+   secondaryText,
+   secondaryClassName,
+   onSecondaryClick,
+}) {
   if (!Array.isArray(items) || items.length === 0) {
     return <p className="text-white/60">No hay coleccionables.</p>;
   }
@@ -19,9 +32,19 @@ export default function ColeccionablesGrid({ items = [], onAddToCart, onAddToWis
           precio={it.precio ?? it.price}
           precioAnterior={it.precioAnterior ?? it.listPrice}
           imagen={it.imagen ?? it.imageUrl ?? it.image}
+          stock={it.stock}
+          quantity={it.cantidad}
+          onQuantityChange={onQuantityChange ? (qty) => onQuantityChange(it, qty) : undefined}
           onAddToCart={onAddToCart}
           onAddToWishlist={onAddToWishlist}
           onClick={() => onItemClick?.(it)}
+          addToCartText={addToCartText}
+          addToCartClassName={addToCartClassName}
+          inWishlist={Boolean(it.inWishlist)}
+          showWishlistButton={showWishlistButton}
+          secondaryText={secondaryText}
+          secondaryClassName={secondaryClassName}
+          onSecondaryClick={onSecondaryClick ? () => onSecondaryClick(it) : undefined}
         />
       ))}
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authcontext.jsx";
+import { uploadColeccionableImages } from "../lib/api";
 
 const BASE = "http://localhost:4002";
 
@@ -53,6 +54,10 @@ export default function CrearColeccionable() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [okMsg, setOkMsg] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [fileNotice, setFileNotice] = useState("");
 
   // Resolver si es ADMIN: primero por backend (si soporta), fallback a JWT
   useEffect(() => {
@@ -132,17 +137,48 @@ export default function CrearColeccionable() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status} ${text}`);
+        const raw = await res.text().catch(() => "");
+        let friendly = `Error ${res.status}`;
+        try {
+          const j = raw ? JSON.parse(raw) : null;
+          const detail = j?.detail || j?.message || j?.error || j?.title || raw;
+          const code = j?.code || j?.errorCode;
+          if (
+            res.status === 409 &&
+            (/(ALREADY|EXIST)/i.test(String(code || "")) || /existe/i.test(String(detail || "")))
+          ) {
+            friendly = "Ese coleccionable ya existe en la línea seleccionada. Cambiá el nombre o la línea.";
+          } else {
+            friendly = String(detail || friendly);
+          }
+        } catch (_) {
+          // si no es JSON, dejamos un resumen corto
+          if (res.status === 409) friendly = "Ese coleccionable ya existe en la línea seleccionada.";
+        }
+        throw new Error(friendly);
       }
       const json = await res.json().catch(() => null);
-      setOkMsg(`Creado con éxito${json?.id ? ` (ID: ${json.id})` : ""}`);
+      const newId = json?.id ?? json?.coleccionableId ?? json?.coleccionableID ?? null;
+
+      // Subir imágenes si hay
+      if (newId && files.length > 0) {
+        setUploading(true);
+        const up = await uploadColeccionableImages(newId, files, { token });
+        setUploading(false);
+        if (!up?.ok) {
+          throw new Error("Coleccionable creado, pero no se pudieron subir imágenes");
+        }
+      }
+
+      setOkMsg(`Creado con éxito${newId ? ` (ID: ${newId})` : ""}${files.length ? " con imágenes" : ""}`);
       // limpiar
       setNombre("");
       setDescripcion("");
       setPrecio("");
       setMarcaId("");
       setLineaId("");
+      setFiles([]);
+      setPreviews((old) => { try { old.forEach((u) => URL.revokeObjectURL(u)); } catch {} return []; });
     } catch (err) {
       setError(err?.message || String(err));
     } finally {
@@ -201,11 +237,60 @@ export default function CrearColeccionable() {
           </div>
         </div>
 
+        {/* Imágenes */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-white/80">Imágenes</label>
+          <input
+            type="file"
+            accept="image/jpeg,image/png"
+            multiple
+            onChange={(e) => {
+              const list = Array.from(e.target.files || []);
+              const allowed = ["image/jpeg","image/png","image/jpg"];
+              const accepted = list.filter((f) => allowed.includes(f.type) || /\.(jpe?g|png)$/i.test(f.name));
+              const rejected = list.length - accepted.length;
+              const nextPrevs = accepted.map((f) => URL.createObjectURL(f));
+              setPreviews((prev) => { try { prev.forEach((u) => URL.revokeObjectURL(u)); } catch {} return nextPrevs; });
+              setFiles(accepted);
+              setFileNotice(rejected > 0 ? `Se ignoraron ${rejected} archivo(s) por formato no soportado (solo JPG/PNG).` : "");
+            }}
+            className="w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-black hover:file:bg-primary/90 focus:border-primary/50 focus:outline-none"
+          />
+          {fileNotice && <p className="mt-2 text-xs text-amber-300">{fileNotice}</p>}
+          {previews?.length > 0 && (
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {previews.map((src, i) => (
+                <div key={i} className="relative group">
+                  <img src={src} alt={`preview-${i}`} className="w-full h-32 object-cover rounded-md border border-white/10" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviews((prev) => {
+                        const copy = [...prev];
+                        const [u] = copy.splice(i, 1);
+                        try { if (u) URL.revokeObjectURL(u); } catch {}
+                        return copy;
+                      });
+                      setFiles((prev) => prev.filter((_, idx) => idx !== i));
+                    }}
+                    className="absolute top-1 right-1 rounded bg-black/60 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {uploading && (
+            <p className="mt-2 text-sm text-white/70">Subiendo imágenes…</p>
+          )}
+        </div>
+
         <div className="flex gap-3 pt-2">
           <button type="submit" disabled={submitting} className="rounded-md bg-primary px-5 py-2 text-sm font-bold text-black hover:bg-primary/90 disabled:opacity-50">
             {submitting ? 'Creando…' : 'Crear'}
           </button>
-          <button type="button" onClick={() => navigate(-1)} className="rounded-md border border-white/10 px-5 py-2 text-sm font-semibold text-white/80 hover:bg-white/5">
+          <button type="button" onClick={() => navigate(-1)} className="rounded-md border border-white/10 px-5 py-2 text-sm font-semibold text-black dark:text-black hover:bg-white/5">
             Cancelar
           </button>
         </div>

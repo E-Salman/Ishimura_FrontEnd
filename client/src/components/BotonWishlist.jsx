@@ -1,26 +1,14 @@
 import React from "react";
+import { addToWishlist } from "../lib/api";
 
 const BotonWishlist = ({ coleccionableId }) => {
   const agregarAWishlist = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Tenés que iniciar sesión para usar la wishlist");
-        return;
-      }
-
-      const response = await fetch(`http://localhost:4002/wishlist/${coleccionableId}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
+      const ok = await addToWishlist(coleccionableId);
+      if (ok) {
         alert("Agregado a tu wishlist");
-      } else if (response.status === 409) {
-        alert("Este coleccionable ya está en tu wishlist");
       } else {
-        const err = await response.text();
-        alert("No se pudo agregar: " + err);
+        alert("No se pudo agregar a la wishlist");
       }
     } catch (error) {
       console.error("Error al agregar a wishlist:", error);
@@ -40,3 +28,4 @@ const BotonWishlist = ({ coleccionableId }) => {
 };
 
 export default BotonWishlist;
+
