@@ -19,7 +19,6 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    console.log("deslogueando...\ntoken: " + localStorage.getItem("ishimura_token") + "\nemail: " + localStorage.getItem("ishimura_email"));
     localStorage.removeItem("ishimura_token");
     localStorage.removeItem("")
     localStorage.removeItem("ishimura_email");

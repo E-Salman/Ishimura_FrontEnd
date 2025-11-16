@@ -5,14 +5,6 @@ import { useAuth } from "../context/AuthContext.jsx";
 
 const BASE = "http://localhost:4002";
 
-/*function getToken() {BORRAR
-  return (
-    localStorage.getItem("ishimura_token") ||
-    localStorage.getItem("token") ||
-    null
-  );
-}*/
-
 // Parser alineado con CatalogoListItemDTO { coleccionableId, nombre, precio, stock, firstImageId }
 function parseCatalogItem(raw) {
   const c = raw ?? {};
@@ -26,8 +18,6 @@ function parseCatalogItem(raw) {
 
 export default function AdminPanel() {
   const navigate = useNavigate();
-  /*const token = useMemo(() => getToken(), []);BORRAR
-  const isAdmin = useMemo(() => isAdminFromToken(token), [token]);*/
   
   const { token, isAdmin } = useAuth();
 

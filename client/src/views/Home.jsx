@@ -1,18 +1,8 @@
 import ColeccionableDestacado from "../components/ColeccionableDestacado";
 import HomeCarousel from "../components/HomeCarousel";
 import { NavLink } from "react-router-dom";
-import { useMemo } from "react";
-import { useAuth } from "../context/AuthContext.jsx";
-import { isAdminFromToken } from "../lib/api";
 
 const Home = () => {
-    const { user } = useAuth?.() || { user: null };
-    const token = useMemo(
-        () => user?.token || localStorage.getItem('ishimura_token') || localStorage.getItem('token') || null,
-        [user]
-    );
-    const isAdmin = useMemo(() => isAdminFromToken(token), [token]);
-
     return (
         <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
             <div className="flex h-full grow flex-col">

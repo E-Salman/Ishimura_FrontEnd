@@ -47,12 +47,8 @@ export default function Login() {
           data?.detail || data?.message || data?.error || data?.title || raw || `HTTP ${res.status}`;
         throw new Error(String(msg || '').trim());
       }
-
-      const token = data?.token || data?.access_token || data?.jwt || data?.accessToken;
+      const token = data?.access_token;
       if (!token) throw new Error("El servidor no devolvió token.");
-      
-      localStorage.setItem("token", token)
-      try { localStorage.setItem("ishimura_token", token); } catch {}
 
       login({ email: trimmedEmail, token });
       setError("");
@@ -63,6 +59,7 @@ export default function Login() {
       const msgRaw = String(err?.message || "").trim();
       const msg = msgRaw.toLowerCase();
 
+      //Arreglar errores y normalizar esto WTF 
       const isCredencialesInvalidas =
         msg.includes("unauthorized") ||
         msg.includes("no autorizado") ||

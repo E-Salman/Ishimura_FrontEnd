@@ -5,21 +5,9 @@ import { uploadColeccionableImages, isAdminFromToken } from "../lib/api";
 
 const BASE = "http://localhost:4002";
 
-function getToken() {
-  return (
-    localStorage.getItem("ishimura_token") ||
-    localStorage.getItem("token") ||
-    null
-  );
-}
-
 export default function CrearColeccionable() {
   const navigate = useNavigate();
-  const { user } = useAuth?.() || { user: null };
-  const token = useMemo(() => getToken(), [user]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checking, setChecking] = useState(true);
-
+  const { token, isAdmin } = useAuth();  
   const [marcas, setMarcas] = useState([]);
   const [lineas, setLineas] = useState([]);
   const [marcaId, setMarcaId] = useState("");
@@ -34,37 +22,6 @@ export default function CrearColeccionable() {
   const [previews, setPreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [fileNotice, setFileNotice] = useState("");
-
-  // Resolver si es ADMIN: primero por backend (si soporta), fallback a JWT
-  useEffect(() => {
-    let active = true;
-    async function check() {
-      try {
-        setChecking(true);
-        const email = user?.email || localStorage.getItem("ishimura_email") || localStorage.getItem("email");
-        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-        if (email && token) {
-          const res = await fetch(`${BASE}/usuarios/filtrarPorEmail?email=${encodeURIComponent(email)}`, { headers });
-          if (res.ok) {
-            const json = await res.json();
-            const rol = json?.role;
-            const ok = Array.isArray(rol)
-              ? rol.some((r) => /ADMIN/i.test(String(r?.authority || r)))
-              : /ADMIN/i.test(String(rol || ""));
-            if (active) { setIsAdmin(ok); setChecking(false); return; }
-          }
-        }
-        // fallback: JWT
-        const okJwt = isAdminFromToken(token);
-        if (active) { setIsAdmin(okJwt); setChecking(false); }
-      } catch (_) {
-        const okJwt = isAdminFromToken(token);
-        if (active) { setIsAdmin(okJwt); setChecking(false); }
-      }
-    }
-    check();
-    return () => { active = false; };
-  }, [token, user]);
 
   // Cargar marcas
   useEffect(() => {
