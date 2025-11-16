@@ -5,6 +5,7 @@ import Contact from "./views/Contact";
 import Carrito from "./views/Carrito";
 import Wishlist from "./views/Wishlist";
 import ConfirmarCompra from "./views/ConfirmarCompra";
+import MisCompras from "./views/MisCompras";
 import NavBar from "./components/NavBar";
 import ColeccionableDestacado from "./components/ColeccionableDestacado";
 import Login from "./views/Login";
@@ -44,6 +45,7 @@ function App() {
         <Route path="/carrito" element={<Carrito />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/confirmar-compra" element={<ConfirmarCompra />} />
+        <Route path="/mis-compras" element={<MisCompras />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
