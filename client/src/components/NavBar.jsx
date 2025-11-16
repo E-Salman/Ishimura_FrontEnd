@@ -60,6 +60,11 @@ const handleLogout = () => {
   }
 };
 
+const goToPurchases = () => {
+  setOpen(false);
+  navigate("/mis-compras");
+};
+
 
   // SEARCH STATE
   const [q, setQ] = useState("");
@@ -395,15 +400,24 @@ const handleLogout = () => {
                   </p>
                 </div>
                 <div className="h-px bg-white/10 dark:bg-black/10" />
-                <button
-                  onClick={handleLogout}
-                  role="menuitem"
-                  className="w-full text-left px-4 py-3 text-sm font-semibold
-                            text-red-300 hover:text-red-200 hover:bg-white/5
-                            dark:text-red-600 dark:hover:text-red-700 dark:hover:bg-black/5"
-                >
-                  Logout
-                </button>
+                <div className="flex flex-col">
+                  <button
+                    onClick={goToPurchases}
+                    role="menuitem"
+                    className="w-full text-left px-4 py-3 text-sm font-semibold text-white hover:bg-white/10 dark:text-black dark:hover:bg-black/5"
+                  >
+                    Mis compras
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    role="menuitem"
+                    className="w-full text-left px-4 py-3 text-sm font-semibold
+                              text-red-300 hover:text-red-200 hover:bg-white/5
+                              dark:text-red-600 dark:hover:text-red-700 dark:hover:bg-black/5"
+                  >
+                    Logout
+                  </button>
+                </div>
               </div>
             )}
           </div>

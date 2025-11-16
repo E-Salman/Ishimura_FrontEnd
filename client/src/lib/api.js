@@ -391,6 +391,53 @@ export async function createOrder(token, dto, signal) {
   return res.json();
 }
 
+export async function getUserOrders(signal) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No auth token');
+  const email =
+    (typeof localStorage !== 'undefined' && (
+      localStorage.getItem('ishimura_email') ||
+      localStorage.getItem('email')
+    )) ||
+    null;
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+  };
+  const attempts = [
+    () => `${BASE}/ordenes/mis`,
+    () => (email ? `${BASE}/ordenes/usuario/${encodeURIComponent(email)}` : null),
+    () => (email ? `${BASE}/ordenes?email=${encodeURIComponent(email)}` : null),
+    () => `${BASE}/ordenes`,
+  ];
+
+  const seen = new Set();
+  for (const buildUrl of attempts) {
+    const url = buildUrl?.();
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    try {
+      const res = await fetch(url, { headers, signal });
+      if (res.status === 401) throw new Error('No autorizado');
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (Array.isArray(data)) return data;
+      if (data && typeof data === 'object') {
+        if (Array.isArray(data?.content)) return data.content;
+        if (Array.isArray(data?.items)) return data.items;
+        if (Array.isArray(data?.ordenes)) return data.ordenes;
+        try {
+          const arr = Object.values(data);
+          if (Array.isArray(arr) && arr.every((x) => typeof x !== 'function')) return arr;
+        } catch (_) {}
+      }
+    } catch (e) {
+      if (e?.message === 'No autorizado') throw e;
+    }
+  }
+  return [];
+}
+
 // Subida de imágenes para un coleccionable.
 // Intenta variantes comunes de endpoint y nombre de campo.
 // - POST /coleccionable/{id}/imagenes   (multipart, field: files[] | file | imagen | image | archivo)
@@ -422,4 +469,43 @@ export async function uploadColeccionableImages(coleccionableId, files, { token,
     }
   }
   return { ok: true, tried, firstOk: tried.find(t => t.ok) || null };
+}
+
+// Subida de imágenes para marcas (logo/foto). Recorre endpoints conocidos.
+export async function uploadMarcaImages(marcaId, files, { token, signal } = {}) {
+  const tried = [];
+  if (!marcaId) throw new Error('marcaId requerido');
+  if (!Array.isArray(files) || files.length === 0) return { ok: true, tried, firstOk: null };
+
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const endpoints = [
+    { url: `${BASE}/marcasImages/${marcaId}/imagenes`, field: null },
+    { url: `${BASE}/marcas/${marcaId}/imagenes`, field: null },
+    { url: `${BASE}/imagenes/marca/${marcaId}`, field: null },
+    { url: `${BASE}/imagenes`, field: 'idMarca' },
+  ];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    let success = false;
+    for (const entry of endpoints) {
+      const form = new FormData();
+      form.append('file', file, file.name);
+      if (entry.field) form.append(entry.field, String(marcaId));
+      try {
+        const res = await fetch(entry.url, { method: 'POST', body: form, headers, signal });
+        tried.push({ url: entry.url, index: i, status: res.status, ok: res.ok });
+        if (res.ok) {
+          success = true;
+          break;
+        }
+      } catch (e) {
+        tried.push({ url: entry.url, index: i, status: 0, ok: false, error: String(e?.message || e) });
+      }
+    }
+    if (!success) {
+      return { ok: false, tried, firstOk: tried.find((t) => t.ok) || null };
+    }
+  }
+  return { ok: true, tried, firstOk: tried.find((t) => t.ok) || null };
 }

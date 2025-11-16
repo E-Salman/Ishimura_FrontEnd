@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { uploadColeccionableImages, isAdminFromToken } from "../lib/api";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -35,6 +35,13 @@ export default function AdminPanel() {
   const [busyIds, setBusyIds] = useState(new Set()); // ids con acción en curso
   const [refreshKey, setRefreshKey] = useState(0);
   const [toast, setToast] = useState(null); // { msg, type }
+  const [newMarca, setNewMarca] = useState({ nombre: "" });
+  const [creatingMarca, setCreatingMarca] = useState(false);
+  const [newMarcaError, setNewMarcaError] = useState(null);
+  const [newMarcaFile, setNewMarcaFile] = useState(null);
+  const [newMarcaPreview, setNewMarcaPreview] = useState(null);
+  const [newMarcaFileKey, setNewMarcaFileKey] = useState(0);
+  const newMarcaFileInputRef = useRef(null);
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type });
@@ -44,6 +51,27 @@ export default function AdminPanel() {
   const [edit, setEdit] = useState({ open: false });
 
   const lowThreshold = 10;
+
+  useEffect(() => {
+    return () => {
+      if (newMarcaPreview) {
+        try { URL.revokeObjectURL(newMarcaPreview); } catch (_) {}
+      }
+    };
+  }, [newMarcaPreview]);
+
+  const refreshMarcas = useCallback(async (signal) => {
+    try {
+      const res = await fetch(`${BASE}/marcas`, { signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setMarcas(Array.isArray(json) ? json : []);
+      return json;
+    } catch (e) {
+      if (e?.name === "AbortError") return null;
+      throw e;
+    }
+  }, []);
 
   // Cargar catálogo (id + stock)
   useEffect(() => {
@@ -132,13 +160,9 @@ export default function AdminPanel() {
   // Cargar marcas para filtros y gestión
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${BASE}/marcas`, { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((arr) => setMarcas(Array.isArray(arr) ? arr : []))
-      .catch(() => {})
-      .finally(() => {});
+    refreshMarcas(controller.signal).catch(() => {});
     return () => controller.abort();
-  }, []);
+  }, [refreshMarcas]);
 
   // Cargar líneas al elegir marca
   useEffect(() => {
@@ -262,11 +286,70 @@ export default function AdminPanel() {
       const res = await fetch(`${BASE}/marcas/${id}`, { method: "DELETE", headers });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       // refrescar marcas
-      const arr = await fetch(`${BASE}/marcas`).then((r) => r.ok ? r.json() : []);
-      setMarcas(Array.isArray(arr) ? arr : []);
+      await refreshMarcas();
       if (String(marcaId) === String(id)) { setMarcaId(""); setLineas([]); setLineaId(""); }
     } catch (e) {
       alert(`No se pudo borrar la marca: ${e?.message || e}`);
+    }
+  }
+
+  async function handleCreateMarca(e) {
+    e?.preventDefault?.();
+    const nombre = newMarca.nombre?.trim();
+    if (!nombre) {
+      setNewMarcaError("Ingresá un nombre para la marca.");
+      return;
+    }
+    try {
+      setCreatingMarca(true);
+      setNewMarcaError(null);
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+      const payload = {
+        nombre,
+      };
+      const res = await fetch(`${BASE}/marcas/crear`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => null);
+        throw new Error(txt || `HTTP ${res.status}`);
+      }
+      const created = await res.json().catch(() => null);
+      const newId = created?.id ?? created?._id ?? created?.marcaId ?? created?.marcaID ?? null;
+
+      let uploadNotice = null;
+      if (newMarcaFile && newId != null) {
+        try {
+          const up = await uploadMarcaImages(newId, [newMarcaFile], { token });
+          if (!up?.ok) {
+            uploadNotice = "Marca creada, pero la imagen no se pudo subir.";
+          }
+        } catch (err) {
+          uploadNotice = err?.message || "Marca creada, pero falló la carga de imagen.";
+        }
+      }
+
+      await refreshMarcas();
+      setNewMarca({ nombre: "" });
+      if (newMarcaPreview) {
+        try { URL.revokeObjectURL(newMarcaPreview); } catch (_) {}
+      }
+      setNewMarcaPreview(null);
+      setNewMarcaFile(null);
+      setNewMarcaFileKey((k) => k + 1);
+      showToast(uploadNotice ?? "Marca creada", uploadNotice ? "info" : "success");
+      setNewMarcaError(uploadNotice);
+    } catch (e) {
+      const msg = e?.message || "No se pudo crear la marca";
+      setNewMarcaError(msg);
+      showToast(msg, "error");
+    } finally {
+      setCreatingMarca(false);
     }
   }
 
@@ -438,6 +521,85 @@ export default function AdminPanel() {
       <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
           <h2 className="mb-3 text-xl font-bold text-primary">Marcas</h2>
+          <form onSubmit={handleCreateMarca} className="mb-4 space-y-3 rounded-lg border border-white/10 bg-black/40 p-3">
+            <div>
+              <label className="block text-xs uppercase tracking-wide text-white/60">Nombre de la marca *</label>
+              <input
+                type="text"
+                value={newMarca.nombre}
+                onChange={(e) => setNewMarca((s) => ({ ...s, nombre: e.target.value }))}
+                required
+                className="mt-1 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
+                placeholder="Ej: Kaiju Series"
+              />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wide text-white/60">Imágenes</label>
+              <input
+                key={newMarcaFileKey}
+                ref={newMarcaFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg"
+                multiple={false}
+                onChange={(e) => {
+                  const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                  setNewMarcaFile(file);
+                  setNewMarcaPreview((prev) => {
+                    if (prev) {
+                      try { URL.revokeObjectURL(prev); } catch (_) {}
+                    }
+                    return file ? URL.createObjectURL(file) : null;
+                  });
+                }}
+                className="sr-only"
+              />
+              <div className="mt-1 flex items-center gap-3 rounded-md border border-white/10 bg-black/60 p-2">
+                <button
+                  type="button"
+                  onClick={() => newMarcaFileInputRef.current?.click()}
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-black hover:bg-primary/90"
+                >
+                  Elegir archivo
+                </button>
+                <span className="text-sm text-white/80">
+                  {newMarcaFile ? newMarcaFile.name : "Ningún archivo seleccionado"}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-white/50">Formatos admitidos: JPG o PNG.</p>
+              {newMarcaPreview && (
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="h-20 w-20 overflow-hidden rounded border border-white/10 bg-black/40">
+                    <img src={newMarcaPreview} alt="preview marca" className="h-full w-full object-cover" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewMarcaFile(null);
+                      setNewMarcaPreview((prev) => {
+                        if (prev) {
+                          try { URL.revokeObjectURL(prev); } catch (_) {}
+                        }
+                        return null;
+                      });
+                      setNewMarcaFileKey((k) => k + 1);
+                      if (newMarcaFileInputRef.current) {
+                        newMarcaFileInputRef.current.value = "";
+                      }
+                    }}
+                    className="rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-500"
+                  >
+                    Quitar imagen
+                  </button>
+                </div>
+              )}
+            </div>
+            {newMarcaError && <p className="text-sm text-red-400">{newMarcaError}</p>}
+            <div className="flex justify-end">
+              <button type="submit" disabled={creatingMarca} className="rounded bg-primary px-4 py-2 text-sm font-bold text-black hover:bg-primary/90 disabled:opacity-50">
+                {creatingMarca ? "Creando..." : "Crear marca"}
+              </button>
+            </div>
+          </form>
           <div className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10">
             {marcas.map((m) => (
               <div key={m.id ?? m.marcaId} className="flex items-center justify-between bg-black/40 px-3 py-2">
