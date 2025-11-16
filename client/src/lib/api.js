@@ -17,63 +17,8 @@ export function isAdminFromToken(token) {
     }
 }
 
-/*export function isAdminFromToken(token) {
-  if (!token) return false;
-  try {
-    const [, raw] = String(token).split(".");
-    if (!raw) return false;
-    let b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
-    while (b64.length % 4) b64 += "=";
-    const json = JSON.parse(atob(b64));
-
-    const buckets = [
-      json?.roles,
-      json?.role,
-      json?.authorities,
-      json?.authority,
-      json?.scope,
-      json?.scopes,
-      json?.rol,
-      json?.perms,
-      json?.permissions,
-    ]
-      .flat()
-      .filter(Boolean)
-      .map((x) => (typeof x === "string" ? x : x?.authority || x?.name || x?.value || ""));
-
-    const data = decodeJwt(token);
-    console.log(data);
-
-    return buckets.some((v) => /ADMIN/i.test(String(v)));
-  } catch {
-    return false;
-  }
-}
-
-function decodeJwt(token) {
-  try {
-    const [, payload] = token.split('.');
-    let b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-    while (b64.length % 4) b64 += '=';
-    return JSON.parse(atob(b64));
-  } catch (err) {
-    console.error("Token inválido:", err);
-    return null;
-  }
-}*/
-
-
 export function getBaseUrl() {
   return BASE;
-}
-
-export function getAuthToken() {
-  if (typeof localStorage === 'undefined') return null;
-  return (
-    localStorage.getItem('ishimura_token') ||
-    localStorage.getItem('token') ||
-    null
-  );
 }
 
 export async function getMarcas(signal) {
@@ -237,7 +182,6 @@ export async function getColeccionableDetalle(coleccionableId, signal) {
 // Carrito --------------------------------------------------------------------
 
 export async function getCart(token, signal) {
-  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/carrito`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -248,7 +192,6 @@ export async function getCart(token, signal) {
 }
 
 export async function addToCart(token, coleccionableId, { cantidad = 1 } = {}, signal) {
-  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const url = `${BASE}/carrito/${encodeURIComponent(
     coleccionableId
@@ -263,7 +206,6 @@ export async function addToCart(token, coleccionableId, { cantidad = 1 } = {}, s
 }
 
 export async function updateCartItemQuantity(token, itemId, cantidad, signal) {
-  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const url = `${BASE}/carrito/${encodeURIComponent(
     itemId
@@ -279,7 +221,6 @@ export async function updateCartItemQuantity(token, itemId, cantidad, signal) {
 }
 
 export async function removeCartItem(token, itemId, signal) {
-  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/carrito/${encodeURIComponent(itemId)}`, {
     method: 'DELETE',
@@ -290,7 +231,6 @@ export async function removeCartItem(token, itemId, signal) {
 }
 
 export async function clearCart(token, signal) {
-  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/carrito/vaciar`, {
     method: 'DELETE',
@@ -306,7 +246,6 @@ export async function clearCart(token, signal) {
 // Backend actual: POST /wishlist/{coleccionableId}
 // Mantiene intentos alternativos por compatibilidad.
 export async function addToWishlist(token, coleccionableId, signal) {
-  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const commonHeaders = {
     'Content-Type': 'application/json',
@@ -331,7 +270,6 @@ export async function addToWishlist(token, coleccionableId, signal) {
 }
 
 export async function getWishlist(token, signal) {
-  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/wishlist`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -342,7 +280,6 @@ export async function getWishlist(token, signal) {
 }
 
 export async function removeFromWishlist(token, itemId, signal) {
-  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/wishlist/${encodeURIComponent(itemId)}`, {
     method: 'DELETE',
@@ -353,7 +290,6 @@ export async function removeFromWishlist(token, itemId, signal) {
 }
 
 export async function clearWishlist(token, signal) {//No lo estamos usando, clearcart tampoco
-  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/wishlist/vaciar`, {
     method: 'DELETE',
@@ -441,7 +377,6 @@ export async function getPricePreview(coleccionableId, { qty = 1 } = {}, signal)
 // Órdenes --------------------------------------------------------------------
 
 export async function createOrder(token, dto, signal) {
-  ///const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/ordenes`, {
     method: 'POST',

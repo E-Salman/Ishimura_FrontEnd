@@ -35,18 +35,7 @@ const NavBar = () => {
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
-
-  // Detect admin from JWT claims
-  /* const token = useMemo(
-    () => user?.token || localStorage.getItem("ishimura_token") || localStorage.getItem("token") || null,
-    [user]
-  );
-  const isAdmin = useMemo(() => isAdminFromToken(token), [token]);
   
-  const token = user?.token || null;
-  const isAdmin = useMemo(() => isAdminFromToken(token), [token]); //Se vuelve a llamar cuando cambia token*/
-
-  // Close dropdown when clicking outside or pressing ESC
   useEffect(() => {
     const onClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);

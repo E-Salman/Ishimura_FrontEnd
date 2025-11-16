@@ -78,9 +78,6 @@ export default function ColeccionablesView() {
     if (!marcaId) return;
     const controller = new AbortController();
     const BASE = getBaseUrl();
-    const token =
-      (typeof localStorage !== 'undefined' && (localStorage.getItem('ishimura_token') || localStorage.getItem('token'))) ||
-      null;
     getLineasByMarca(marcaId, controller.signal)
       .then((arr) => {
         const mapped = (Array.isArray(arr) ? arr : []).map((l) => ({
@@ -162,9 +159,6 @@ export default function ColeccionablesView() {
         let data = await getColeccionables({ marcaId: marcaId || null, lineaId: lineaId || null }, controller.signal);
         // Prefetch stocks map en un solo request si es posible
         const BASE = getBaseUrl();
-        const token =
-          (typeof localStorage !== 'undefined' && (localStorage.getItem('ishimura_token') || localStorage.getItem('token'))) ||
-          null;
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
           const resMap = await fetch(`${BASE}/catalogo`, { signal: controller.signal, headers });
