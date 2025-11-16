@@ -71,7 +71,7 @@ fetch(URLregister, {
     return res.json().catch(() => ({}));
   })
   .then((data) => {
-    const token = data?.token || data?.jwt || data?.access_token;
+    const token = data?.access_token;
 
     if (token) {
       login({ email: form.email, token });

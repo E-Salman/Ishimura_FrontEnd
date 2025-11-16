@@ -1,44 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { uploadColeccionableImages, uploadMarcaImages } from "../lib/api";
+import { uploadColeccionableImages, isAdminFromToken } from "../lib/api";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const BASE = "http://localhost:4002";
-
-function getToken() {
-  return (
-    localStorage.getItem("ishimura_token") ||
-    localStorage.getItem("token") ||
-    null
-  );
-}
-
-function isAdminFromToken(token) {
-  if (!token) return false;
-  try {
-    const [, raw] = String(token).split(".");
-    if (!raw) return false;
-    let b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
-    while (b64.length % 4) b64 += "=";
-    const json = JSON.parse(atob(b64));
-    const buckets = [
-      json?.roles,
-      json?.role,
-      json?.authorities,
-      json?.authority,
-      json?.scope,
-      json?.scopes,
-      json?.rol,
-      json?.perms,
-      json?.permissions,
-    ]
-      .flat()
-      .filter(Boolean)
-      .map((x) => (typeof x === "string" ? x : x?.authority || x?.name || x?.value || ""));
-    return buckets.some((v) => /ADMIN/i.test(String(v)));
-  } catch (_) {
-    return false;
-  }
-}
 
 // Parser alineado con CatalogoListItemDTO { coleccionableId, nombre, precio, stock, firstImageId }
 function parseCatalogItem(raw) {
@@ -53,8 +18,8 @@ function parseCatalogItem(raw) {
 
 export default function AdminPanel() {
   const navigate = useNavigate();
-  const token = useMemo(() => getToken(), []);
-  const isAdmin = useMemo(() => isAdminFromToken(token), [token]);
+  
+  const { token, isAdmin } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

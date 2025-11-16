@@ -52,6 +52,7 @@ function App() {
         <Route path="/admin/crear-coleccionable" element={<CrearColeccionable />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />
+        <Route path="/carrito" element={<Carrito />} />
       </Routes>
       <Footer/>
     </>

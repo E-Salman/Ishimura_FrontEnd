@@ -1,37 +1,9 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 import { getMarcas, getLineasByMarca, getColeccionables } from "../lib/api";
-import { useAuth } from "../context/authcontext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 import logo from "../../../assets/images/logoishimura.png";
-import { useEffect, useMemo, useRef, useState } from "react";
-
-function isAdminFromToken(token) {
-  if (!token) return false;
-  try {
-    const [, raw] = String(token).split(".");
-    if (!raw) return false;
-    let b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
-    while (b64.length % 4) b64 += "=";
-    const json = JSON.parse(atob(b64));
-    const buckets = [
-      json?.roles,
-      json?.role,
-      json?.authorities,
-      json?.authority,
-      json?.scope,
-      json?.scopes,
-      json?.rol,
-      json?.perms,
-      json?.permissions,
-    ]
-      .flat()
-      .filter(Boolean)
-      .map((x) => (typeof x === "string" ? x : x?.authority || x?.name || x?.value || ""));
-    return buckets.some((v) => /ADMIN/i.test(String(v)));
-  } catch (_) {
-    return false;
-  }
-}
+import { useEffect, useRef, useState } from "react";
 
 function AvatarInitial({ email }) {
   const initial = (email?.[0] || "?").toUpperCase();
@@ -58,20 +30,12 @@ const linkInactive =
 const linkActive = "text-primary";
 
 const NavBar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
-
-  // Detect admin from JWT claims
-  const token = useMemo(
-    () => user?.token || localStorage.getItem("ishimura_token") || localStorage.getItem("token") || null,
-    [user]
-  );
-  const isAdmin = useMemo(() => isAdminFromToken(token), [token]);
-
-  // Close dropdown when clicking outside or pressing ESC
+  
   useEffect(() => {
     const onClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);

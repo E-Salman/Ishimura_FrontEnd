@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createOrder } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 const ConfirmarCompra = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const carrito = location.state?.carrito || [];
+  const { token } = useAuth();
 
   const [direccion, setDireccion] = useState({
     calle: "",
@@ -39,7 +41,7 @@ const ConfirmarCompra = () => {
     };
 
     try {
-      await createOrder(payload);
+      await createOrder(token, payload);
       setMensaje("Compra confirmada");
       setTimeout(() => navigate("/home"), 2000);
     } catch (error) {

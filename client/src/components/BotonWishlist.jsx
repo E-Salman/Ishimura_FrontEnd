@@ -1,10 +1,12 @@
 import React from "react";
 import { addToWishlist } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 const BotonWishlist = ({ coleccionableId }) => {
+  const { token } = useAuth();
   const agregarAWishlist = async () => {
     try {
-      const ok = await addToWishlist(coleccionableId);
+      const ok = await addToWishlist(token, coleccionableId);
       if (ok) {
         alert("Agregado a tu wishlist");
       } else {
