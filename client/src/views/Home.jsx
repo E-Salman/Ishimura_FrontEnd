@@ -2,39 +2,8 @@ import ColeccionableDestacado from "../components/ColeccionableDestacado";
 import HomeCarousel from "../components/HomeCarousel";
 import { NavLink } from "react-router-dom";
 import { useMemo } from "react";
-import { useAuth } from "../context/authcontext.jsx";
-
-function isAdminFromToken(token) {
-  if (!token) return false;
-  try {
-    const [, raw] = String(token).split(".");
-    if (!raw) return false;
-    // B64url -> B64 + padding seguro
-    let b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
-    while (b64.length % 4) b64 += "=";
-    const json = JSON.parse(atob(b64));
-
-    // Reunir todas las posibles llaves de rol/permisos
-    const buckets = [
-      json?.roles,
-      json?.role,
-      json?.authorities,
-      json?.authority,
-      json?.scope,
-      json?.scopes,
-      json?.rol,
-      json?.perms,
-      json?.permissions,
-    ]
-      .flat()
-      .filter(Boolean)
-      .map((x) => (typeof x === "string" ? x : x?.authority || x?.name || x?.value || ""));
-
-    return buckets.some((v) => /ADMIN/i.test(String(v)));
-  } catch {
-    return false;
-  }
-}
+import { useAuth } from "../context/AuthContext.jsx";
+import { isAdminFromToken } from "../lib/api";
 
 const Home = () => {
     const { user } = useAuth?.() || { user: null };

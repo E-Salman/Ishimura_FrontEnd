@@ -1,6 +1,68 @@
 // If VITE_API_URL is not set, use Vite dev proxy under /api
 const BASE = import.meta.env.VITE_API_URL ?? '/api';
 
+export function isAdminFromToken(token) {
+  if (!token) return false;
+    try {
+      const [, payload] = token.split('.');
+      let b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+
+      let payload2 = JSON.parse(atob(b64));
+      if (!payload2) return false;
+      if (payload2.role && payload2.role === "ADMIN") return true;
+    } catch (err) {
+      console.error("Token inválido:", err);
+      return false;
+    }
+}
+
+/*export function isAdminFromToken(token) {
+  if (!token) return false;
+  try {
+    const [, raw] = String(token).split(".");
+    if (!raw) return false;
+    let b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    const json = JSON.parse(atob(b64));
+
+    const buckets = [
+      json?.roles,
+      json?.role,
+      json?.authorities,
+      json?.authority,
+      json?.scope,
+      json?.scopes,
+      json?.rol,
+      json?.perms,
+      json?.permissions,
+    ]
+      .flat()
+      .filter(Boolean)
+      .map((x) => (typeof x === "string" ? x : x?.authority || x?.name || x?.value || ""));
+
+    const data = decodeJwt(token);
+    console.log(data);
+
+    return buckets.some((v) => /ADMIN/i.test(String(v)));
+  } catch {
+    return false;
+  }
+}
+
+function decodeJwt(token) {
+  try {
+    const [, payload] = token.split('.');
+    let b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    return JSON.parse(atob(b64));
+  } catch (err) {
+    console.error("Token inválido:", err);
+    return null;
+  }
+}*/
+
+
 export function getBaseUrl() {
   return BASE;
 }
@@ -49,7 +111,7 @@ export async function getLineasByMarca(marcaId, signal) {
       const json = await res.json();
       return Array.isArray(json) ? json : [];
     }
-  } catch (_) {}
+  } catch (_) { }
   return [];
 }
 
@@ -80,7 +142,7 @@ export async function getColeccionables({ marcaId = null, lineaId = null } = {},
             if (Array.isArray(c)) { arr = c; break; }
           }
           if (!arr) {
-            try { arr = Object.values(json); } catch (_) {}
+            try { arr = Object.values(json); } catch (_) { }
           }
         }
         if (!Array.isArray(arr)) arr = [];
@@ -149,7 +211,7 @@ export async function getColeccionables({ marcaId = null, lineaId = null } = {},
         });
       }
       return Array.from(map.values());
-    } catch (_) {}
+    } catch (_) { }
   }
 
   return [];
@@ -174,8 +236,8 @@ export async function getColeccionableDetalle(coleccionableId, signal) {
 
 // Carrito --------------------------------------------------------------------
 
-export async function getCart(signal) {
-  const token = getAuthToken();
+export async function getCart(token, signal) {
+  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/carrito`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -185,8 +247,8 @@ export async function getCart(signal) {
   return res.json();
 }
 
-export async function addToCart(coleccionableId, { cantidad = 1 } = {}, signal) {
-  const token = getAuthToken();
+export async function addToCart(token, coleccionableId, { cantidad = 1 } = {}, signal) {
+  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const url = `${BASE}/carrito/${encodeURIComponent(
     coleccionableId
@@ -200,8 +262,8 @@ export async function addToCart(coleccionableId, { cantidad = 1 } = {}, signal) 
   return res.json();
 }
 
-export async function updateCartItemQuantity(itemId, cantidad, signal) {
-  const token = getAuthToken();
+export async function updateCartItemQuantity(token, itemId, cantidad, signal) {
+  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const url = `${BASE}/carrito/${encodeURIComponent(
     itemId
@@ -216,8 +278,8 @@ export async function updateCartItemQuantity(itemId, cantidad, signal) {
   return res.json();
 }
 
-export async function removeCartItem(itemId, signal) {
-  const token = getAuthToken();
+export async function removeCartItem(token, itemId, signal) {
+  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/carrito/${encodeURIComponent(itemId)}`, {
     method: 'DELETE',
@@ -227,8 +289,8 @@ export async function removeCartItem(itemId, signal) {
   if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
 }
 
-export async function clearCart(signal) {
-  const token = getAuthToken();
+export async function clearCart(token, signal) {
+  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/carrito/vaciar`, {
     method: 'DELETE',
@@ -243,8 +305,8 @@ export async function clearCart(signal) {
 // Intenta agregar un coleccionable a la wishlist.
 // Backend actual: POST /wishlist/{coleccionableId}
 // Mantiene intentos alternativos por compatibilidad.
-export async function addToWishlist(coleccionableId, signal) {
-  const token = getAuthToken();
+export async function addToWishlist(token, coleccionableId, signal) {
+  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const commonHeaders = {
     'Content-Type': 'application/json',
@@ -263,13 +325,13 @@ export async function addToWishlist(coleccionableId, signal) {
       const res = await req();
       if (res.ok) return true;
       if (res.status === 409) return true; // ya existe
-    } catch (_) {}
+    } catch (_) { }
   }
   return false;
 }
 
-export async function getWishlist(signal) {
-  const token = getAuthToken();
+export async function getWishlist(token, signal) {
+  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/wishlist`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -279,8 +341,8 @@ export async function getWishlist(signal) {
   return res.json();
 }
 
-export async function removeFromWishlist(itemId, signal) {
-  const token = getAuthToken();
+export async function removeFromWishlist(token, itemId, signal) {
+  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/wishlist/${encodeURIComponent(itemId)}`, {
     method: 'DELETE',
@@ -290,8 +352,8 @@ export async function removeFromWishlist(itemId, signal) {
   if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
 }
 
-export async function clearWishlist(signal) {
-  const token = getAuthToken();
+export async function clearWishlist(token, signal) {//No lo estamos usando, clearcart tampoco
+  //const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/wishlist/vaciar`, {
     method: 'DELETE',
@@ -321,7 +383,7 @@ export async function getNewArrivals({ limit = 12 } = {}, signal) {
       if (!arr && json && typeof json === 'object') {
         const candidates = [json.content, json.items, json.data, json.lista, json.catalogo, json.results, json.rows, json.values];
         for (const c of candidates) { if (Array.isArray(c)) { arr = c; break; } }
-        if (!arr) try { arr = Object.values(json); } catch (_) {}
+        if (!arr) try { arr = Object.values(json); } catch (_) { }
       }
       if (!Array.isArray(arr)) arr = [];
       const mapped = arr.map((raw) => {
@@ -351,7 +413,7 @@ export async function getNewArrivals({ limit = 12 } = {}, signal) {
       });
       return mapped.slice(0, limit).map(({ _time, ...rest }) => rest);
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // 2) fallback: todos los coleccionables, ordenar por id desc
   try {
@@ -378,8 +440,8 @@ export async function getPricePreview(coleccionableId, { qty = 1 } = {}, signal)
 
 // Órdenes --------------------------------------------------------------------
 
-export async function createOrder(dto, signal) {
-  const token = getAuthToken();
+export async function createOrder(token, dto, signal) {
+  ///const token = getAuthToken();
   if (!token) throw new Error('No auth token');
   const res = await fetch(`${BASE}/ordenes`, {
     method: 'POST',

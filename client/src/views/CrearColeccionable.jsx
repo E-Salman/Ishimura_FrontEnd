@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/authcontext.jsx";
-import { uploadColeccionableImages } from "../lib/api";
+import { useAuth } from "../context/AuthContext.jsx";
+import { uploadColeccionableImages, isAdminFromToken } from "../lib/api";
 
 const BASE = "http://localhost:4002";
 
@@ -11,30 +11,6 @@ function getToken() {
     localStorage.getItem("token") ||
     null
   );
-}
-
-function isAdminFromToken(token) {
-  if (!token) return false;
-  try {
-    const [, payloadB64] = token.split(".");
-    const json = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")));
-    const candidates = [
-      json?.roles,
-      json?.authorities,
-      json?.authority,
-      json?.scope,
-      json?.scopes,
-      json?.rol,
-      json?.perms,
-    ]
-      .flat()
-      .filter(Boolean)
-      .map((x) => (typeof x === "string" ? x : x?.authority || x?.name || ""))
-      .filter(Boolean);
-    return candidates.some((s) => /ADMIN/i.test(String(s)));
-  } catch (_) {
-    return false;
-  }
 }
 
 export default function CrearColeccionable() {
@@ -71,7 +47,7 @@ export default function CrearColeccionable() {
           const res = await fetch(`${BASE}/usuarios/filtrarPorEmail?email=${encodeURIComponent(email)}`, { headers });
           if (res.ok) {
             const json = await res.json();
-            const rol = json?.rol || json?.role || json?.authority || json?.authorities || json?.roles;
+            const rol = json?.role;
             const ok = Array.isArray(rol)
               ? rol.some((r) => /ADMIN/i.test(String(r?.authority || r)))
               : /ADMIN/i.test(String(rol || ""));
