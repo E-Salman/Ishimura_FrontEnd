@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { getNewArrivals, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist, getPricePreview, addToCart, getWishlist, removeFromWishlist } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function NewArrivals() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { token } = useAuth();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -66,8 +68,8 @@ export default function NewArrivals() {
   }, []);
 
   const moveFromWishlistToCart = async (coleccionableId) => {
-    try {
-      await addToCart(coleccionableId, { cantidad: 1 });
+    try {      
+      await addToCart(token, coleccionableId, { cantidad: 1 });
     } catch (e) {
       console.warn("Cart error", e);
       const msg = String(e?.message || "");
@@ -77,13 +79,13 @@ export default function NewArrivals() {
       }
     }
     try {
-      const data = await getWishlist();
+      const data = await getWishlist(token);
       const list = Array.isArray(data) ? data : [];
       const row = list.find(
         (w) => String(w.coleccionableId) === String(coleccionableId)
       );
       if (row) {
-        await removeFromWishlist(row.id);
+        await removeFromWishlist(token, row.id);
       }
     } catch (_) {}
   };
@@ -103,7 +105,7 @@ export default function NewArrivals() {
           <ColeccionablesGrid
             items={items}
             onAddToWishlist={async ({ id }) => {
-              try { await addToWishlist(id); } catch (_) {}
+              try { await addToWishlist(token, id); } catch (_) {}
             }}
             onAddToCart={({ id }) => moveFromWishlistToCart(id)}
             addToCartText="Agregar al carrito"

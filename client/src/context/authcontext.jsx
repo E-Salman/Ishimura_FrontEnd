@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
+import { isAdminFromToken } from "../lib/api";
 
 const AuthContext = createContext(null);
 
@@ -18,7 +19,9 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    console.log("deslogueando...\ntoken: " + localStorage.getItem("ishimura_token") + "\nemail: " + localStorage.getItem("ishimura_email"));
     localStorage.removeItem("ishimura_token");
+    localStorage.removeItem("")
     localStorage.removeItem("ishimura_email");
     setUser(null);
   };
@@ -29,8 +32,17 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
-
+ 
 export function useAuth() {
-  return useContext(AuthContext);
-}
+  const { user, login, logout } = useContext(AuthContext); //Es lo mismo que se puso en <AuthContext.Provider value={{ user, login, logout }}>
+  const token = user?.token || null;
+  const isAdmin = useMemo(() => isAdminFromToken(token), [token]);
 
+  return {
+    user,
+    token,
+    isAdmin,
+    login,
+    logout
+  };
+}

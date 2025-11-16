@@ -8,12 +8,14 @@ import {
   getWishlist,
   removeFromWishlist,
 } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 const DetalleColeccionable = () => {
   const { id } = useParams();
   const [coleccionable, setColeccionable] = useState(null);
   const [imagen, setImagen] = useState(null);
   const [mensaje, setMensaje] = useState("");
+  const { token } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,8 +44,8 @@ const DetalleColeccionable = () => {
 
   const agregarAlCarrito = async () => {
     let skipWishlist = false;
-    try {
-      await addToCart(id, { cantidad: 1 });
+    try {      
+      await addToCart(token, id, { cantidad: 1 });
       setMensaje("Producto agregado al carrito");
       setTimeout(() => setMensaje(""), 2000);
     } catch (error) {
@@ -60,20 +62,20 @@ const DetalleColeccionable = () => {
     if (skipWishlist) return;
 
     try {
-      const data = await getWishlist();
+      const data = await getWishlist(token);
       const list = Array.isArray(data) ? data : [];
       const row = list.find(
         (w) => String(w.coleccionableId) === String(id)
       );
       if (row) {
-        await removeFromWishlist(row.id);
+        await removeFromWishlist(token, row.id);
       }
     } catch (_) {}
   };
 
   const agregarAWishlist = async () => {
     try {
-      const ok = await addToWishlist(id);
+      const ok = await addToWishlist(token, id);
       if (ok) {
         setMensaje("Agregado a tu wishlist");
       } else {
@@ -103,7 +105,7 @@ const DetalleColeccionable = () => {
             onClick={() => navigate(-1)}
             className="absolute top-4 left-4 px-4 py-2 bg-[rgb(79_255_207_/var(--tw-bg-opacity,1))] bg-accent text-background-dark font-semibold rounded-lg hover:bg-accent/90 transition-colors z-20"
           >
-            ������? Back
+            ⬅ Back
           </button>
 
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12 text-[rgb(79_255_207_/var(--tw-text-opacity,1))]">
