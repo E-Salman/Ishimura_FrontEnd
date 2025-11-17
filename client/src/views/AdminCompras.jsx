@@ -28,6 +28,7 @@ function normalizeOrder(raw) {
     total:
       base.montoTotal ??
       mappedItems.reduce((acc, it) => acc + Number(it.subtotal || 0), 0),
+    email: base.emailUsuario ?? base.userEmail ?? base.email ?? null,
     items: mappedItems,
     raw: base,
   };
@@ -69,7 +70,7 @@ export default function AdminCompras() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const [q, setQ] = useState(""); // búsqueda por nro orden / método
+  const [q, setQ] = useState(""); // búsqueda por nro orden / email
   const [minTotal, setMinTotal] = useState("");
   const [maxTotal, setMaxTotal] = useState("");
   const [page, setPage] = useState(1);
@@ -145,7 +146,11 @@ export default function AdminCompras() {
         const matchesNumero = String(o.id ?? "")
             .toLowerCase()
             .includes(term);
-        return matchesNumero;
+        const matchesEmail = String(o.email ?? "")
+            .toLowerCase()
+            .includes(term);
+
+        return matchesNumero || matchesEmail;
       })
       .sort((a, b) => {
         const da = new Date(a.fecha || 0).getTime();
@@ -182,7 +187,7 @@ export default function AdminCompras() {
         <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
           <input
             className="rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white focus:border-primary/50 focus:outline-none md:col-span-2"
-            placeholder="Buscar por número de orden"
+            placeholder="Buscar por número de orden o email"
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
@@ -242,6 +247,7 @@ export default function AdminCompras() {
                   <tr>
                     <th className="px-3 py-3 text-left">N° Orden</th>
                     <th className="px-3 py-3 text-left">Fecha</th>
+                    <th className="px-3 py-3 text-left">Cliente</th>
                     <th className="px-3 py-3 text-left">Método</th>
                     <th className="px-3 py-3 text-right">Total</th>
                     <th className="px-3 py-3 text-left">Items</th>
@@ -255,6 +261,9 @@ export default function AdminCompras() {
                       </td>
                       <td className="px-3 py-3 text-white/80">
                         {formatDate(order.fecha)}
+                      </td>
+                      <td className="px-3 py-3 text-white/80">
+                        {order.email || "—"}
                       </td>
                       <td className="px-3 py-3 text-white/80">
                         {order.metodoPago || "—"}
