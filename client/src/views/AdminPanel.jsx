@@ -396,6 +396,9 @@ export default function AdminPanel() {
           <NavLink to="/admin/crear-coleccionable" className="rounded-md bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30">
             Agregar Producto
           </NavLink>
+          <NavLink to="/admin/compras" className="rounded-md bg-white/10 px-4 py-2 text-sm font-bold text-white hover:bg-white/20">
+            Ver compras
+          </NavLink>
         </div>
       </div>
 

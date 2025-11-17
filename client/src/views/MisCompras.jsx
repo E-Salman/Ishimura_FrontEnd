@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getUserOrders } from "../lib/api";
-import { useAuth } from "../context/authcontext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
