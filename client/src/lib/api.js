@@ -227,6 +227,7 @@ export async function removeCartItem(token, itemId, signal) {
     headers: { Authorization: `Bearer ${token}` },
     signal,
   });
+  console.log(res);
   if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
 }
 
@@ -378,6 +379,7 @@ export async function getPricePreview(coleccionableId, { qty = 1 } = {}, signal)
 
 export async function createOrder(token, dto, signal) {
   if (!token) throw new Error('No auth token');
+
   const res = await fetch(`${BASE}/ordenes`, {
     method: 'POST',
     headers: {
@@ -387,12 +389,28 @@ export async function createOrder(token, dto, signal) {
     body: JSON.stringify(dto),
     signal,
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+
+  let data;
+  try {
+    data = await res.json();
+  } catch (err) {
+    console.log(err);
+    data = null;
+  }
+
+  if (!res.ok) {
+    const msg = data?.detail || `HTTP ${res.status}`;
+    const error = new Error(msg);
+    error.status = res.status;
+    error.data = data;
+    throw error;
+  }
+
+  return data;
 }
 
-export async function getUserOrders(signal) {
-  const token = getAuthToken();
+
+export async function getUserOrders(token, signal) {
   if (!token) throw new Error('No auth token');
   const email =
     (typeof localStorage !== 'undefined' && (

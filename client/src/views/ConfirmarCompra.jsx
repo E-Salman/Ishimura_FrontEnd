@@ -45,8 +45,7 @@ const ConfirmarCompra = () => {
       setMensaje("Compra confirmada");
       setTimeout(() => navigate("/home"), 2000);
     } catch (error) {
-      console.error("Error de conexión:", error);
-      setMensaje("Error de conexión con el servidor.");
+      setMensaje("" + error);
     }
   };
 

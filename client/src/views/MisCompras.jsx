@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getUserOrders } from "../lib/api";
-import { useAuth } from "../context/authcontext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
@@ -94,9 +94,7 @@ function formatMoney(amount) {
 }
 
 export default function MisCompras() {
-  const { user } = useAuth();
-  const token = useMemo(() => user?.token || localStorage.getItem("ishimura_token") || null, [user]);
-
+  const { user, token } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -108,7 +106,7 @@ export default function MisCompras() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getUserOrders(controller.signal);
+        const data = await getUserOrders(token, controller.signal);
         setOrders(Array.isArray(data) ? data.map(normalizeOrder) : []);
       } catch (e) {
         if (e?.message !== "No autorizado") {
