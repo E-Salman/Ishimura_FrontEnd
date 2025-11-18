@@ -387,8 +387,32 @@ export async function createOrder(token, dto, signal) {
     body: JSON.stringify(dto),
     signal,
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+
+  let data = null;
+  const contentType = res.headers.get('content-type') || '';
+  try {
+    if (contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      data = text || null;
+    }
+  } catch (_) {
+    data = null;
+  }
+
+  if (!res.ok) {
+    const message =
+      (data && typeof data === 'object' && (data.detail || data.message)) ||
+      (typeof data === 'string' && data) ||
+      `HTTP ${res.status}`;
+    const error = new Error(message);
+    error.status = res.status;
+    error.body = data;
+    throw error;
+  }
+
+  return data;
 }
 
 export async function getUserOrders(signal) {
