@@ -20,6 +20,8 @@ import Coleccionables from "./views/Coleccionables";
 import NewArrivals from "./views/NewArrivals";
 import AdminPanel from "./views/AdminPanel";
 import Promotions from "./views/Promotions";
+import AdminCompras from "./views/AdminCompras";
+
 
 function App() {
   const navigate = useNavigate();
@@ -51,6 +53,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/admin/crear-coleccionable" element={<CrearColeccionable />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin/compras" element={<AdminCompras />} />
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />
         <Route path="/carrito" element={<Carrito />} />
       </Routes>

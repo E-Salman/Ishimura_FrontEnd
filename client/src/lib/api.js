@@ -390,19 +390,27 @@ export async function createOrder(token, dto, signal) {
     signal,
   });
 
-  let data;
+  let data = null;
+  const contentType = res.headers.get('content-type') || '';
   try {
-    data = await res.json();
-  } catch (err) {
-    console.log(err);
+    if (contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      data = text || null;
+    }
+  } catch (_) {
     data = null;
   }
 
   if (!res.ok) {
-    const msg = data?.detail || `HTTP ${res.status}`;
-    const error = new Error(msg);
+    const message =
+      (data && typeof data === 'object' && (data.detail || data.message)) ||
+      (typeof data === 'string' && data) ||
+      `HTTP ${res.status}`;
+    const error = new Error(message);
     error.status = res.status;
-    error.data = data;
+    error.body = data;
     throw error;
   }
 
