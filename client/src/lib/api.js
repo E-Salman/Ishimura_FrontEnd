@@ -22,7 +22,9 @@ export function getBaseUrl() {
 }
 
 export async function getMarcas(signal) {
-  const res = await fetch(`${BASE}/marcas`, { signal });
+  const token = getAuthToken?.();
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const res = await fetch(`${BASE}/marcas`, { signal, ...(headers ? { headers } : {}) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -39,9 +41,11 @@ export async function getMarcaFirstImageUrl(marcaId, signal) {
 }
 
 export async function getLineasByMarca(marcaId, signal) {
+  const token = getAuthToken?.();
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
   // Endpoint principal visto en tu backend
   try {
-    const res = await fetch(`${BASE}/listarColeLineas/lineas/marca/${marcaId}`, { signal });
+    const res = await fetch(`${BASE}/listarColeLineas/lineas/marca/${marcaId}`, { signal, ...(headers ? { headers } : {}) });
     if (res.ok) {
       const json = await res.json();
       return Array.isArray(json) ? json : [];
@@ -51,7 +55,7 @@ export async function getLineasByMarca(marcaId, signal) {
   }
   // Alternativa por querystring si cambian rutas
   try {
-    const res = await fetch(`${BASE}/lineas?marcaId=${encodeURIComponent(marcaId)}`, { signal });
+    const res = await fetch(`${BASE}/lineas?marcaId=${encodeURIComponent(marcaId)}`, { signal, ...(headers ? { headers } : {}) });
     if (res.ok) {
       const json = await res.json();
       return Array.isArray(json) ? json : [];
@@ -63,6 +67,8 @@ export async function getLineasByMarca(marcaId, signal) {
 // Obtiene coleccionables con filtros opcionales de marca y línea.
 // Prioriza los endpoints listados en tu backend (listarColeLineas + catálogo).
 export async function getColeccionables({ marcaId = null, lineaId = null } = {}, signal) {
+  const token = getAuthToken?.();
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
   const isAll = !marcaId && !lineaId;
   const paths = [];
   if (lineaId) {
@@ -76,7 +82,7 @@ export async function getColeccionables({ marcaId = null, lineaId = null } = {},
   let lastStatus = 0;
   for (const p of paths) {
     try {
-      const res = await fetch(p, { signal });
+      const res = await fetch(p, { signal, ...(headers ? { headers } : {}) });
       lastStatus = res.status;
       if (res.ok) {
         const json = await res.json();
@@ -311,9 +317,12 @@ export async function getNewArrivals({ limit = 12 } = {}, signal) {
     return Number.isNaN(t) ? null : t;
   }
 
+  const token = getAuthToken?.();
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
   // 1) catálogo
   try {
-    const res = await fetch(`${BASE}/catalogo`, { signal });
+    const res = await fetch(`${BASE}/catalogo`, { signal, ...(headers ? { headers } : {}) });
     if (res.ok) {
       const json = await res.json();
       let arr = Array.isArray(json) ? json : null;
