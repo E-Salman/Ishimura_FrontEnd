@@ -2,16 +2,18 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getWishlist, removeFromWishlist, addToCart } from "../lib/api";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
+import { useAuth } from "../context/AuthContext";
 
 const Wishlist = () => {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { token } = useAuth();
 
   useEffect(() => {
     const fetchWishlist = async () => {
       try {
-        const data = await getWishlist();
+        const data = await getWishlist(token);
         setWishlist(data);
       } catch (error) {
         console.error("Error al cargar wishlist:", error);
@@ -25,7 +27,7 @@ const Wishlist = () => {
 
   const eliminarDeWishlist = async (id) => {
     try {
-      await removeFromWishlist(id);
+      await removeFromWishlist(token, id);
       setWishlist((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
       console.error("Error al eliminar producto:", error);
@@ -68,7 +70,7 @@ const Wishlist = () => {
             (it) => String(it.coleccionableId) === String(id)
           );
           try {
-            await addToCart(id, { cantidad: 1 });
+            await addToCart(token, id, { cantidad: 1 });
           } catch (e) {
             console.warn("Error al agregar al carrito desde wishlist", e);
             const msg = String(e?.message || "");

@@ -6,17 +6,19 @@ import {
   updateCartItemQuantity,
 } from "../lib/api";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
+import { useAuth } from "../context/AuthContext";
 
 const Carrito = () => {
   const [carrito, setCarrito] = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const { token } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCarrito = async () => {
       try {
-        const data = await getCart();
+        const data = await getCart(token);
         setCarrito(data);
         calcularTotal(data);
       } catch (error) {
@@ -38,7 +40,7 @@ const Carrito = () => {
 
   const eliminarDelCarrito = async (idProducto) => {
     try {
-      await removeCartItem(idProducto);
+      await removeCartItem(token, idProducto);
       const nuevoCarrito = carrito.filter((item) => item.id !== idProducto);
       setCarrito(nuevoCarrito);
       calcularTotal(nuevoCarrito);
@@ -53,7 +55,7 @@ const Carrito = () => {
         await eliminarDelCarrito(rowId);
         return;
       }
-      const updated = await updateCartItemQuantity(rowId, nuevaCantidad);
+      const updated = await updateCartItemQuantity(token, rowId, nuevaCantidad);
       setCarrito((prev) => {
         const next = prev.map((it) =>
           it.id === rowId ? { ...it, cantidad: updated?.cantidad ?? nuevaCantidad } : it
