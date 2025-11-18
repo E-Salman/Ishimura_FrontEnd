@@ -18,7 +18,7 @@ function parseCatalogItem(raw) {
 
 export default function AdminPanel() {
   const navigate = useNavigate();
-  
+
   const { token, isAdmin } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -91,9 +91,23 @@ export default function AdminPanel() {
         setError(null);
         const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
         const res = await fetch(`${BASE}/catalogo`, { headers });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        const arr = Array.isArray(json) ? json : [];
+        let data;
+        try {
+          data = await res.json();
+        } catch (err) {
+          console.log(err);
+          data = null;
+        }
+        if (!res.ok) {
+          //throw new Error(`HTTP ${res.status}`);
+          const msg = data?.detail || `HTTP ${res.status}`;
+          const error = new Error(msg);
+          error.status = res.status;
+          error.data = data;
+          throw error;
+        }
+        //const json = await res.json();
+        const arr = Array.isArray(data) ? data : [];
         const mapped = arr.map(parseCatalogItem).filter((x) => x.id != null);
         if (!cancelled) setRows(mapped);
       } catch (e) {
@@ -530,6 +544,9 @@ export default function AdminPanel() {
           <NavLink to="/admin/crear-coleccionable" className="rounded-md bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30">
             Agregar Producto
           </NavLink>
+          <NavLink to="/admin/compras" className="rounded-md bg-white/10 px-4 py-2 text-sm font-bold text-white hover:bg-white/20">
+            Ver compras
+          </NavLink>
         </div>
       </div>
 
@@ -593,8 +610,7 @@ export default function AdminPanel() {
               const st = Number(r.stock || 0);
               const status = st <= 0 ? { label: "Sin stock", class: "bg-red-500/20 text-red-300" }
                 : st <= lowThreshold ? { label: "Bajo stock", class: "bg-yellow-500/20 text-yellow-300" }
-                  : { label: "En stock", class: "bg-emerald-500/20 text-emerald-300" };
-              const discount = d?.descuento ?? d?.discount ?? null;
+                : { label: "En stock", class: "bg-emerald-500/20 text-emerald-300" };
               const busy = busyIds.has(String(r.id));
               return (
                 <tr key={r.id} className="hover:bg-white/5">
@@ -981,7 +997,20 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
       }
       const json = await res.json().catch(() => null);
       let newImgUrl = null;
-
+      if (files.length > 0) {
+        const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
+        if (replaceMain) {
+          try {
+            await fetch(`${base}/imagenes/coleccionable/${encodeURIComponent(local.id)}?mode=first`, { method: 'DELETE', headers: authHeader });
+          } catch (_) {}
+        }
+        const up = await uploadColeccionableImages(local.id, files, { token });
+        if (!up?.ok) throw new Error('Cambios guardados, pero error subiendo imágenes');
+        try {
+          const resImg = await fetch(`${base}/coleccionable/${encodeURIComponent(local.id)}/imagenes/0`, { headers: authHeader });
+          if (resImg.ok) { const blob = await resImg.blob(); newImgUrl = URL.createObjectURL(blob); }
+        } catch (_) {}
+      }
 
       const updated = {
         id: local.id,
@@ -1073,46 +1102,46 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
               </div>
             </div>
 
-            {/* Imágenes */}
-            <div className="pt-2">
-              <label className="mb-1 block text-xs text-white/70">Imagen principal</label>
-              <div className="flex items-start gap-4">
-                <div className="h-24 w-24 overflow-hidden rounded bg-white/10">
-                  {edit?.imagenUrl ? (
-                    <img src={edit.imagenUrl} alt="actual" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="grid h-full w-full place-items-center text-xs text-white/50">Sin imagen</div>
-                  )}
-                </div>
-                <div className="grow">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    multiple
-                    onChange={(e) => {
-                      const list = Array.from(e.target.files || []);
-                      const allowed = ["image/jpeg", "image/png", "image/jpg"];
-                      const selected = list.filter((f) => allowed.includes(f.type) || /\.(jpe?g|png)$/i.test(f.name));
-                      try { previews.forEach((u) => URL.revokeObjectURL(u)); } catch { }
-                      setFiles(selected);
-                      setPreviews(selected.map((f) => URL.createObjectURL(f)));
-                    }}
-                    className="block w-full text-sm text-white file:mr-3 file:rounded-md file:border-0 file:bg-primary/20 file:px-3 file:py-2 file:text-white hover:file:bg-primary/30"
-                  />
-                  {previews.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {previews.map((u, idx) => (
-                        <img key={idx} src={u} alt="preview" className="h-16 w-16 rounded object-cover" />
-                      ))}
-                    </div>
-                  )}
-                  <label className="mt-2 flex items-center gap-2 text-xs text-white/70">
-                    <input type="checkbox" checked={replaceMain} onChange={(e) => setReplaceMain(e.target.checked)} />
-                    Reemplazar imagen principal (borra la actual)
-                  </label>
-                </div>
+          {/* Imágenes */}
+          <div className="pt-2">
+            <label className="mb-1 block text-xs text-white/70">Imagen principal</label>
+            <div className="flex items-start gap-4">
+              <div className="h-24 w-24 overflow-hidden rounded bg-white/10">
+                {edit?.imagenUrl ? (
+                  <img src={edit.imagenUrl} alt="actual" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="grid h-full w-full place-items-center text-xs text-white/50">Sin imagen</div>
+                )}
+              </div>
+              <div className="grow">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  multiple
+                  onChange={(e) => {
+                    const list = Array.from(e.target.files || []);
+                    const allowed = ["image/jpeg","image/png","image/jpg"];
+                    const selected = list.filter((f) => allowed.includes(f.type) || /\.(jpe?g|png)$/i.test(f.name));
+                    try { previews.forEach((u) => URL.revokeObjectURL(u)); } catch {}
+                    setFiles(selected);
+                    setPreviews(selected.map((f) => URL.createObjectURL(f)));
+                  }}
+                  className="block w-full text-sm text-white file:mr-3 file:rounded-md file:border-0 file:bg-primary/20 file:px-3 file:py-2 file:text-white hover:file:bg-primary/30"
+                />
+                {previews.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {previews.map((u, idx) => (
+                      <img key={idx} src={u} alt="preview" className="h-16 w-16 rounded object-cover" />
+                    ))}
+                  </div>
+                )}
+                <label className="mt-2 flex items-center gap-2 text-xs text-white/70">
+                  <input type="checkbox" checked={replaceMain} onChange={(e) => setReplaceMain(e.target.checked)} />
+                  Reemplazar imagen principal (borra la actual)
+                </label>
               </div>
             </div>
+          </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" onClick={() => setEdit({ open: false })} className="rounded-md bg-gray-600 px-4 py-2 text-white hover:bg-gray-500">Cancelar</button>
