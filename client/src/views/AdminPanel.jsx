@@ -413,79 +413,19 @@ export default function AdminPanel() {
     try {
       setCreatingLinea(true);
       setNewLineaError(null);
-      const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
-      const jsonHeaders = { "Content-Type": "application/json", ...authHeader };
-      const attempts = [
-        { url: `${BASE}/lineas/crear`, body: { nombre, marcaId: marcaIdValue }, headers: jsonHeaders },
-        { url: `${BASE}/lineas/crear`, body: { nombre, marca: marcaIdValue }, headers: jsonHeaders },
-        { url: `${BASE}/lineas/crear`, body: { nombre, marca: { id: marcaIdValue } }, headers: jsonHeaders },
-        { url: `${BASE}/lineas/crear`, body: { nombre, marca: { marcaId: marcaIdValue } }, headers: jsonHeaders },
-        { url: `${BASE}/lineas/crear`, body: { nombre, marca_id: marcaIdValue }, headers: jsonHeaders },
-        { url: `${BASE}/lineas/crear`, body: { nombre, idMarca: marcaIdValue }, headers: jsonHeaders },
-        { url: `${BASE}/lineas`, body: { nombre, marcaId: marcaIdValue }, headers: jsonHeaders },
-        { url: `${BASE}/lineas`, body: { nombre, marca: marcaIdValue }, headers: jsonHeaders },
-        { url: `${BASE}/lineas`, body: { nombre, marca: { id: marcaIdValue } }, headers: jsonHeaders },
-        { url: `${BASE}/lineas`, body: { nombre, marca_id: marcaIdValue }, headers: jsonHeaders },
-        { url: `${BASE}/lineas/crear?nombre=${encodeURIComponent(nombre)}&marcaId=${encodeURIComponent(targetMarcaId)}`, body: null, headers: authHeader },
-        { url: `${BASE}/marcas/${encodeURIComponent(targetMarcaId)}/lineas`, body: { nombre, marcaId: marcaIdValue }, headers: jsonHeaders },
-        { url: `${BASE}/marcas/${encodeURIComponent(targetMarcaId)}/lineas`, body: { nombre, marca: marcaIdValue }, headers: jsonHeaders },
-        { url: `${BASE}/marcas/${encodeURIComponent(targetMarcaId)}/lineas`, body: { nombre }, headers: jsonHeaders },
-        (() => {
-          const fd = new FormData();
-          fd.append("nombre", nombre);
-          fd.append("marcaId", String(targetMarcaId));
-          return { url: `${BASE}/lineas/crear`, body: fd, headers: authHeader };
-        })(),
-        (() => {
-          const fd = new FormData();
-          fd.append("nombre", nombre);
-          fd.append("marca", String(targetMarcaId));
-          return { url: `${BASE}/lineas/crear`, body: fd, headers: authHeader };
-        })(),
-        (() => {
-          const fd = new FormData();
-          fd.append("nombre", nombre);
-          fd.append("marca_id", String(targetMarcaId));
-          return { url: `${BASE}/lineas/crear`, body: fd, headers: authHeader };
-        })(),
-        (() => {
-          const fd = new FormData();
-          fd.append("nombre", nombre);
-          fd.append("idMarca", String(targetMarcaId));
-          return { url: `${BASE}/lineas/crear`, body: fd, headers: authHeader };
-        })(),
-        { url: `${BASE}/lineas/crear/${encodeURIComponent(targetMarcaId)}`, body: { nombre }, headers: jsonHeaders },
-      ];
-
-      let created = null;
-      let lastError = null;
-      for (const attempt of attempts) {
-        try {
-          const opts = {
-            method: "POST",
-            headers: attempt.body instanceof FormData
-              ? attempt.headers
-              : { "Content-Type": "application/json", ...(attempt.headers || {}) },
-            body: attempt.body instanceof FormData
-              ? attempt.body
-              : attempt.body != null
-                ? JSON.stringify(attempt.body)
-                : undefined,
-          };
-          const res = await fetch(attempt.url, opts);
-          if (res.ok) {
-            created = await res.json().catch(() => null);
-            break;
-          }
-          const txt = await res.text().catch(() => null);
-          lastError = txt || `HTTP ${res.status}`;
-        } catch (err) {
-          lastError = err?.message || String(err);
-        }
+      const headers = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+      // el backend valida idMarca, por eso lo enviamos junto al nombre
+      const payloadLinea = { nombre, marcaId: marcaIdValue, idMarca: marcaIdValue };
+      const res = await fetch(`${BASE}/lineas/crear`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payloadLinea),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => null);
+        throw new Error(txt || `HTTP ${res.status}`);
       }
-      if (!created) {
-        throw new Error(lastError || "No se pudo crear la linea.");
-      }
+      const created = await res.json().catch(() => null);
 
       const arr = await fetch(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(targetMarcaId)}`).then((r) => (r.ok ? r.json() : []));
       setMarcaId(String(targetMarcaId));
