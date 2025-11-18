@@ -417,15 +417,8 @@ export async function createOrder(token, dto, signal) {
   return data;
 }
 
-
-export async function getUserOrders(token, signal) {
+export async function getUserOrders(token, email, signal) {
   if (!token) throw new Error('No auth token');
-  const email =
-    (typeof localStorage !== 'undefined' && (
-      localStorage.getItem('ishimura_email') ||
-      localStorage.getItem('email')
-    )) ||
-    null;
 
   const headers = {
     Authorization: `Bearer ${token}`,

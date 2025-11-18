@@ -106,7 +106,7 @@ export default function MisCompras() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getUserOrders(token, controller.signal);
+        const data = await getUserOrders(token, user, controller.signal);
         setOrders(Array.isArray(data) ? data.map(normalizeOrder) : []);
       } catch (e) {
         if (e?.message !== "No autorizado") {
