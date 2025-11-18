@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { uploadColeccionableImages, isAdminFromToken } from "../lib/api";
+import { uploadColeccionableImages, uploadMarcaImages, isAdminFromToken } from "../lib/api";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const BASE = "http://localhost:4002";
@@ -611,6 +611,7 @@ export default function AdminPanel() {
               const status = st <= 0 ? { label: "Sin stock", class: "bg-red-500/20 text-red-300" }
                 : st <= lowThreshold ? { label: "Bajo stock", class: "bg-yellow-500/20 text-yellow-300" }
                 : { label: "En stock", class: "bg-emerald-500/20 text-emerald-300" };
+              const discount = d?.descuento ?? d?.discount ?? null;
               const busy = busyIds.has(String(r.id));
               return (
                 <tr key={r.id} className="hover:bg-white/5">
