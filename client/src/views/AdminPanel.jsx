@@ -18,7 +18,7 @@ function parseCatalogItem(raw) {
 
 export default function AdminPanel() {
   const navigate = useNavigate();
-  
+
   const { token, isAdmin } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -91,9 +91,23 @@ export default function AdminPanel() {
         setError(null);
         const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
         const res = await fetch(`${BASE}/catalogo`, { headers });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        const arr = Array.isArray(json) ? json : [];
+        let data;
+        try {
+          data = await res.json();
+        } catch (err) {
+          console.log(err);
+          data = null;
+        }
+        if (!res.ok) {
+          //throw new Error(`HTTP ${res.status}`);
+          const msg = data?.detail || `HTTP ${res.status}`;
+          const error = new Error(msg);
+          error.status = res.status;
+          error.data = data;
+          throw error;
+        }
+        //const json = await res.json();
+        const arr = Array.isArray(data) ? data : [];
         const mapped = arr.map(parseCatalogItem).filter((x) => x.id != null);
         if (!cancelled) setRows(mapped);
       } catch (e) {
@@ -529,6 +543,9 @@ export default function AdminPanel() {
           </button>
           <NavLink to="/admin/crear-coleccionable" className="rounded-md bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30">
             Agregar Producto
+          </NavLink>
+          <NavLink to="/admin/compras" className="rounded-md bg-white/10 px-4 py-2 text-sm font-bold text-white hover:bg-white/20">
+            Ver compras
           </NavLink>
         </div>
       </div>

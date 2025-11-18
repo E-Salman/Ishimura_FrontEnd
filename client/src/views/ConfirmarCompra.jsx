@@ -27,7 +27,7 @@ const ConfirmarCompra = () => {
 
   const handleConfirmar = async () => {
     if (!tarjeta || Object.values(direccion).some((v) => v === "")) {
-      setMensaje("Por favor completá todos los campos.");
+      setMensaje("Por favor completǭ todos los campos.");
       return;
     }
 
@@ -45,8 +45,7 @@ const ConfirmarCompra = () => {
       setMensaje("Compra confirmada");
       setTimeout(() => navigate("/home"), 2000);
     } catch (error) {
-      console.error("Error de conexión:", error);
-      setMensaje("Error de conexión con el servidor.");
+      setMensaje("" + error);
     }
   };
 
@@ -80,7 +79,7 @@ const ConfirmarCompra = () => {
                   type="text"
                   name="numero"
                   className="w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  placeholder="Número"
+                  placeholder="Nǧmero"
                   value={direccion.numero}
                   onChange={handleChange}
                 />
@@ -113,13 +112,13 @@ const ConfirmarCompra = () => {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-white/60">
-                  Código postal
+                  Codigo postal
                 </label>
                 <input
                   type="text"
                   name="codigoPostal"
                   className="w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  placeholder="Código postal"
+                  placeholder="Codigo postal"
                   value={direccion.codigoPostal}
                   onChange={handleChange}
                 />
