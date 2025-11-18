@@ -45,18 +45,7 @@ const ConfirmarCompra = () => {
       setMensaje("Compra confirmada");
       setTimeout(() => navigate("/home"), 2000);
     } catch (error) {
-      console.error("Error al crear la orden:", error);
-
-      const status = error?.status;
-      const body = error?.body;
-
-      if (status === 422 && body && (body.detail || body.message)) {
-        setMensaje(body.detail || body.message);
-      } else if (status && error.message) {
-        setMensaje(error.message);
-      } else {
-        setMensaje("Error de conexion con el servidor.");
-      }
+      setMensaje("" + error);
     }
   };
 

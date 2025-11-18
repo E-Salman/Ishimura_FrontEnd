@@ -94,9 +94,7 @@ function formatMoney(amount) {
 }
 
 export default function MisCompras() {
-  const { user } = useAuth();
-  const token = useMemo(() => user?.token || localStorage.getItem("ishimura_token") || null, [user]);
-
+  const { user, token } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -108,7 +106,7 @@ export default function MisCompras() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getUserOrders(controller.signal);
+        const data = await getUserOrders(token, user, controller.signal);
         setOrders(Array.isArray(data) ? data.map(normalizeOrder) : []);
       } catch (e) {
         if (e?.message !== "No autorizado") {

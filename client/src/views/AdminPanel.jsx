@@ -18,7 +18,7 @@ function parseCatalogItem(raw) {
 
 export default function AdminPanel() {
   const navigate = useNavigate();
-  
+
   const { token, isAdmin } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export default function AdminPanel() {
   useEffect(() => {
     return () => {
       if (newMarcaPreview) {
-        try { URL.revokeObjectURL(newMarcaPreview); } catch (_) {}
+        try { URL.revokeObjectURL(newMarcaPreview); } catch (_) { }
       }
     };
   }, [newMarcaPreview]);
@@ -82,9 +82,23 @@ export default function AdminPanel() {
         setError(null);
         const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
         const res = await fetch(`${BASE}/catalogo`, { headers });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        const arr = Array.isArray(json) ? json : [];
+        let data;
+        try {
+          data = await res.json();
+        } catch (err) {
+          console.log(err);
+          data = null;
+        }
+        if (!res.ok) {
+          //throw new Error(`HTTP ${res.status}`);
+          const msg = data?.detail || `HTTP ${res.status}`;
+          const error = new Error(msg);
+          error.status = res.status;
+          error.data = data;
+          throw error;
+        }
+        //const json = await res.json();
+        const arr = Array.isArray(data) ? data : [];
         const mapped = arr.map(parseCatalogItem).filter((x) => x.id != null);
         if (!cancelled) setRows(mapped);
       } catch (e) {
@@ -119,7 +133,7 @@ export default function AdminPanel() {
             const res2 = await fetch(`${BASE}/coleccionable/${id}/imagenes/0`, { signal: controller.signal, headers: authHeaders });
             if (res2.ok) { const blob = await res2.blob(); imgUrl = URL.createObjectURL(blob); }
           }
-        } catch (_) {}
+        } catch (_) { }
         if (!cancelled) {
           setDetails((prev) => {
             const next = new Map(prev);
@@ -160,7 +174,7 @@ export default function AdminPanel() {
   // Cargar marcas para filtros y gestión
   useEffect(() => {
     const controller = new AbortController();
-    refreshMarcas(controller.signal).catch(() => {});
+    refreshMarcas(controller.signal).catch(() => { });
     return () => controller.abort();
   }, [refreshMarcas]);
 
@@ -237,7 +251,7 @@ export default function AdminPanel() {
             return r;
           }));
         }
-      } catch (_) {}
+      } catch (_) { }
     } catch (e) {
       alert(`No se pudo actualizar el stock: ${e?.message || e}`);
     } finally {
@@ -337,7 +351,7 @@ export default function AdminPanel() {
       await refreshMarcas();
       setNewMarca({ nombre: "" });
       if (newMarcaPreview) {
-        try { URL.revokeObjectURL(newMarcaPreview); } catch (_) {}
+        try { URL.revokeObjectURL(newMarcaPreview); } catch (_) { }
       }
       setNewMarcaPreview(null);
       setNewMarcaFile(null);
@@ -461,7 +475,7 @@ export default function AdminPanel() {
               const st = Number(r.stock || 0);
               const status = st <= 0 ? { label: "Sin stock", class: "bg-red-500/20 text-red-300" }
                 : st <= lowThreshold ? { label: "Bajo stock", class: "bg-yellow-500/20 text-yellow-300" }
-                : { label: "En stock", class: "bg-emerald-500/20 text-emerald-300" };
+                  : { label: "En stock", class: "bg-emerald-500/20 text-emerald-300" };
               const busy = busyIds.has(String(r.id));
               return (
                 <tr key={r.id} className="hover:bg-white/5">
@@ -549,7 +563,7 @@ export default function AdminPanel() {
                   setNewMarcaFile(file);
                   setNewMarcaPreview((prev) => {
                     if (prev) {
-                      try { URL.revokeObjectURL(prev); } catch (_) {}
+                      try { URL.revokeObjectURL(prev); } catch (_) { }
                     }
                     return file ? URL.createObjectURL(file) : null;
                   });
@@ -580,7 +594,7 @@ export default function AdminPanel() {
                       setNewMarcaFile(null);
                       setNewMarcaPreview((prev) => {
                         if (prev) {
-                          try { URL.revokeObjectURL(prev); } catch (_) {}
+                          try { URL.revokeObjectURL(prev); } catch (_) { }
                         }
                         return null;
                       });
@@ -672,7 +686,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
   useEffect(() => {
     // revoke previews on unmount or when files change
     return () => {
-      try { previews.forEach((u) => URL.revokeObjectURL(u)); } catch {}
+      try { previews.forEach((u) => URL.revokeObjectURL(u)); } catch { }
     };
   }, [previews]);
 
@@ -724,14 +738,14 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
         if (replaceMain) {
           try {
             await fetch(`${base}/imagenes/coleccionable/${encodeURIComponent(local.id)}?mode=first`, { method: 'DELETE', headers: authHeader });
-          } catch (_) {}
+          } catch (_) { }
         }
         const up = await uploadColeccionableImages(local.id, files, { token });
         if (!up?.ok) throw new Error('Cambios guardados, pero error subiendo imágenes');
         try {
           const resImg = await fetch(`${base}/coleccionable/${encodeURIComponent(local.id)}/imagenes/0`, { headers: authHeader });
           if (resImg.ok) { const blob = await resImg.blob(); newImgUrl = URL.createObjectURL(blob); }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       const updated = {
@@ -818,9 +832,9 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
                   multiple
                   onChange={(e) => {
                     const list = Array.from(e.target.files || []);
-                    const allowed = ["image/jpeg","image/png","image/jpg"];
+                    const allowed = ["image/jpeg", "image/png", "image/jpg"];
                     const selected = list.filter((f) => allowed.includes(f.type) || /\.(jpe?g|png)$/i.test(f.name));
-                    try { previews.forEach((u) => URL.revokeObjectURL(u)); } catch {}
+                    try { previews.forEach((u) => URL.revokeObjectURL(u)); } catch { }
                     setFiles(selected);
                     setPreviews(selected.map((f) => URL.createObjectURL(f)));
                   }}
