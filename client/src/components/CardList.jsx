@@ -1,30 +1,30 @@
 import { use, useEffect, useState } from "react"
 import PostCard from "./PostCard"
-import { useDispatch, useSelector } from "react-redux"
+import { useDispatch, useSelector } from 'react-redux'
 
 const CardList = () => {
-    const dispatch = useDispatch();
-    const {items, eror, loading} = useSelector((state) => state.posts);
+    const dispatch = useDispatch()
+    const { items, error, loading } = useSelector((state) => state.posts)
 
-    useEffect(() => {
-        dispatch(fetchPosts());
-    }, [dispatch]);
+    useEffect(()=>{
+        dispatch(fetchPosts())
+    }, [dispatch])
 
-    if (loading) return <p>Cargando Publicaciones...</p>;
-    if (error) return <p>Error al cargar publicaciones: {error} </p>;
+   if (loading) return <p>Cargando Publicaciones...</p>;
+   if (error) return <p>Error al cargar publicaciones: {error} </p>;
 
     return (
         <>
             <h1>asopdkasopdmkaspdfm</h1>
             <div>
                 {
-                    items.map((post) => (//Para cada post en posts, renderiza un PostCard con los datos especificados
+                    items.map((item) => (//Para cada post en posts, renderiza un PostCard con los datos especificados
                         <PostCard
-                            key={post.id}
-                            id={post.id}
-                            title={post.title}
-                            body={post.body}
-                            userId={post.userId}
+                            key={item.id}
+                            id={item.id}
+                            title={item.title}
+                            body={item.body}
+                            userId={item.userId}
                         />
                     ))
                 }
