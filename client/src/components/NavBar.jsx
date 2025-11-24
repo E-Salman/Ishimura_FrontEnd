@@ -30,7 +30,9 @@ const linkInactive =
 const linkActive = "text-primary";
 
 const NavBar = () => {
-  const { user, logout, isAdmin } = useAuth();
+  //const { user, logout, isAdmin } = useAuth();
+  const user = null;
+  const isAdmin = false;
   const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
@@ -53,7 +55,7 @@ const NavBar = () => {
 
 const handleLogout = () => {
   try {
-    logout();            // limpia contexto + localStorage
+    //logout();            // limpia contexto + localStorage
   } finally {
     setOpen(false);      // cierra el menú
     navigate("/login", { replace: true }); // redirección segura
@@ -64,7 +66,6 @@ const goToPurchases = () => {
   setOpen(false);
   navigate("/mis-compras");
 };
-
 
   // SEARCH STATE
   const [q, setQ] = useState("");

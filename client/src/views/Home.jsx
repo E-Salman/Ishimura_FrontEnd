@@ -1,8 +1,20 @@
 import ColeccionableDestacado from "../components/ColeccionableDestacado";
 import HomeCarousel from "../components/HomeCarousel";
 import { NavLink } from "react-router-dom";
+import { useEffect } from "react"
+import { fetchDestacados } from "../redux/colDestacadosSlice";
+import { useDispatch } from "react-redux";
 
 const Home = () => {
+    const dispatch = useDispatch();
+    const idsDestacados = useMemo(() => [1, 2, 3, 4], []); //con useMemo se crea una sola vez el arreglo
+
+    useEffect(() => {
+        for (const colId of idsDestacados) {
+            dispatch(fetchDestacados(colId))
+        }
+    }, [idsDestacados, dispatch]) //idDestacados no puede ir aca asi nomas porque con cada render se crea un arreglo nuevo, entonces se termina llamando infinitamente
+
     return (
         <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
             <div className="flex h-full grow flex-col">
@@ -17,15 +29,15 @@ const Home = () => {
                         <section className="py-12">
                             <h2 className="mb-6 text-2xl font-bold text-[rgb(79_255_207_/var(--tw-bg-opacity,1))]">Figuras Destacadas</h2>
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                                {[1, 2, 3, 4].map((id) => (
+                                {idsDestacados.map(colId => (
                                     <NavLink
-                                        key={id}
-                                        to={`/coleccionable/${id}`}
+                                        key={colId}
+                                        to={`/coleccionable/${colId}`}
                                         className="group mx-auto w-full max-w-[250px] transition-transform duration-300 hover:scale-105"
-                                        state={{ id }} // You can pass extra data if needed
+                                        state={{ colId }}
                                     >
                                         <div className="overflow-hidden rounded-lg aspect-[3/4]">
-                                            <ColeccionableDestacado colId={id} />
+                                            <ColeccionableDestacado colId={colId} />
                                         </div>
                                     </NavLink>
                                 ))}
@@ -40,10 +52,10 @@ const Home = () => {
                                     </NavLink>
                                 </div>
                             )}
-                        </section>                                                
+                        </section>
                     </div>
                 </main>
-                
+
             </div>
         </div>
     )

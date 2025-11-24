@@ -1,6 +1,3 @@
-// Componente presentacional reutilizable para un coleccionable en formato tarjeta
-// No depende de configuración adicional: usa Tailwind por CDN ya cargado en index.html
-
 function formatPrice(value, currency = "USD") {
   if (value == null || value === "") return "";
   const num = typeof value === "string" ? Number(value) : value;

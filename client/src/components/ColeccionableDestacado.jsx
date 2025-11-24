@@ -1,68 +1,25 @@
 import { useEffect, useState } from "react"
 import Coleccionable from "./Coleccionable";
-import Imagen from "./Imagen";
+import { fetchDestacados } from "../redux/colDestacadosSlice";
+import { useDispatch, useSelector } from "react-redux";
 
-const ColeccionableDestacado = ({ colId }) => {
-    const [coleccionable, setColeccionable] = useState({})
-    const [coleccionables, setColeccionables] = useState([])
-    const [nombre, setNombre] = useState("")
-    const [descripcion, setDescription] = useState("")
-    const [precio, setPrecio] = useState(0)
-    const [linea_id, setLinea_id] = useState()
-    const [token, setToken] = useState("")
-    const [imagen, setImagen] = useState(null)
-    const URLColeccionable = `http://localhost:4002/coleccionable/${colId}`//"http://localhost:4002/coleccionable/${colId}"
-    const URLImagen = `http://localhost:4002/coleccionable/${colId}/imagenes/0`
+const ColeccionableDestacado = ({ colId }) => {    
+    const { coleccionables } = useSelector((state) => state.destacados)
+    if (!coleccionables || !coleccionables[colId]) return <p>Cargando...</p>
+    const { loading, error } = coleccionables[colId]
 
-    const options = {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    }
+    if(loading) return <p>Cargando!</p>
+    if(error) return <p>error: {error}</p>
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const res1 = await fetch(URLColeccionable, options);
-                const coleccionableData = await res1.json();
-                setColeccionable(coleccionableData);
-
-                const res2 = await fetch(URLImagen);
-                const blob = await res2.blob();
-                const imagenBlob = URL.createObjectURL(blob);
-                setImagen(imagenBlob);
-            }
-            catch (err) {
-                console.error("Error al obtener los datos", err)
-            }
-        };
-        fetchData();
-        return () => {
-            if (imagen) URL.revokeObjectURL(imagen);
-        };
-    }, [colId]); //Se vuelve a correr este useEffect cada vez que colId cambie
-
-    /*
-        useEffect(() => {
-            fetch(URL, options)        
-            .then((response) => {
-                return response.json()
-            })        
-            .then((data) => {
-                setColeccionable(data)
-            })
-            .catch((error)=>{
-                console.error("Error al obtener los datos")
-            })        
-        }, []) //Con [] vacio, corre una sola vez*/
-
+    const {coleccionable, imagen } = coleccionables[colId]
+    const url = URL.createObjectURL(imagen)
+    
     return (
         <div style={{ textAlign: 'left' }}>
             {
-                imagen ? (
+                url ? (
                     <img
-                        src={imagen}
+                        src={url}
                         alt="Coleccionable"
                         style={{
                             width: 200,
@@ -84,26 +41,5 @@ const ColeccionableDestacado = ({ colId }) => {
             />
         </div>
     )
-
-    //Mover a un crear coleccionable
-    /*const options = {
-        method: 'POST',
-        header: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({nombre, description, precio, linea_id})
-    }
-
-    useEffect(()=>{
-        fetch(URL, options)
-        .then((response) => response.json)
-        .then((data) => {
-            setColeccionables([...coleccionables, {data}])
-        })
-        .catch((error)=>{
-            console.error("Error al obtener los datos")
-        })
-    }, [coleccionables])*/
 }
 export default ColeccionableDestacado
