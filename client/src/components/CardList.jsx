@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import PostCard from "./PostCard"
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -10,8 +10,8 @@ const CardList = () => {
         dispatch(fetchPosts())
     }, [dispatch])
 
-    if(loading) return <p>cargando</p>
-    if(error) return <p>error</p>
+   if (loading) return <p>Cargando Publicaciones...</p>;
+   if (error) return <p>Error al cargar publicaciones: {error} </p>;
 
     return (
         <>
