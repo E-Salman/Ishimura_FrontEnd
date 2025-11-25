@@ -149,6 +149,7 @@ export default function AdminPanel() {
   }, [refreshMarcas]);
 
   // Cargar lineas al elegir marca (Redux)
+  // Cargar lineas al elegir marca (Redux)
   useEffect(() => {
     setLineaId("");
     if (!marcaId) return;
