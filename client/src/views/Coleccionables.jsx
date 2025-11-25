@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { useDispatch, useSelector } from 'react-redux';
 import { addCartItem } from '../redux/cartSlice';
-import { fetchWishlist, removeFromWishlist } from '../redux/wishlistSlice';
+import { addToWishlist, fetchWishlist, removeFromWishlist } from '../redux/wishlistSlice';
 import {
   fetchMarcas as fetchMarcasCat,
   fetchLineasByMarca as fetchLineasCat,
@@ -19,8 +19,8 @@ import {
 } from '../redux/coleccionablesSlice';
 
 const SORTS = [
-  { id: 'alpha-desc', label: 'Alfabético Z→A' }, // default
-  { id: 'alpha-asc', label: 'Alfabético A→Z' },
+  { id: 'alpha-desc', label: 'Alfabetico Z-A' }, // default
+  { id: 'alpha-asc', label: 'Alfabetico A-Z' },
   { id: 'price-desc', label: 'Precio: mayor a menor' },
   { id: 'price-asc', label: 'Precio: menor a mayor' },
 ];
@@ -50,10 +50,11 @@ export default function ColeccionablesView() {
   const loadingStatus = useSelector(selectColeccionablesStatus);
   const error = useSelector(selectColeccionablesError);
   const [q, setQ] = useState(initialQ);
-  const wishlist = useSelector((state) => state.wishlist);
+  const { items: wishlistItems = [] } = useSelector((state) => state.wishlist);
   const detallesById = useSelector((state) => state.coleccionables.detallesById || {});
   const previewsById = useSelector((state) => state.coleccionables.previewsById || {});
   const token = useSelector((state) => state.login.token)
+  const requestedRef = useRef({ detail: new Set(), preview: new Set(), image: new Set() });
   useEffect(() => { setQ(searchParams.get('q') || ''); }, [searchParams]);
 
   // Load marcas at start
@@ -135,26 +136,10 @@ export default function ColeccionablesView() {
     };
   }, [lineOpen]);
 
-  // Load items according to filters
+  // Load items according to filters (servidor filtra por marca/línea)
   useEffect(() => {
     dispatch(fetchColeccionablesCat({ marcaId: marcaId || null, lineaId: lineaId || null, token }));
   }, [dispatch, marcaId, lineaId, token]);
-
-  // Enriquecer items con precios/imágenes via Redux
-  useEffect(() => {
-    (itemsStore || []).forEach((it) => {
-      if (!detallesById[it.id]) {
-        dispatch(fetchDetalle({ id: it.id, token }));
-      }
-      if (!previewsById[it.id]) {
-        dispatch(fetchPricePreview({ id: it.id, qty: 1 }));
-      }
-      const hasImage = detallesById[it.id]?.imagenUrl;
-      if (!hasImage && it.firstImageId != null) {
-        dispatch(fetchFirstImage({ id: it.id, token }));
-      }
-    });
-  }, [dispatch, itemsStore, detallesById, previewsById, token]);
 
   function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, ''); }
   function levenshtein(a, b) {
@@ -206,10 +191,75 @@ export default function ColeccionablesView() {
   }, [itemsStore, detallesById, previewsById]);
 
   const filteredItems = useMemo(() => {
-    if (!q) return [...enrichedItems];
     const term = q;
-    return enrichedItems.filter((it) => similarity(it?.nombre || '', term) >= 0.75 || norm(it?.nombre).includes(norm(term)));
-  }, [enrichedItems, q]);
+    return enrichedItems.filter((it) => {
+      const det = detallesById[it.id];
+      const marcaVal =
+        det?.marcaId ??
+        det?.marca_id ??
+        det?.marcaID ??
+        det?.marca?.id ??
+        it?.marcaId ??
+        it?.marca_id ??
+        it?.marcaID ??
+        it?.marca?.id ??
+        null;
+      const lineaVal =
+        det?.lineaId ??
+        det?.linea_id ??
+        det?.lineaID ??
+        det?.linea?.id ??
+        it?.lineaId ??
+        it?.linea_id ??
+        it?.lineaID ??
+        it?.linea?.id ??
+        null;
+
+      if (marcaId && marcaVal != null && String(marcaVal ?? '') !== String(marcaId)) return false;
+      if (lineaId && lineaVal != null && String(lineaVal ?? '') !== String(lineaId)) return false;
+
+      if (!term) return true;
+      return similarity(it?.nombre || '', term) >= 0.75 || norm(it?.nombre).includes(norm(term));
+    });
+  }, [enrichedItems, detallesById, marcaId, lineaId, q]);
+
+  // Enriquecer solo los ítems visibles con precios/detalle/imagen de forma acotada
+  useEffect(() => {
+    const MAX_BATCH = 6;
+    const pendingDetalles = [];
+    const pendingPreviews = [];
+    const pendingImages = [];
+
+    const sourceItems = (marcaId || lineaId) ? (itemsStore || []) : filteredItems;
+
+    sourceItems.forEach((it) => {
+      const det = detallesById[it.id];
+      if (!det && !requestedRef.current.detail.has(it.id)) {
+        pendingDetalles.push(it.id);
+      }
+      if (!previewsById[it.id] && !requestedRef.current.preview.has(it.id)) {
+        pendingPreviews.push(it.id);
+      }
+      const hasImage = det?.imagenUrl;
+      const triedImage = det?.firstImageTried;
+      if (!hasImage && !triedImage && it.firstImageId != null && !requestedRef.current.image.has(it.id)) {
+        pendingImages.push(it.id);
+      }
+    });
+
+    pendingDetalles.slice(0, MAX_BATCH).forEach((id) => {
+      requestedRef.current.detail.add(id);
+      dispatch(fetchDetalle({ id, token }));
+    });
+    pendingPreviews.slice(0, MAX_BATCH).forEach((id) => {
+      requestedRef.current.preview.add(id);
+      dispatch(fetchPricePreview({ id, qty: 1 }));
+    });
+    pendingImages.slice(0, MAX_BATCH).forEach((id) => {
+      requestedRef.current.image.add(id);
+      dispatch(fetchFirstImage({ id, token }));
+    });
+  }, [dispatch, filteredItems, itemsStore, detallesById, previewsById, token, marcaId, lineaId]);
 
   const sortedItems = useMemo(() => {
     const arr = [...filteredItems];
@@ -229,8 +279,8 @@ export default function ColeccionablesView() {
   }, [filteredItems, sort]);
 
   const wishlistIdSet = useMemo(
-    () => new Set((wishlist || []).map((w) => String(w.coleccionableId))),
-    [wishlist]
+    () => new Set((wishlistItems || []).map((w) => String(w.coleccionableId))),
+    [wishlistItems]
   );
 
   const handleAddToWishlist = async ({ id }) => {
@@ -390,7 +440,7 @@ export default function ColeccionablesView() {
           }))}
           onAddToWishlist={handleAddToWishlist}
           onAddToCart={async ({ id }) => {            
-            const row = wishlist.find(
+            const row = wishlistItems.find(
               (w) => String(w.coleccionableId) === String(id)
             );
             try {

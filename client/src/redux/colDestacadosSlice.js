@@ -2,27 +2,42 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios"
 
 export const fetchDestacados = createAsyncThunk("colDestacados/fetchDestacados", async (colId, { rejectWithValue }) => {
+    if (!colId) return rejectWithValue("Id del coleccionable invalido");
 
-    if(!colId) return rejectWithValue("Id del coleccionable invalido")
-    
-    const URLColeccionable = `http://localhost:4002/coleccionable/${colId} `//"http://localhost:4002/coleccionable/${colId}"
-    const URLImagen = `http://localhost:4002/coleccionable/${colId}/imagenes/0`
+    const asText = (val) => {
+        if (!val) return "";
+        if (typeof val === "string") return val;
+        if (typeof val === "object" && typeof val.message === "string") return val.message;
+        try { return JSON.stringify(val); } catch (_) { return String(val); }
+    };
+
+    const URLColeccionable = `http://localhost:4002/coleccionable/${colId}`;
+    const URLImagen = `http://localhost:4002/coleccionable/${colId}/imagenes/0`;
 
     const headers = {
         'Content-Type': 'application/json'
     };
 
-    /*Axios devuelve un JSON con este formato:
-    {
-        data: ...,
-        status: ...,
-        headers: ...
-    }*/
+    try {
+        const res = await axios.get(URLColeccionable, { headers, validateStatus: () => true });
+        if (res.status !== 200) {
+            return rejectWithValue(asText(res?.data) || `HTTP ${res.status}`);
+        }
 
-    const { data } = await axios.get(URLColeccionable, { headers }) //axios devuelve JSON de una
-    const { data: blobImg } = await axios.get(URLImagen, { headers, responseType: "blob" })
-    const imgURL = URL.createObjectURL(blobImg);
-    return { colId, data, imgURL }
+        let imgURL = null;
+        try {
+            const imgRes = await axios.get(URLImagen, { headers, responseType: "blob", validateStatus: (s) => s === 200 || s === 404 });
+            if (imgRes.status === 200) {
+                imgURL = URL.createObjectURL(imgRes.data);
+            }
+        } catch (_) {
+            imgURL = null;
+        }
+
+        return { colId, data: res.data, imgURL };
+    } catch (err) {
+        return rejectWithValue(asText(err?.response?.data) || err?.message || "Error cargando destacados");
+    }
 })
 
 const colDestacadosSlice = createSlice({
@@ -51,7 +66,7 @@ const colDestacadosSlice = createSlice({
             .addCase(fetchDestacados.rejected, (state, action) => { //Rejected no recibe payload
                 state.coleccionables[action.meta.arg] = {
                     loading: false,
-                    error: action.payload || action.error.message
+                    error: typeof action.payload === "string" ? action.payload : action.error.message
                 }
             })
     },
