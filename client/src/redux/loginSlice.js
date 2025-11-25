@@ -1,36 +1,39 @@
+// src/redux/loginSlice.js
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Login al backend
 export const authLogin = createAsyncThunk(
   "auth/login",
   async ({ email, password }, { rejectWithValue }) => {
     const URL = "http://localhost:4002/api/v1/auth/authenticate";
-    if (!email || !password) {
-      return rejectWithValue("Email y contraseña son obligatorios");
-    }
-    const headers = { "Content-Type": "application/json" };
-    const body = JSON.stringify({ email, password });
-    const { data } = await axios.post(URL, body, { headers });
-    return data;
-  }
-);
 
-const initialState = {
-  role: null,
-  token: null,
-  loading: false,
-  error: null,
-  kaomojiCount: 0,
-  email: null,
-};
+      const headers = {
+        "Content-Type": "application/json",
+      };
+
+      const body = JSON.stringify({ email, password });
+
+      const { data } = await axios.post(URL, body, { headers });
+
+      return data;
+    }  
+      
+);
 
 const loginSlice = createSlice({
   name: "login",
-  initialState,
+  initialState: {
+    role: null,
+    token: null,
+    email: null,
+    loading: false,
+    error: null,
+    kaomojiCount: 0,
+  },
   reducers: {
     setLogin: (state, action) => {
       const { token, role, email } = action.payload || {};
+
       state.token = token || null;
       state.role = role || null;
       state.email = email || null;
@@ -54,20 +57,20 @@ const loginSlice = createSlice({
       .addCase(authLogin.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
-        const payload = action.payload || {};
-        const data = payload?.data || payload;
-        state.role = data?.role || null;
-        state.token = data?.access_token || data?.token || null;
-        state.email = action.meta?.arg?.email || null;
+
+        state.role = action.payload.role;
+        state.token = action.payload.access_token;
+        state.email = action.meta.arg.email;
+
         state.kaomojiCount = 0;
       })
       .addCase(authLogin.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || action.error.message;
-        state.kaomojiCount = state.kaomojiCount + 1;
+        state.error = action.error.message || "Error desconocido";
+        state.kaomojiCount += 1;
       });
   },
 });
 
-export const { setLogin, logout } = loginSlice.actions;
 export default loginSlice.reducer;
+export const { setLogin, logout } = loginSlice.actions;
