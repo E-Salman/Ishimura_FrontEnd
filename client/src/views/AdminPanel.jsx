@@ -1,25 +1,30 @@
 ﻿﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import axios from "axios";
 import { NavLink, useNavigate } from "react-router-dom";
-import { uploadColeccionableImages, isAdminFromToken } from "../lib/api";
-import { useAuth } from "../context/AuthContext.jsx";
+import { useDispatch, useSelector } from "react-redux";
+import { uploadColeccionableImages, isAdminFromToken, getBaseUrl } from "../lib/api";
+import {
+  fetchCatalogo,
+  fetchLineasByMarca,
+  fetchMarcas,
+  selectAdminError,
+  selectAdminStatus,
+  selectCatalogo,
+  selectLineasByMarca,
+  selectMarcas,
+} from "../redux/adminSlice";
 
-const BASE = "http://localhost:4002";
-
-// Parser alineado con CatalogoListItemDTO { coleccionableId, nombre, precio, stock, firstImageId }
-function parseCatalogItem(raw) {
-  const c = raw ?? {};
-  const id = c?.coleccionableId ?? c?.coleccionableID ?? c?.id ?? null;
-  const stock = c?.stock ?? 0;
-  const nombre = c?.nombre ?? null;
-  const precio = c?.precio ?? null;
-  const firstImageId = c?.firstImageId ?? c?.firstImageID ?? c?.firstimageid ?? null;
-  return { id, stock, nombre, precio, firstImageId };
-}
+const BASE = getBaseUrl();
 
 export default function AdminPanel() {
   const navigate = useNavigate();
-
-  const { token, isAdmin } = useAuth();
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
+  const isAdmin = useMemo(() => isAdminFromToken(token), [token]);
+  const catalogo = useSelector(selectCatalogo);
+  const marcasStore = useSelector(selectMarcas);
+  const adminStatus = useSelector(selectAdminStatus);
+  const adminError = useSelector(selectAdminError);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,11 +34,11 @@ export default function AdminPanel() {
   const [lineas, setLineas] = useState([]);
   const [marcaId, setMarcaId] = useState("");
   const [lineaId, setLineaId] = useState("");
+  const lineasStore = useSelector((state) => selectLineasByMarca(state, marcaId || ""));
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [busyIds, setBusyIds] = useState(new Set()); // ids con acción en curso
-  const [refreshKey, setRefreshKey] = useState(0);
   const [toast, setToast] = useState(null); // { msg, type }
   const [newMarca, setNewMarca] = useState({ nombre: "" });
   const [creatingMarca, setCreatingMarca] = useState(false);
@@ -69,55 +74,49 @@ export default function AdminPanel() {
     }
   }, [marcaId]);
 
-  const refreshMarcas = useCallback(async (signal) => {
-    try {
-      const res = await fetch(`${BASE}/marcas`, { signal });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setMarcas(Array.isArray(json) ? json : []);
-      return json;
-    } catch (e) {
-      if (e?.name === "AbortError") return null;
-      throw e;
-    }
-  }, []);
-
-  // Cargar catálogo (id + stock)
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
+    dispatch(fetchCatalogo());
+    dispatch(fetchMarcas());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (marcaId) {
+      dispatch(fetchLineasByMarca({ marcaId }));
+    }
+  }, [dispatch, marcaId]);
+
+  useEffect(() => {
+    setRows(Array.isArray(catalogo) ? catalogo : []);
+  }, [catalogo]);
+
+  useEffect(() => {
+    setMarcas(Array.isArray(marcasStore) ? marcasStore : []);
+  }, [marcasStore]);
+
+  useEffect(() => {
+    setLineas(Array.isArray(lineasStore) ? lineasStore : []);
+  }, [lineasStore]);
+
+  useEffect(() => {
+    setLoading(adminStatus === "loading");
+  }, [adminStatus]);
+
+  useEffect(() => {
+    if (adminError) {
+      setError(adminError);
+    }
+  }, [adminError]);
+
+  const refreshMarcas = useCallback(
+    async () => {
       try {
-        setLoading(true);
-        setError(null);
-        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-        const res = await fetch(`${BASE}/catalogo`, { headers });
-        let data;
-        try {
-          data = await res.json();
-        } catch (err) {
-          console.log(err);
-          data = null;
-        }
-        if (!res.ok) {
-          //throw new Error(`HTTP ${res.status}`);
-          const msg = data?.detail || `HTTP ${res.status}`;
-          const error = new Error(msg);
-          error.status = res.status;
-          error.data = data;
-          throw error;
-        }
-        //const json = await res.json();
-        const arr = Array.isArray(data) ? data : [];
-        const mapped = arr.map(parseCatalogItem).filter((x) => x.id != null);
-        if (!cancelled) setRows(mapped);
+        await dispatch(fetchMarcas());
       } catch (e) {
-        if (!cancelled) setError(e?.message || String(e));
-      } finally {
-        if (!cancelled) setLoading(false);
+        return null;
       }
-    })();
-    return () => { cancelled = true; };
-  }, [refreshKey]);
+    },
+    [dispatch]
+  );
 
   // Cargar detalles por cada id (nombre, marca, linea, imagen)
   useEffect(() => {
@@ -127,9 +126,8 @@ export default function AdminPanel() {
     const loadFor = async (id) => {
       try {
         // Detalle
-        const res1 = await fetch(`${BASE}/coleccionable/${id}`, { signal: controller.signal, headers: authHeaders });
-        if (!res1.ok) throw new Error(`Detalle HTTP ${res1.status}`);
-        const det = await res1.json();
+        const res1 = await axios.get(`${BASE}/coleccionable/${id}`, { signal: controller.signal, headers: authHeaders });
+        const det = res1.data;
         // Descuento / promo activa
         let promoDiscount = det?.descuento
           ?? det?.discount
@@ -138,15 +136,15 @@ export default function AdminPanel() {
           ?? det?.valor
           ?? null;
         try {
-          const resPromo = await fetch(`${BASE}/promociones/activas?coleccionableId=${encodeURIComponent(id)}`, { signal: controller.signal, headers: authHeaders });
-          if (resPromo.ok) {
-            const arrPromo = await resPromo.json();
-            if (Array.isArray(arrPromo)) {
-              const found = arrPromo.find((p) => String(p?.scopeType).toUpperCase?.() === "ITEM" && String(p?.scopeId) === String(id));
-              if (found?.valor != null && String(found?.tipo).toUpperCase?.() === "PERCENT") {
-                promoDiscount = found.valor;
-              }
-            }
+          const resPromo = await axios.get(`${BASE}/promociones/activas`, {
+            params: { coleccionableId: id },
+            signal: controller.signal,
+            headers: authHeaders,
+          });
+          const arrPromo = Array.isArray(resPromo.data) ? resPromo.data : [];
+          const found = arrPromo.find((p) => String(p?.scopeType).toUpperCase?.() === "ITEM" && String(p?.scopeId) === String(id));
+          if (found?.valor != null && String(found?.tipo).toUpperCase?.() === "PERCENT") {
+            promoDiscount = found.valor;
           }
         } catch (_) { }
         // Imagen
@@ -155,11 +153,22 @@ export default function AdminPanel() {
           // Si /catalogo nos dio firstImageId, úsalo. Si no, caer a /coleccionable/{id}/imagenes/0
           const row = rows.find((r) => String(r.id) === String(id));
           if (row?.firstImageId != null) {
-            const resImg = await fetch(`${BASE}/imagenes?id=${encodeURIComponent(row.firstImageId)}`, { signal: controller.signal, headers: authHeaders });
-            if (resImg.ok) { const blob = await resImg.blob(); imgUrl = URL.createObjectURL(blob); }
+            const resImg = await axios.get(`${BASE}/imagenes`, {
+              params: { id: row.firstImageId },
+              signal: controller.signal,
+              headers: authHeaders,
+              responseType: "blob",
+            });
+            const blob = resImg.data;
+            imgUrl = URL.createObjectURL(blob);
           } else {
-            const res2 = await fetch(`${BASE}/coleccionable/${id}/imagenes/0`, { signal: controller.signal, headers: authHeaders });
-            if (res2.ok) { const blob = await res2.blob(); imgUrl = URL.createObjectURL(blob); }
+            const res2 = await axios.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
+              signal: controller.signal,
+              headers: authHeaders,
+              responseType: "blob",
+            });
+            const blob = res2.data;
+            imgUrl = URL.createObjectURL(blob);
           }
         } catch (_) { }
         if (!cancelled) {
@@ -200,25 +209,18 @@ export default function AdminPanel() {
     return () => { cancelled = true; controller.abort(); };
   }, [rows]);
 
-  // Cargar marcas para filtros y gestión
+  // Cargar marcas para filtros y gestión (Redux)
   useEffect(() => {
-    const controller = new AbortController();
-    refreshMarcas(controller.signal).catch(() => { });
-    return () => controller.abort();
+    refreshMarcas().catch(() => { });
   }, [refreshMarcas]);
 
-  // Cargar líneas al elegir marca
+  // Cargar líneas al elegir marca (Redux)
   useEffect(() => {
     setLineas([]);
     setLineaId("");
     if (!marcaId) return;
-    const controller = new AbortController();
-    fetch(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`, { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((arr) => setLineas(Array.isArray(arr) ? arr : []))
-      .catch(() => setLineas([]));
-    return () => controller.abort();
-  }, [marcaId]);
+    dispatch(fetchLineasByMarca({ marcaId }));
+  }, [dispatch, marcaId]);
 
   const filtered = useMemo(() => {
     const term = String(q || "").toLowerCase().trim();
@@ -260,14 +262,17 @@ export default function AdminPanel() {
       else if (mode === "dec") url = `${BASE}/catalogo/${id}/decrementarstock?cantidad=${encodeURIComponent(value)}`;
       else if (mode === "set") { url = `${BASE}/catalogo/${id}/cambiarstock?nuevoStock=${encodeURIComponent(value)}`; method = "PUT"; }
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-      const res = await fetch(url, { method, headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await axios({
+        url,
+        method: method.toLowerCase(),
+        headers,
+      });
       // refrescar stock del item desde /catalogo/{id}
       try {
         const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-        const one = await fetch(`${BASE}/catalogo/${id}`, { headers });
-        if (one.ok) {
-          const dto = await one.json();
+        const one = await axios.get(`${BASE}/catalogo/${id}`, { headers });
+        if (one.status >= 200 && one.status < 300) {
+          const dto = one.data;
           const newStock = dto?.stock ?? dto?.cantidad ?? null;
           setRows((prev) => prev.map((r) => (String(r.id) === String(id) ? { ...r, stock: newStock ?? r.stock } : r)));
         } else {
@@ -294,8 +299,7 @@ export default function AdminPanel() {
     try {
       setBusy(id, true);
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-      const res = await fetch(`${BASE}/coleccionable/${id}`, { method: "DELETE", headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await axios.delete(`${BASE}/coleccionable/${id}`, { headers });
       setRows((prev) => prev.filter((r) => String(r.id) !== String(id)));
       setDetails((prev) => { const next = new Map(prev); next.delete(String(id)); return next; });
     } catch (e) {
@@ -308,13 +312,12 @@ export default function AdminPanel() {
     if (!sure) return;
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-      const res = await fetch(`${BASE}/lineas/${id}`, { method: "DELETE", headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await axios.delete(`${BASE}/lineas/${id}`, { headers });
       // refrescar filtros
       setMarcas((m) => [...m]);
       if (String(marcaId)) {
-        const arr = await fetch(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`).then((r) => r.ok ? r.json() : []);
-        setLineas(Array.isArray(arr) ? arr : []);
+        const arrResp = await axios.get(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`);
+        setLineas(Array.isArray(arrResp.data) ? arrResp.data : []);
       }
     } catch (e) {
       alert(`No se pudo borrar la línea: ${e?.message || e}`);
@@ -326,8 +329,7 @@ export default function AdminPanel() {
     if (!sure) return;
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-      const res = await fetch(`${BASE}/marcas/${id}`, { method: "DELETE", headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await axios.delete(`${BASE}/marcas/${id}`, { headers });
       // refrescar marcas
       await refreshMarcas();
       if (String(marcaId) === String(id)) { setMarcaId(""); setLineas([]); setLineaId(""); }
@@ -353,16 +355,8 @@ export default function AdminPanel() {
       const payload = {
         nombre,
       };
-      const res = await fetch(`${BASE}/marcas/crear`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const txt = await res.text().catch(() => null);
-        throw new Error(txt || `HTTP ${res.status}`);
-      }
-      const created = await res.json().catch(() => null);
+      const res = await axios.post(`${BASE}/marcas/crear`, payload, { headers });
+      const created = res.data ?? null;
       const newId = created?.id ?? created?._id ?? created?.marcaId ?? created?.marcaID ?? null;
 
       let uploadNotice = null;
@@ -461,33 +455,27 @@ export default function AdminPanel() {
       let lastError = null;
       for (const attempt of attempts) {
         try {
-          const opts = {
-            method: "POST",
-            headers: attempt.body instanceof FormData
+          const isForm = attempt.body instanceof FormData;
+          const res = await axios({
+            url: attempt.url,
+            method: "post",
+            headers: isForm
               ? attempt.headers
               : { "Content-Type": "application/json", ...(attempt.headers || {}) },
-            body: attempt.body instanceof FormData
-              ? attempt.body
-              : attempt.body != null
-                ? JSON.stringify(attempt.body)
-                : undefined,
-          };
-          const res = await fetch(attempt.url, opts);
-          if (res.ok) {
-            created = await res.json().catch(() => null);
-            break;
-          }
-          const txt = await res.text().catch(() => null);
-          lastError = txt || `HTTP ${res.status}`;
+            data: isForm ? attempt.body : attempt.body,
+          });
+          created = res.data ?? null;
+          break;
         } catch (err) {
-          lastError = err?.message || String(err);
+          lastError = err?.response?.data || err?.message || String(err);
         }
       }
       if (!created) {
         throw new Error(lastError || "No se pudo crear la linea.");
       }
 
-      const arr = await fetch(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(targetMarcaId)}`).then((r) => (r.ok ? r.json() : []));
+      const arrResp = await axios.get(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(targetMarcaId)}`);
+      const arr = arrResp.data;
       setMarcaId(String(targetMarcaId));
       setLineas(Array.isArray(arr) ? arr : []);
       setNewLinea({ nombre: "", marcaId: String(targetMarcaId) });
@@ -878,11 +866,9 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${base}/marcas`, { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((arr) => setMarcas(Array.isArray(arr) ? arr : []))
+    axios.get(`${base}/marcas`, { signal: controller.signal })
+      .then((res) => setMarcas(Array.isArray(res.data) ? res.data : []))
       .catch((e) => {
-        // si el efecto se limpió (abort), ignoramos; solo log si es otro error
         if (e?.name !== 'AbortError') {
           console.warn('Error cargando marcas', e);
         }
@@ -896,10 +882,13 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
     setPromoLocal((prev) => ({ ...prev, scopeId: local.id }));
     const controller = new AbortController();
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-    fetch(`${base}/promociones/activas?coleccionableId=${encodeURIComponent(local.id)}`, { signal: controller.signal, headers })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((arr) => {
-        const list = Array.isArray(arr) ? arr : [];
+    axios.get(`${base}/promociones/activas`, {
+      params: { coleccionableId: local.id },
+      signal: controller.signal,
+      headers,
+    })
+      .then((res) => {
+        const list = Array.isArray(res.data) ? res.data : [];
         const found = list.find((p) => String(p?.scopeType).toUpperCase?.() === "ITEM" && String(p?.scopeId) === String(local.id));
         setPromo(found || null);
         if (found?.valor != null && String(found?.tipo).toUpperCase() === "PERCENT") {
@@ -924,9 +913,8 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
   useEffect(() => {
     if (!local.marcaId) { setLines([]); return; }
     const controller = new AbortController();
-    fetch(`${base}/listarColeLineas/lineas/marca/${encodeURIComponent(local.marcaId)}`, { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((arr) => setLines(Array.isArray(arr) ? arr : []))
+    axios.get(`${base}/listarColeLineas/lineas/marca/${encodeURIComponent(local.marcaId)}`, { signal: controller.signal })
+      .then((r) => setLines(Array.isArray(r.data) ? r.data : []))
       .catch(() => setLines([]));
     return () => controller.abort();
   }, [base, local.marcaId]);
@@ -967,15 +955,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
           nPromocion.setActiva(p.isActiva());
           nPromocion.setStackable(p.isStackable());
           repo.save(nPromocion); */
-      const resPOST = await fetch(`${base}/promociones`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payloadPOST),
-      });
-      if (!resPOST.ok) {
-        const txtPOST = await resPOST.text().catch(() => '');
-        throw new Error(txtPOST || `HTTP ${resPOST.status}`);
-      }
+      const resPOST = await axios.post(`${base}/promociones`, payloadPOST, { headers });
       const payload = {
         nombre: local.nombre?.trim(),
         descripcion: local.descripcion?.trim() || '',
@@ -986,17 +966,9 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
       };
 
 
-      const res = await fetch(`${base}/coleccionable/${encodeURIComponent(local.id)}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify(payload),
-      });
+      const res = await axios.put(`${base}/coleccionable/${encodeURIComponent(local.id)}`, payload, { headers });
       console.log('Edit res:', res);
-      if (!res.ok) {
-        const txt = await res.text().catch(() => '');
-        throw new Error(txt || `HTTP ${res.status}`);
-      }
-      const json = await res.json().catch(() => null);
+      const json = res.data ?? null;
       let newImgUrl = null;
 
 
