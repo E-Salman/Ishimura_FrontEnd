@@ -30,22 +30,21 @@ const Wishlist = () => {
     }
   };
 
-  // 🔥 ACOMODAMOS la wishlist para el grid
   const itemsForGrid = useMemo(() => {
     return items.map((raw) => {
       const it = raw.coleccionable ?? raw;
       return {
-        id: it.id ?? raw.coleccionableId,
+        id: it.id,
+        colId: raw.coleccionableId,
         nombre: it.nombre,
         descripcion: it.descripcion ?? "",
         precio: it.precio ?? null,
-        imagen: it.imagen ?? it.imageUrl ?? null,
+        imagen: it.imagenUrl,
         _rowId: raw.id, // se usa para eliminar
       };
     });
   }, [items]);
 
-  // 🔥 Usuario no logueado
   if (!token) {
     return (
       <main className="flex-1">
@@ -59,12 +58,10 @@ const Wishlist = () => {
     );
   }
 
-  // 🔥 Loading
   if (loading) {
     return <p className="px-4 py-8 text-sm text-white/70">Cargando wishlist...</p>;
   }
 
-  // 🔥 Lista vacía
   if (!error && itemsForGrid.length === 0) {
     return (
       <main className="flex-1">
@@ -115,7 +112,7 @@ const Wishlist = () => {
         secondaryText="Eliminar"
         secondaryClassName="bg-red-600 text-white hover:bg-red-500 focus:ring-2 focus:ring-red-500/50"
         onSecondaryClick={(it) => eliminarDeWishlist(it._rowId)}
-        onItemClick={(it) => navigate(`/coleccionable/${it.id}`)}
+        onItemClick={(it) => navigate(`/coleccionable/${it.colId}`)}
         className="mb-8"
         showWishlistButton={false}
       />
