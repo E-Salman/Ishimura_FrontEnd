@@ -5,18 +5,34 @@ const BASE = "http://localhost:4002";
 
 export const fetchLineasByMarca = createAsyncThunk(
   "lineas/fetchByMarca",
-  async (marcaId, { rejectWithValue }) => {
-    if (!marcaId) return rejectWithValue("Id de marca inválido");
+  async (marcaId, { rejectWithValue, signal }) => {
+    if (!marcaId) return rejectWithValue("Id de marca invalido");
 
-    const res = await axios.get(`${BASE}/marcas/${marcaId}/lineas`, {
-      validateStatus: () => true,
-    });
+    try {
+      const res = await axios.get(
+        `${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`,
+        { signal, validateStatus: () => true }
+      );
 
-    if (res.status !== 200) {
-      return rejectWithValue("No se pudieron cargar las líneas");
+      if (res.status !== 200) {
+        const data = res.data;
+        const msg =
+          (typeof data === "string" && data) ||
+          data?.message ||
+          `HTTP ${res.status}`;
+        return rejectWithValue(msg);
+      }
+
+      return { marcaId, items: Array.isArray(res.data) ? res.data : [] };
+    } catch (err) {
+      const data = err?.response?.data;
+      const msg =
+        (typeof data === "string" && data) ||
+        data?.message ||
+        err?.message ||
+        "No se pudieron cargar las lineas";
+      return rejectWithValue(msg);
     }
-
-    return { marcaId, items: res.data };
   }
 );
 

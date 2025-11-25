@@ -15,7 +15,8 @@ export default function MarcasGrid({ marcas = [], onSelect }) {
     if (!openId) return;
 
     const state = lineasByMarca?.[openId];
-    if (state?.status === "loaded" || state?.status === "loading") return;
+    // Evita re-dispatch en loop cuando la petición ya falló: se intentará de nuevo sólo si el usuario reabre.
+    if (state?.status === "loaded" || state?.status === "loading" || state?.status === "error") return;
 
     dispatch(fetchLineasByMarca(openId));
   }, [openId, lineasByMarca, dispatch]);
