@@ -1,8 +1,13 @@
-import { configureStore } from '@reduxjs/toolkit'
-import postReducer from './postSlice'
-import authReducer from './authSlice'
-import wishlistReducer from './wishlistSlice'
-import destacadosReducer from './colDestacadosSlice'
+import { configureStore } from '@reduxjs/toolkit';
+import postReducer from './postSlice';
+import authReducer from './authSlice';
+import wishlistReducer from './wishlistSlice';
+import destacadosReducer from './colDestacadosSlice';
+import lineasReducer from "./lineasSlice";
+import marcasReducer from "./marcasSlice";
+import coleccionablesReducer from "./coleccionablesSlice";
+import themeReducer from "./themeSlice";
+import adminOrdersReducer from "./adminOrdersSlice";
 import cartReducer from './cartSlice'
 import adminReducer from './adminSlice'
 import coleccionablesReducer from './coleccionablesSlice'
@@ -13,6 +18,11 @@ export const store = configureStore({
         auth: authReducer,
         wishlist: wishlistReducer,
         destacados: destacadosReducer,
+        lineas: lineasReducer,
+        marcas: marcasReducer,
+        coleccionables: coleccionablesReducer,
+        theme: themeReducer,
+        adminOrders: adminOrdersReducer,
         cart: cartReducer,
         admin: adminReducer,
         coleccionables: coleccionablesReducer,
