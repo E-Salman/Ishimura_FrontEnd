@@ -9,7 +9,6 @@ import coleccionablesReducer from "./coleccionablesSlice";
 import themeReducer from "./themeSlice";
 import adminOrdersReducer from "./adminOrdersSlice";
 import newArrivalsReducer from "./newArrivalsSlice";
-import misComprasReducer from "./misComprasSlice";
 import promotionsReducer from "./promotionsSlice";
 import registerReducer from "./registerSlice";
 import navigationReducer from "./navigationSlice";
@@ -40,6 +39,6 @@ export const store = configureStore({
         admin: adminReducer,
         orders: ordersReducer,
         colsCarousel: carouselReducer,
-      misCompras: misComprasReducer,
-    }    
+        misCompras: misComprasReducer,
+    }
 });
