@@ -7,7 +7,7 @@ const BASE = "http://localhost:4002";
 export const addToWishlist = createAsyncThunk(
     "wishlist/add",
     async (coleccionableId, { getState, rejectWithValue }) => {
-        const token = getState().auth.token;
+        const token = getState().login.token;
 
         if (!token) return rejectWithValue("No se encuentra logueado");
 
@@ -30,7 +30,7 @@ export const addToWishlist = createAsyncThunk(
 export const fetchWishlist = createAsyncThunk(
     "wishlist/fetchAll",
     async (_, { getState, rejectWithValue }) => {
-        const token = getState().auth.token;
+        const token = getState().login.token;
 
         if (!token) return rejectWithValue("No se encuentra logueado");
 
@@ -51,7 +51,7 @@ export const fetchWishlist = createAsyncThunk(
 export const removeFromWishlist = createAsyncThunk(
     "wishlist/remove",
     async (wishlistItemId, { getState, rejectWithValue }) => {
-        const token = getState().auth.token;
+        const token = getState().login.token;
 
         if (!token) return rejectWithValue("No se encuentra logueado");
 

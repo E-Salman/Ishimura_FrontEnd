@@ -14,10 +14,8 @@ export const fetchCart = createAsyncThunk(
   }
 );
 
-export const addCartItem = createAsyncThunk(
-  "cart/add",
-  async ({ coleccionableId, cantidad = 1 }, { getState, rejectWithValue, signal }) => {
-    const token = getState().auth.token;
+export const addCartItem = createAsyncThunk("cart/add", async ({ coleccionableId, cantidad = 1 }, { getState, rejectWithValue, signal }) => {
+    const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     const url = `${BASE}/carrito/${encodeURIComponent(coleccionableId)}?cantidad=${encodeURIComponent(cantidad)}`;
     const res = await axios.post(url, null, { signal, headers: authHeaders(token) });
@@ -28,7 +26,7 @@ export const addCartItem = createAsyncThunk(
 export const updateCartQuantity = createAsyncThunk(
   "cart/updateQty",
   async ({ itemId, cantidad }, { getState, rejectWithValue, signal }) => {
-    const token = getState().auth.token;
+    const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     const url = `${BASE}/carrito/${encodeURIComponent(itemId)}?cantidad=${encodeURIComponent(cantidad)}`;
     const res = await axios.patch(url, null, { signal, headers: authHeaders(token) });
@@ -39,7 +37,7 @@ export const updateCartQuantity = createAsyncThunk(
 export const removeCartItemThunk = createAsyncThunk(
   "cart/remove",
   async ({ itemId }, { getState, rejectWithValue, signal }) => {
-    const token = getState().auth.token;
+    const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     await axios.delete(`${BASE}/carrito/${encodeURIComponent(itemId)}`, { signal, headers: authHeaders(token) });
     return itemId;
@@ -49,7 +47,7 @@ export const removeCartItemThunk = createAsyncThunk(
 export const clearCartThunk = createAsyncThunk(
   "cart/clear",
   async (_arg, { getState, rejectWithValue, signal }) => {
-    const token = getState().auth.token;
+    const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     await axios.delete(`${BASE}/carrito/vaciar`, { signal, headers: authHeaders(token) });
     return true;
