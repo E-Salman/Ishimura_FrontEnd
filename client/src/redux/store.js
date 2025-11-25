@@ -1,6 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
 import postReducer from './postSlice';
-import authReducer from './authSlice';
 import wishlistReducer from './wishlistSlice';
 import destacadosReducer from './colDestacadosSlice';
 import lineasReducer from "./lineasSlice";
@@ -12,11 +11,11 @@ import newArrivalsReducer from "./newArrivalsSlice";
 import cartReducer from './cartSlice'
 import adminReducer from './adminSlice'
 import ordersReducer from './ordersSlice'
+import loginReducer from './loginSlice'
 
 export const store = configureStore({
     reducer: { 
         posts: postReducer,
-        auth: authReducer,
         wishlist: wishlistReducer,
         destacados: destacadosReducer,
         lineas: lineasReducer,
@@ -28,5 +27,6 @@ export const store = configureStore({
         cart: cartReducer,
         admin: adminReducer,
         orders: ordersReducer,
+        login: loginReducer,
     }
 })

@@ -14,7 +14,7 @@ const Carrito = () => {
   const dispatch = useDispatch();
   const carrito = useSelector(selectCartItems);
   const status = useSelector(selectCartStatus);
-  const token = useSelector((state) => state.auth.token);
+  const token = useSelector((state) => state.login.token);
   const navigate = useNavigate();
 
   useEffect(() => {

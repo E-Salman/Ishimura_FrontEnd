@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
- 
+
 export function useAuth() {
   const { user, login, logout } = useContext(AuthContext); //Es lo mismo que se puso en <AuthContext.Provider value={{ user, login, logout }}>
   const token = user?.token || null;

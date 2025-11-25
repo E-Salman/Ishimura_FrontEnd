@@ -31,6 +31,15 @@ function App() {
     navigate("/home");
   };
 
+  const RequireAdmin = ({ children }) => {
+  const role = useSelector((s) => s.login.role);
+  const token = useSelector((s) => s.login.token);
+  const ok = role === 'ADMIN' || isAdminFromToken(token);
+  return ok ? children : <Navigate to="/home" replace />;
+};
+
+
+
   return (
     <>
       <NavBar />
@@ -51,9 +60,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/admin/crear-coleccionable" element={<CrearColeccionable />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/admin/compras" element={<AdminCompras />} />
+        <Route path="/admin/crear-coleccionable" element={<RequireAdmin><CrearColeccionable /></RequireAdmin>} />
+        <Route path="/admin" element={<RequireAdmin> <AdminPanel /> </RequireAdmin>} />
+        <Route path="/admin/compras" element={<RequireAdmin><AdminCompras /></RequireAdmin>} />
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />
         <Route path="/carrito" element={<Carrito />} />
       </Routes>
