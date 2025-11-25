@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import axios from 'axios';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 
@@ -8,9 +9,10 @@ const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {
 
 export default function Promotions() {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const token = useSelector((state) => state.login.token)
-  const { items, status, error } = useSelector((state) => state.promotions);
+  const token = useSelector((state) => state.login.token);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -103,6 +105,7 @@ export default function Promotions() {
         enriched.sort((a, b) => (b._discount || 0) - (a._discount || 0));
         setItems(enriched);
       } catch (e) {
+        if (e?.name === 'CanceledError' || e?.message === 'canceled') return;
         if (e?.name !== 'AbortError') setError(e?.message || String(e));
       } finally {
         setLoading(false);
@@ -114,7 +117,7 @@ export default function Promotions() {
       controller.abort();
       revoked.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
     };
-  }, [status, dispatch]);
+  }, [token]);
 
   const moveFromWishlistToCart = async (coleccionableId) => {
     try {
@@ -144,8 +147,6 @@ export default function Promotions() {
     } catch (_) {}
   };
 
-  const isLoading = status === "loading";
-
   return (
     <div className="relative mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="text-center">
@@ -162,11 +163,11 @@ export default function Promotions() {
           Error al cargar promociones: {error}
         </p>
       )}
-      {isLoading && (
+      {loading && (
         <p className="mt-8 text-center text-sm text-white/60">Cargando...</p>
       )}
 
-      {!isLoading && (
+      {!loading && (
         <div className="mt-12">
           <ColeccionablesGrid
             items={items}
