@@ -37,7 +37,7 @@ export const fetchColeccionablesCarousel = createAsyncThunk("coleccionables/fetc
   }
 );
 
-const coleccionablesSlice = createSlice({
+const coleccionablesCarouselSlice = createSlice({
   name: "coleccionablesCarousel",
   initialState: {
     items: [], // { coleccionable, imagen }
