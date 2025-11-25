@@ -713,7 +713,7 @@ export default function AdminPanel() {
           </div>
         </div>
         <div>
-          <h2 className="mb-3 text-xl font-bold text-primary">Líneas {marcaId ? `(marca ${marcaId})` : ""}</h2>
+          <h2 className="mb-3 text-xl font-bold text-primary">Líneas</h2>
           <form onSubmit={handleCreateLinea} className="mb-4 space-y-3 rounded-lg border border-white/10 bg-black/40 p-3">
             <div>
               <label className="block text-xs uppercase tracking-wide text-white/60">Marca *</label>
