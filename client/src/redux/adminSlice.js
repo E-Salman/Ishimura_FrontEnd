@@ -46,15 +46,16 @@ export const fetchDetalle = createAsyncThunk(
 
     // Imagen principal
     let imagenUrl = null;
-    try {
-      const imgRes = await axios.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
-        signal,
-        headers,
-        responseType: 'blob',
-      });
+    const imgRes = await axios.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
+      signal,
+      headers,
+      responseType: 'blob',
+      validateStatus: (s) => s === 200 || s === 404,
+    });
+    if (imgRes.status === 200) {
       const blob = imgRes.data;
       imagenUrl = URL.createObjectURL(blob);
-    } catch (_) { }
+    }
 
     return { id, detalle: { ...detalle, descuento, imagenUrl } };
   }
@@ -251,6 +252,9 @@ const adminSlice = createSlice({
     setBusy(state, { payload: { id, on } }) {
       state.busyById[id] = on;
     },
+    clearAdminError(state) {
+      state.error = null;
+    },
     revokeImagen(state, { payload: { id } }) {
       const det = state.detallesById[id];
       if (det?.imagenUrl) {
@@ -275,6 +279,13 @@ const adminSlice = createSlice({
       })
       .addCase(fetchDetalle.fulfilled, (state, action) => {
         state.detallesById[action.payload.id] = action.payload.detalle;
+      })
+      .addCase(fetchDetalle.rejected, (state, action) => {
+        const id = action.meta?.arg?.id;
+        if (id != null) {
+          delete state.detallesById[id];
+        }
+        state.error = action.error?.message || 'No se pudo cargar el detalle';
       })
       .addCase(fetchMarcas.fulfilled, (state, action) => {
         state.marcas = Array.isArray(action.payload) ? action.payload : [];
@@ -345,7 +356,7 @@ const adminSlice = createSlice({
   },
 });
 
-export const { setBusy, revokeImagen } = adminSlice.actions;
+export const { setBusy, revokeImagen, clearAdminError } = adminSlice.actions;
 
 // Selectors
 export const selectCatalogo = (state) => state.admin.catalogo;

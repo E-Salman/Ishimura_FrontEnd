@@ -23,6 +23,7 @@ import {
   uploadMarcaImagesThunk,
   fetchActivePromo,
   savePromo,
+  clearAdminError,
 } from "../redux/adminSlice";
 
 const BASE = "http://localhost:4002";
@@ -178,6 +179,11 @@ export default function AdminPanel() {
 
   function setBusy(id, on) {
     dispatch(setBusy({ id, on }));
+  }
+
+  function dismissError() {
+    setError(null);
+    dispatch(clearAdminError());
   }
 
   async function adjustStock(id, mode, value) {
@@ -378,7 +384,18 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
+      {error && (
+        <div className="mb-3 flex items-start justify-between gap-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          <span className="leading-snug">{error}</span>
+          <button
+            type="button"
+            onClick={dismissError}
+            className="rounded bg-red-500/20 px-2 py-1 text-xs font-semibold text-red-100 hover:bg-red-500/30"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-lg border border-white/10 bg-black/50">
         <table className="min-w-full text-sm">
