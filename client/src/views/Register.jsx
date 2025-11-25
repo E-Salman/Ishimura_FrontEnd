@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useAuth } from "../context/AuthContext.jsx";
 import {
   clearRegisterState,
   registerUser,
@@ -21,10 +20,7 @@ export default function Register() {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { login } = useAuth();
-  const { loading, error, success, response } = useSelector(
-    (state) => state.register
-  );
+  const { loading, error } = useSelector((state) => state.register);
 
   useEffect(() => {
     return () => {
@@ -36,17 +32,18 @@ export default function Register() {
     if (form.password.trim().length < 4) {
       return "La contraseña debe tener al menos 4 caracteres.";
     }
-    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email.trim())) {
       return "Ingresá un email válido.";
     }
     return "";
   };
 
-  const onSubmit = async (e) => {
+  const onSubmit = (e) => {
     e.preventDefault();
     setOkMsg("");
     setValidationError("");
+
     const validation = validate();
     if (validation) {
       setValidationError(validation);
@@ -54,20 +51,16 @@ export default function Register() {
       return;
     }
 
-    try {
-      const result = await dispatch(registerUser({ ...form })).unwrap();
-      const token = result?.access_token;
-      if (token) {
-        login({ email: form.email, token });
+    dispatch(registerUser({ ...form }))
+      .unwrap()
+      .then(() => {
+    
         setOkMsg("¡Cuenta creada!");
         setTimeout(() => navigate("/home"), 700);
-      } else {
-        setOkMsg("¡Cuenta creada! Iniciá sesión.");
-        setTimeout(() => navigate("/login"), 700);
-      }
-    } catch (_) {
-      // error handled by slice state
-    }
+      })
+      .catch(() => {
+     
+      });
   };
 
   return (

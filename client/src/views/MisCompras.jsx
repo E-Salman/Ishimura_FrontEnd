@@ -9,65 +9,27 @@ import {
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
-  const items = Array.isArray(base.items)
-    ? base.items
-    : Array.isArray(base.detalles)
-    ? base.detalles
-    : Array.isArray(base.detalle)
-    ? base.detalle
-    : Array.isArray(base.productos)
-    ? base.productos
-    : [];
+  const items = Array.isArray(base.items) ? base.items : [];
 
   const mappedItems = items.map((item, idx) => ({
-    key:
-      item?.id ??
-      item?.detalleId ??
-      item?.ordenDetalleId ??
-      `${base?.id ?? base?.ordenId ?? idx}-${idx}`,
-    nombre:
-      item?.nombre ??
-      item?.coleccionableNombre ??
-      item?.coleccionable?.nombre ??
-      item?.producto ??
-      `Item ${idx + 1}`,
-    cantidad: item?.cantidad ?? item?.qty ?? 1,
-    precio:
-      item?.precio ??
-      item?.precioUnitario ??
-      item?.monto ??
-      item?.importe ??
-      item?.coleccionable?.precio ??
-      null,
+    key: `${base?.numeroOrden ?? "orden"}-${idx}`,
+    nombre: item?.nombre ?? `Item ${idx + 1}`,
+    cantidad: item?.cantidad ?? 1,
+    precio: item?.precioUnitario ?? item?.precio ?? item?.subtotal ?? null,
+    subtotal: item?.subtotal ?? null,
   }));
 
   return {
-    id:
-      base?.id ??
-      base?.ordenId ??
-      base?.orderId ??
-      base?.codigo ??
-      base?.numero ??
-      base?.code ??
-      base?.uuid ??
-      null,
-    fecha:
-      base?.fecha ??
-      base?.fechaCreacion ??
-      base?.createdAt ??
-      base?.createdDate ??
-      base?.fechaCompra ??
-      base?.timestamp ??
-      null,
-    estado: base?.estado ?? base?.status ?? base?.estadoOrden ?? "Procesando",
+    id: base?.numeroOrden ?? null,
+    fecha: base?.creadaEn ?? null,
+    estado: base?.estado ?? "Procesando",
     total:
-      base?.total ??
-      base?.monto ??
-      base?.importe ??
-      base?.totalOrden ??
+      base?.montoTotal ??
       mappedItems.reduce(
         (acc, it) =>
-          acc + Number(it.precio || 0) * Number(it.cantidad || 1),
+          acc +
+          Number(it.subtotal || 0) ||
+          Number(it.precio || 0) * Number(it.cantidad || 1),
         0
       ),
     items: mappedItems,
