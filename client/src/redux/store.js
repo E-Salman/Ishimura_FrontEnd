@@ -1,4 +1,7 @@
-import { configureStore } from '@reduxjs/toolkit';
+// src/redux/store.js
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { persistStore, persistReducer } from "redux-persist";
+import storage from "redux-persist/lib/storage";
 
 import postReducer from './postSlice';
 import wishlistReducer from './wishlistSlice';
@@ -19,26 +22,39 @@ import ordersReducer from './ordersSlice';
 import carouselReducer from './coleccionablesCarouselSlice'
 import misComprasReducer from './misComprasSlice'
 
-export const store = configureStore({
-    reducer: {
-        posts: postReducer,
-        wishlist: wishlistReducer,
-        destacados: destacadosReducer,
-        lineas: lineasReducer,
-        marcas: marcasReducer,
-        coleccionables: coleccionablesReducer,
-        theme: themeReducer,
-        adminOrders: adminOrdersReducer,
-        newArrivals: newArrivalsReducer,
-        misCompras: misComprasReducer,
-        promotions: promotionsReducer,
-        register: registerReducer,
-        navigation: navigationReducer,
-        login: loginReducer,
-        cart: cartReducer,
-        admin: adminReducer,
-        orders: ordersReducer,
-        colsCarousel: carouselReducer,
-        misCompras: misComprasReducer,
-    }
+// ✅ CONFIG de persist solo para login
+const loginPersistConfig = {
+  key: "login",
+  storage,
+  whitelist: ["token", "role", "email"], 
+};
+
+const persistedLoginReducer = persistReducer(loginPersistConfig, loginReducer);
+
+// 👉 combinamos reducers
+const rootReducer = combineReducers({
+  posts: postReducer,
+  wishlist: wishlistReducer,
+  destacados: destacadosReducer,
+  lineas: lineasReducer,
+  marcas: marcasReducer,
+  coleccionables: coleccionablesReducer,
+  theme: themeReducer,
+  adminOrders: adminOrdersReducer,
+  newArrivals: newArrivalsReducer,
+  misCompras: misComprasReducer,
+  promotions: promotionsReducer,
+  register: registerReducer,
+  navigation: navigationReducer,
+  login: persistedLoginReducer, 
+  cart: cartReducer,
+  admin: adminReducer,
+  orders: ordersReducer,
+  colsCarousel: carouselReducer,
 });
+
+export const store = configureStore({
+  reducer: rootReducer,
+});
+
+export const persistor = persistStore(store);
