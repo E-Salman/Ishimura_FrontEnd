@@ -5,7 +5,7 @@ import { NavLink } from "react-router-dom";
 
 const HomeCarousel = () => {
   const dispatch = useDispatch();
-  const { items, loading, error } = useSelector((state) => state.coleccionables);
+  const { items, loading, error } = useSelector((state) => state.colsCarousel);
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {

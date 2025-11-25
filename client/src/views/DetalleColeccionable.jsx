@@ -3,12 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addCartItem } from "../redux/cartSlice";
 import { addToWishlist, fetchWishlist, removeFromWishlist } from "../redux/wishlistSlice";
-import { fetchDetalle, selectDetalleCat } from "../redux/coleccionablesSlice";
+import { fetchDetalle, fetchFirstImage, selectDetalleCat } from "../redux/coleccionablesSlice";
 
 const DetalleColeccionable = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
-  const wishlist = useSelector((state)=>state.wishlist);
+  const { items: wishlistItems = [] } = useSelector((state)=>state.wishlist);
   const [mensaje, setMensaje] = useState("");
   const { token } = useSelector((state) => state.login)
   const navigate = useNavigate();
@@ -17,8 +17,14 @@ const DetalleColeccionable = () => {
   const imagen = detalle?.imagenUrl;
 
   useEffect(() => {
-    dispatch(fetchDetalle({ id, token }));
-  }, [dispatch, id, token]);
+    // Evita spam: solo busca detalle/imagen si no está en store
+    if (!detalle) {
+      dispatch(fetchDetalle({ id, token }));
+    }
+    if (detalle && !detalle.firstImageTried && !detalle.imagenUrl) {
+      dispatch(fetchFirstImage({ id, token }));
+    }
+  }, [dispatch, id, token, detalle]);
 
   const agregarAlCarrito = async () => {
     let skipWishlist = false;
@@ -41,9 +47,7 @@ const DetalleColeccionable = () => {
 
     try {
       await dispatch(fetchWishlist()).unwrap();
-      const row = wishlist.find(
-        (w) => String(w.coleccionableId) === String(id)
-      );
+      const row = wishlistItems.find((w) => String(w.coleccionableId) === String(id));
       if (row) {
         await dispatch(removeFromWishlist({ itemId: row.id })).unwrap();
       }

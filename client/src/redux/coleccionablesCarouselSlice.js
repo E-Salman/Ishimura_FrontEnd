@@ -10,29 +10,48 @@ const getUniqueRandoms = (count, min, max) => {
   return Array.from(numbers);
 };
 
-export const fetchColeccionablesCarousel = createAsyncThunk("coleccionables/fetchColeccionables", async (_, { rejectWithValue }) => {
+const asText = (val) => {
+  if (!val) return "";
+  if (typeof val === "string") return val;
+  if (typeof val === "object" && typeof val.message === "string") return val.message;
+  try { return JSON.stringify(val); } catch (_) { return String(val); }
+};
+
+export const fetchColeccionablesCarousel = createAsyncThunk("coleccionablesCarousel/fetch", async (_, { rejectWithValue }) => {
     const URLBase = "http://localhost:4002/coleccionable/";
     const randomIds = getUniqueRandoms(5, 1, 22);
 
     try {
       const results = await Promise.all(
         randomIds.map(async (id) => {
-          const coleccionableRes = await axios.get(URLBase + id);
-          const imagenRes = await axios.get(URLBase + id + "/imagenes/0", {
-            responseType: "blob",
-          });
+          try {
+            const coleccionableRes = await axios.get(URLBase + id, {
+              validateStatus: (s) => s === 200,
+            });
+            const imagenRes = await axios.get(URLBase + id + "/imagenes/0", {
+              responseType: "blob",
+              validateStatus: (s) => s === 200 || s === 404,
+            });
 
-          const imagenBlob = URL.createObjectURL(imagenRes.data);
-          return {
-            coleccionable: coleccionableRes.data,
-            imagen: imagenBlob,
-          };
+            const imagenBlob = imagenRes.status === 200 ? URL.createObjectURL(imagenRes.data) : null;
+            return {
+              coleccionable: coleccionableRes.data,
+              imagen: imagenBlob,
+            };
+          } catch (_) {
+            return null; // omitir ids inexistentes sin romper todo el carrusel
+          }
         })
       );
 
-      return results; // array de {coleccionable, imagen}
+      const filtered = results.filter(Boolean);
+      if (!filtered.length) {
+        return rejectWithValue("No se pudieron cargar coleccionables para el carrusel");
+      }
+
+      return filtered; // array de {coleccionable, imagen}
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(asText(error?.response?.data) || error.message);
     }
   }
 );
