@@ -3,7 +3,6 @@ import {
   getColeccionables,
   getPricePreview,
   getColeccionableFirstImageUrl,
-  getColeccionableDetalle,
 } from "../lib/api";
 
 export const fetchPromotions = createAsyncThunk(
@@ -11,60 +10,52 @@ export const fetchPromotions = createAsyncThunk(
   async (_, { signal, rejectWithValue }) => {
     const revokedUrls = [];
     try {
+      // 1) Traer catálogo base
       const all = await getColeccionables({}, signal);
-      const withPromo = [];
 
-      for (const it of all) {
-        try {
-          const quote = await getPricePreview(it.id, { qty: 1 }, signal);
-          const lista = Number(
-            quote?.precioLista ?? quote?.lista ?? it?.precio ?? 0
-          );
-          const efectivo = Number(
-            quote?.precioEfectivo ?? quote?.efectivo ?? it?.precio ?? 0
-          );
-          const hasPromo =
-            Number(quote?.discount ?? 0) > 0 ||
-            (efectivo > 0 && lista > 0 && efectivo < lista) ||
-            Boolean(quote?.promocionId);
-          if (!hasPromo) continue;
-          withPromo.push({
-            ...it,
-            precio: efectivo || it.precio || null,
-            precioAnterior:
-              lista && efectivo && efectivo < lista
-                ? lista
-                : it.precioAnterior ?? null,
-            _discount:
-              Number(
-                quote?.discount ?? (lista && efectivo ? lista - efectivo : 0)
-              ) || 0,
-          });
-        } catch (_) {
-          // ignorar ítems sin acceso al precio
-        }
-      }
+      // 2) Filtrar únicamente con datos del pricing preview (sin heurísticas)
+      const withPreview = await Promise.all(
+        all.map(async (it) => {
+          try {
+            const quote = await getPricePreview(it.id, { qty: 1 }, signal);
+            const lista = Number(quote?.precioLista ?? 0);
+            const efectivo = Number(quote?.precioEfectivo ?? 0);
+            const discount = Number(quote?.discount ?? 0);
+            const hasPromo = discount > 0 || Boolean(quote?.promocionId);
+            if (!hasPromo) return null;
 
-      const enriched = await Promise.all(
-        withPromo.map(async (it) => {
-          let acc = it;
-          if (acc?.precio == null) {
-            try {
-              const det = await getColeccionableDetalle(it.id, signal);
-              acc = { ...acc, precio: det?.precio ?? acc?.precio ?? null };
-            } catch (_) {}
+            const precio = efectivo || it.precio || null;
+            const precioAnterior = lista || it.precioAnterior || null;
+
+            return {
+              ...it,
+              precio,
+              precioAnterior,
+              _discount: discount || (lista && efectivo ? lista - efectivo : 0),
+            };
+          } catch (_) {
+            return null;
           }
-          if (!acc.imagen) {
-            try {
-              const url = await getColeccionableFirstImageUrl(it.id, signal);
-              if (url?.startsWith?.("blob:")) revokedUrls.push(url);
-              acc = { ...acc, imagen: url };
-            } catch (_) {}
-          }
-          return acc;
         })
       );
 
+      const filtered = withPreview.filter(Boolean);
+
+      // 3) Completar imagen si falta
+      const enriched = await Promise.all(
+        filtered.map(async (it) => {
+          if (it?.imagen) return it;
+          try {
+            const url = await getColeccionableFirstImageUrl(it.id, signal);
+            if (url?.startsWith?.("blob:")) revokedUrls.push(url);
+            return { ...it, imagen: url };
+          } catch (_) {
+            return it;
+          }
+        })
+      );
+
+      // 4) Ordenar por mayor descuento
       enriched.sort((a, b) => (b._discount || 0) - (a._discount || 0));
 
       return { items: enriched, revokedUrls };
