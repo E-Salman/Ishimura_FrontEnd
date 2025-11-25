@@ -3,11 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "../lib/api";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
-import { useSelector } from "react-redux";
 import {
-  clearWishlistState,
   fetchWishlist,
-  removeWishlistItem,
+  removeFromWishlist,
 } from "../redux/wishlistSlice";
 
 const Wishlist = () => {
@@ -15,13 +13,13 @@ const Wishlist = () => {
   const dispatch = useDispatch();
   const { token } = useSelector((state) => state.login)
   const { items, loading, error } = useSelector((state) => state.wishlist);
-
+  //clearWishlistState,
   useEffect(() => {
     if (!loading && token) {
       dispatch(fetchWishlist({ token }));
     }
     return () => {
-      dispatch(clearWishlistState());
+      //dispatch(clearWishlistState());
     };
   }, [loading, token, dispatch]);
 
@@ -29,14 +27,14 @@ const Wishlist = () => {
     () =>
       Array.isArray(items)
         ? items.map((item) => ({
-            id: item.coleccionableId,
-            nombre: item.nombre,
-            descripcion: "En tu wishlist",
-            precio: item.precio,
-            imagen: item.imagenUrl || item.imagenurl || null,
-            stock: 1,
-            _rowId: item.id,
-          }))
+          id: item.coleccionableId,
+          nombre: item.nombre,
+          descripcion: "En tu wishlist",
+          precio: item.precio,
+          imagen: item.imagenUrl || item.imagenurl || null,
+          stock: 1,
+          _rowId: item.id,
+        }))
         : [],
     [items]
   );
@@ -44,7 +42,7 @@ const Wishlist = () => {
   const eliminarDeWishlist = async (id) => {
     if (!token) return;
     try {
-      await dispatch(removeWishlistItem({ token, itemId: id })).unwrap();
+      await dispatch(removeFromWishlist({ token, itemId: id })).unwrap();
     } catch (e) {
       console.error("Error al eliminar producto:", e);
     }

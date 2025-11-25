@@ -8,6 +8,7 @@ import {
   getWishlist,
   removeFromWishlist,
 } from "../lib/api";
+
 import {
   clearPromotions,
   fetchPromotions,

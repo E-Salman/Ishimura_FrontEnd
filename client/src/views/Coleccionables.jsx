@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { useDispatch, useSelector } from 'react-redux';
 import { addCartItem } from '../redux/cartSlice';
-import { addToWishlistThunk, fetchWishlist, removeFromWishlistThunk, selectWishlistItems } from '../redux/wishlistSlice';
+import { fetchWishlist, removeFromWishlist } from '../redux/wishlistSlice';
 import {
   fetchMarcas as fetchMarcasCat,
   fetchLineasByMarca as fetchLineasCat,
@@ -50,7 +50,7 @@ export default function ColeccionablesView() {
   const loadingStatus = useSelector(selectColeccionablesStatus);
   const error = useSelector(selectColeccionablesError);
   const [q, setQ] = useState(initialQ);
-  const wishlist = useSelector(selectWishlistItems);
+  const wishlist = useSelector((state) => state.wishlist);
   const detallesById = useSelector((state) => state.coleccionables.detallesById || {});
   const previewsById = useSelector((state) => state.coleccionables.previewsById || {});
   const token = useSelector((state) => state.login.token)
@@ -235,7 +235,7 @@ export default function ColeccionablesView() {
 
   const handleAddToWishlist = async ({ id }) => {
     try {
-      await dispatch(addToWishlistThunk({ coleccionableId: id })).unwrap();
+      await dispatch(addToWishlist({ coleccionableId: id })).unwrap();
       await dispatch(fetchWishlist());
     } catch (e) {
       console.warn('Wishlist error', e);
@@ -401,7 +401,7 @@ export default function ColeccionablesView() {
             }
             if (row) {
               try {
-                await dispatch(removeFromWishlistThunk({ itemId: row.id })).unwrap();
+                await dispatch(removeFromWishlist({ itemId: row.id })).unwrap();
               } catch (_) {}
             }
           }}

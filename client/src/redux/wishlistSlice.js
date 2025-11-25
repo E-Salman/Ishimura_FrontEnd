@@ -81,7 +81,6 @@ const wishlistSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder
-
             // ADD
             .addCase(addToWishlist.pending, (state) => {
                 state.loading = true;
@@ -113,7 +112,7 @@ const wishlistSlice = createSlice({
                 state.error =
                     action.payload ||
                     action.error.message
-      })
+            })
 
             // REMOVE
             .addCase(removeFromWishlist.pending, (state) => {
@@ -130,7 +129,7 @@ const wishlistSlice = createSlice({
                 state.error =
                     action.payload ||
                     action.error.message
-      });
+            });
     },
 });
 
