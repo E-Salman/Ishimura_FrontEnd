@@ -58,7 +58,7 @@ function formatMoney(amount) {
 
 export default function MisCompras() {
   const dispatch = useDispatch();
-  const { user, token } = useSelector((state) => state.login)
+  const { token, role, email } = useSelector((state) => state.login);
   const rawOrders = useSelector(selectMisCompras);
   const status = useSelector(selectMisComprasStatus);
   const error = useSelector(selectMisComprasError);
@@ -72,7 +72,7 @@ export default function MisCompras() {
     dispatch(fetchMisCompras());
   }, [token, dispatch]);
 
-  if (!user || !token || isAdmin) {
+  if (!token) {
     return (
       <main className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
@@ -94,7 +94,7 @@ export default function MisCompras() {
         <div className="mb-8">
           <h1 className="text-3xl font-black text-primary">Mis compras</h1>
           <p className="mt-2 text-sm text-white/60">
-            Historial de ordenes asociadas a tu cuenta ({user?.email || "sin email"}).
+            Historial de ordenes asociadas a tu cuenta ({email || "sin email"}).
           </p>
         </div>
 
