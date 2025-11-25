@@ -325,16 +325,16 @@ export default function ColeccionablesView() {
                     Todas las marcas
                   </button>
                   {marcas.map((m) => (
-                    <button
-                      type="button"
-                      key={m.id}
-                      className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${String(m.id) === String(marcaId) ? 'font-bold' : ''}`}
-                      onClick={() => { setMarcaId(String(m.id)); setMarcaOpen(false); }}
-                      role="option"
-                      aria-selected={String(m.id) === String(marcaId)}
-                    >
-                      {m.nombre}
-                    </button>
+                  <button
+                    type="button"
+                    key={m.id}
+                    className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${String(m.id) === String(marcaId) ? 'font-bold' : ''}`}
+                    onClick={() => { setMarcaId(String(m.id)); setLineaId(''); setMarcaOpen(false); }}
+                    role="option"
+                    aria-selected={String(m.id) === String(marcaId)}
+                  >
+                    {m.nombre}
+                  </button>
                   ))}
                 </div>
               </div>
