@@ -3,8 +3,6 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAdminOrders } from "../redux/adminOrdersSlice";
 
-// --- Helpers de mapeo y formato ---
-
 function normalizeOrder(raw) {
   const base = raw ?? {};
   const items = Array.isArray(base.items) ? base.items : [];
@@ -64,7 +62,10 @@ function formatMoney(amount) {
 }
 
 export default function AdminCompras() {
-  const token = useSelector((state) => state.login.token);
+  const loginToken = useSelector((state) => state.login?.token);
+  const loginRole = useSelector((state) => state.login?.role);
+  const token = loginToken || localStorage.getItem("ishimura_token") || null;
+  const isAdmin = Boolean(loginRole === "ADMIN");
   const dispatch = useDispatch();
 
   const {

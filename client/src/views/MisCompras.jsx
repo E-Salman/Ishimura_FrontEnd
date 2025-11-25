@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useAuth } from "../context/AuthContext.jsx";
 import {
   fetchMisCompras,
   selectMisCompras,
@@ -14,7 +13,7 @@ function normalizeOrder(raw) {
   const items = Array.isArray(base.items) ? base.items : [];
 
   const mappedItems = items.map((item, idx) => ({
-    key: item.coleccionableId ?? idx, // fallback mínimo solo para la key de React
+    key: item.coleccionableId ?? idx, // fallback minimo solo para la key de React
     nombre: item.nombre,
     cantidad: item.cantidad,
     precio: item.precioUnitario,
@@ -58,7 +57,15 @@ function formatMoney(amount) {
 }
 
 export default function MisCompras() {
-  const { user, token } = useAuth();
+  const loginToken = useSelector((state) => state.login?.token);
+  const loginEmail = useSelector((state) => state.login?.email);
+  const loginRole = useSelector((state) => state.login?.role);
+  const isAdmin = loginRole === "ADMIN";
+  const token = loginToken || localStorage.getItem("ishimura_token");
+  const user =
+    token && (loginEmail || localStorage.getItem("ishimura_email"))
+      ? { email: loginEmail || localStorage.getItem("ishimura_email"), token }
+      : null;
   const dispatch = useDispatch();
   const rawOrders = useSelector(selectMisCompras);
   const status = useSelector(selectMisComprasStatus);
@@ -73,13 +80,13 @@ export default function MisCompras() {
     dispatch(fetchMisCompras());
   }, [token, dispatch]);
 
-  if (!user || !token) {
+  if (!user || !token || isAdmin) {
     return (
       <main className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-black text-primary">Mis compras</h1>
           <p className="mt-4 text-white/70">
-            Tenés que <Link to="/login" className="text-primary underline">iniciar sesión</Link> para
+            Tenes que <Link to="/login" className="text-primary underline">iniciar sesion</Link> para
             ver tu historial de compras.
           </p>
         </div>
@@ -95,7 +102,7 @@ export default function MisCompras() {
         <div className="mb-8">
           <h1 className="text-3xl font-black text-primary">Mis compras</h1>
           <p className="mt-2 text-sm text-white/60">
-            Historial de órdenes asociadas a tu cuenta ({email.email}).
+            Historial de ordenes asociadas a tu cuenta ({user?.email || "sin email"}).
           </p>
         </div>
 
@@ -113,8 +120,8 @@ export default function MisCompras() {
 
         {status === "succeeded" && !error && orders.length === 0 && (
           <div className="rounded-xl border border-white/10 bg-black/60 px-5 py-8 text-center text-white/60">
-            Aún no registramos compras en tu cuenta. Explorá la{" "}
-            <Link to="/coleccionables" className="text-primary underline">tienda</Link> y completá tu
+            Aun no registramos compras en tu cuenta. Explora la{" "}
+            <Link to="/coleccionables" className="text-primary underline">tienda</Link> y completa tu
             primera orden.
           </div>
         )}
@@ -137,7 +144,7 @@ export default function MisCompras() {
                   <p className="text-white">{formatDate(order.fecha)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-white/50">Método</p>
+                  <p className="text-sm text-white/50">Metodo</p>
                   <span className="inline-flex rounded-full bg-slate-500/20 px-3 py-1 text-sm font-semibold text-slate-200">
                     {order.metodoPago ?? "N/D"}
                   </span>
