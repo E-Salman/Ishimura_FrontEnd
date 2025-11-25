@@ -7,7 +7,7 @@ const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : u
 export const fetchWishlist = createAsyncThunk(
   "wishlist/fetch",
   async (_arg, { getState, rejectWithValue, signal }) => {
-    const token = getState().auth.token;
+    const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     const res = await axios.get(`${BASE}/wishlist`, { signal, headers: authHeaders(token) });
     return Array.isArray(res.data) ? res.data : [];
@@ -17,7 +17,7 @@ export const fetchWishlist = createAsyncThunk(
 export const addToWishlistThunk = createAsyncThunk(
   "wishlist/add",
   async ({ coleccionableId }, { getState, rejectWithValue, signal }) => {
-    const token = getState().auth.token;
+    const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
 
     const headers = { "Content-Type": "application/json", ...authHeaders(token) };
@@ -43,7 +43,7 @@ export const addToWishlistThunk = createAsyncThunk(
 export const removeFromWishlistThunk = createAsyncThunk(
   "wishlist/remove",
   async ({ itemId }, { getState, rejectWithValue, signal }) => {
-    const token = getState().auth.token;
+    const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     await axios.delete(`${BASE}/wishlist/${encodeURIComponent(itemId)}`, { signal, headers: authHeaders(token) });
     return itemId;

@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 export const authLogin = createAsyncThunk("auth/login", async ({ email, password },{rejectWithValue}) => {
-  const URL = "http://localhost:4002/api/v1/auth/authenticate";
+const URL = "http://localhost:4002/api/v1/auth/authenticate";
     if(!email || !password) return rejectWithValue("Email y contraseña son obligatorios")
     const headers = {
         "Content-Type": "application/json",
@@ -19,7 +19,8 @@ const loginSlice = createSlice({
         token: null,
         loading: false,
         error: null,
-        kaomojiCount: 0
+        kaomojiCount: 0,
+        email: null,
     },
     extraReducers: (builder) => {
         builder
@@ -33,6 +34,7 @@ const loginSlice = createSlice({
                 state.role = action.payload.data.role
                 state.token = action.payload.data.access_token
                 state.kaomojiCount = 0
+                state.email = action.meta.arg.email
             })
             .addCase(authLogin.rejected, (state, action) => {
                 state.loading = false

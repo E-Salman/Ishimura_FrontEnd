@@ -31,18 +31,13 @@ export const fetchDetalle = createAsyncThunk(
 
     // Promos activas para obtener descuento
     let descuento = detalle?.descuento ?? detalle?.discount ?? null;
-    try {
-      const promoRes = await axios.get(`${BASE}/promociones/activas`, {
-        params: { coleccionableId: id },
-        signal,
-        headers,
-      });
-      const arr = Array.isArray(promoRes.data) ? promoRes.data : [];
-      const found = arr.find((p) => String(p?.scopeType).toUpperCase?.() === 'ITEM' && String(p?.scopeId) === String(id));
-      if (found?.valor != null && String(found?.tipo).toUpperCase?.() === 'PERCENT') {
-        descuento = found.valor;
-      }
-    } catch (_) { }
+    const promoRes = await axios.get(`${BASE}/promociones/activas`, {
+      params: { coleccionableId: id },
+      signal,
+      headers,
+  validateStatus: (s) => s >= 200 && s < 500, // no lanza en 4xx/5xx
+  });
+  const arr = Array.isArray(promoRes.data) ? promoRes.data : [];
 
     // Imagen principal
     let imagenUrl = null;

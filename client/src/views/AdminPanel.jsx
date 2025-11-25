@@ -1,5 +1,5 @@
 ﻿﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { isAdminFromToken } from "../lib/api";
 import {
@@ -31,8 +31,9 @@ const BASE = "http://localhost:4002";
 export default function AdminPanel() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const token = useSelector((state) => state.auth.token);
-  const isAdmin = useMemo(() => isAdminFromToken(token), [token]);
+  const token = useSelector((state) => state.login.token);
+  const role = useSelector((state) => state.login.role);
+  const isAdmin = useMemo(() => role === "ADMIN" || isAdminFromToken(token), [role, token]);
   const catalogo = useSelector(selectCatalogo);
   const marcasStore = useSelector(selectMarcas);
   const detallesStore = useSelector((state) => state.admin.detallesById || {});
@@ -87,15 +88,17 @@ export default function AdminPanel() {
   }, [marcaId]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     dispatch(fetchCatalogo({ token }));
     dispatch(fetchMarcas());
-  }, [dispatch, token]);
+  }, [dispatch, token, isAdmin]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     if (marcaId) {
       dispatch(fetchLineasByMarca({ marcaId }));
     }
-  }, [dispatch, marcaId]);
+  }, [dispatch, marcaId, isAdmin]);
 
   useEffect(() => {
     setRows(Array.isArray(catalogo) ? catalogo : []);
@@ -110,14 +113,14 @@ export default function AdminPanel() {
   }, [lineasStore]);
 
   useEffect(() => {
-    if (!rows.length) return;
+    if (!isAdmin || !rows.length) return;
     rows.forEach((r) => {
       const key = String(r.id);
       if (!detallesStore[key]) {
         dispatch(fetchDetalle({ id: r.id, token }));
       }
     });
-  }, [rows, detallesStore, dispatch, token]);
+  }, [rows, detallesStore, dispatch, token, isAdmin]);
 
   useEffect(() => {
     setLoading(adminStatus === "loading");
@@ -328,13 +331,9 @@ export default function AdminPanel() {
   }
   // Visibilidad anulada por solicitud: no se implementa ocultar/mostrar
 
+
   if (!isAdmin) {
-    return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <h1 className="text-3xl font-black text-primary">No autorizado</h1>
-        <p className="mt-2 text-white/70">Necesitás permisos de administrador para ver el panel.</p>
-      </div>
-    );
+    return <Navigate to="/home" replace />;
   }
 
   return (
