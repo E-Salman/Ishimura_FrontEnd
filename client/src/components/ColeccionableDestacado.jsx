@@ -12,14 +12,13 @@ const ColeccionableDestacado = ({ colId }) => {
     if(error) return <p>error: {error}</p>
 
     const {coleccionable, imagen } = coleccionables[colId]
-    const url = URL.createObjectURL(imagen)
     
     return (
         <div style={{ textAlign: 'left' }}>
             {
-                url ? (
+                imagen ? (
                     <img
-                        src={url}
+                        src={imagen}
                         alt="Coleccionable"
                         style={{
                             width: 200,
