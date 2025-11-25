@@ -1,41 +1,73 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getWishlist, removeFromWishlist, addToCart } from "../lib/api";
+import { useDispatch, useSelector } from "react-redux";
+import { addToCart } from "../lib/api";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
 import { useAuth } from "../context/AuthContext";
+import {
+  clearWishlistState,
+  fetchWishlist,
+  removeWishlistItem,
+} from "../redux/wishlistSlice";
 
 const Wishlist = () => {
-  const [wishlist, setWishlist] = useState([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const dispatch = useDispatch();
+  const { token } = useSelector((state) => state.login)
+  const { items, loading, error } = useSelector((state) => state.wishlist);
 
   useEffect(() => {
-    const fetchWishlist = async () => {
-      try {
-        const data = await getWishlist(token);
-        setWishlist(data);
-      } catch (error) {
-        console.error("Error al cargar wishlist:", error);
-      } finally {
-        setLoading(false);
-      }
+    if (!loading && token) {
+      dispatch(fetchWishlist({ token }));
+    }
+    return () => {
+      dispatch(clearWishlistState());
     };
+  }, [loading, token, dispatch]);
 
-    fetchWishlist();
-  }, []);
+  const itemsForGrid = useMemo(
+    () =>
+      Array.isArray(items)
+        ? items.map((item) => ({
+            id: item.coleccionableId,
+            nombre: item.nombre,
+            descripcion: "En tu wishlist",
+            precio: item.precio,
+            imagen: item.imagenUrl || item.imagenurl || null,
+            stock: 1,
+            _rowId: item.id,
+          }))
+        : [],
+    [items]
+  );
 
   const eliminarDeWishlist = async (id) => {
+    if (!token) return;
     try {
-      await removeFromWishlist(token, id);
-      setWishlist((prev) => prev.filter((item) => item.id !== id));
-    } catch (error) {
-      console.error("Error al eliminar producto:", error);
+      await dispatch(removeWishlistItem({ token, itemId: id })).unwrap();
+    } catch (e) {
+      console.error("Error al eliminar producto:", e);
     }
   };
 
-  if (loading) return <p>Cargando wishlist...</p>;
-  if (wishlist.length === 0)
+  if (!token) {
+    return (
+      <main className="flex-1">
+        <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <h1 className="mb-6 text-3xl font-black text-primary">Mi Wishlist</h1>
+          <p className="text-center text-sm text-white/70">
+            Tenés que iniciar sesión para ver tu wishlist.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (status === "loading") {
+    return <p className="px-4 py-8 text-sm text-white/70">Cargando wishlist...</p>;
+  }
+
+  if (!error && itemsForGrid.length === 0) {
     return (
       <main className="flex-1">
         <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -46,16 +78,7 @@ const Wishlist = () => {
         </div>
       </main>
     );
-
-  const itemsForGrid = wishlist.map((item) => ({
-    id: item.coleccionableId,
-    nombre: item.nombre,
-    descripcion: "En tu wishlist",
-    precio: item.precio,
-    imagen: item.imagenUrl || item.imagenurl || null,
-    stock: 1,
-    _rowId: item.id,
-  }));
+  }
 
   return (
     <div className="relative mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -63,10 +86,16 @@ const Wishlist = () => {
         <h1 className="text-3xl font-black text-primary">Mi Wishlist</h1>
       </div>
 
+      {error && (
+        <p className="mb-4 text-sm text-red-400">
+          Error al cargar wishlist: {error}
+        </p>
+      )}
+
       <ColeccionablesGrid
         items={itemsForGrid}
         onAddToCart={async ({ id }) => {
-          const row = wishlist.find(
+          const row = items.find(
             (it) => String(it.coleccionableId) === String(id)
           );
           try {
@@ -74,7 +103,6 @@ const Wishlist = () => {
           } catch (e) {
             console.warn("Error al agregar al carrito desde wishlist", e);
             const msg = String(e?.message || "");
-            // Si no hay token, no borramos para no desincronizar la wishlist
             if (msg.includes("No auth token")) {
               return;
             }

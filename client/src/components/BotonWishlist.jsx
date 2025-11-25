@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addToWishlist } from "./redux/wishlistSlice";
+import { addToWishlist } from "../redux/wishlistSlice";
 
 const BotonWishlist = ({ coleccionableId }) => {
   const dispatch = useDispatch();
