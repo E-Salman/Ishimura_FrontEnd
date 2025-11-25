@@ -1,9 +1,12 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
-import { getMarcas, getLineasByMarca, getColeccionables } from "../lib/api";
 import { useAuth } from "../context/AuthContext.jsx";
 import logo from "../../../assets/images/logoishimura.png";
 import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchMarcas } from "../redux/marcasSlice";
+import { fetchLineasByMarca } from "../redux/lineasSlice";
+import { fetchColeccionables } from "../redux/coleccionablesSlice";
 
 function AvatarInitial({ email }) {
   const initial = (email?.[0] || "?").toUpperCase();
@@ -30,14 +33,14 @@ const linkInactive =
 const linkActive = "text-primary";
 
 const NavBar = () => {
-  //const { user, logout, isAdmin } = useAuth();
   const user = null;
   const isAdmin = false;
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
-  
+
   useEffect(() => {
     const onClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
@@ -53,146 +56,225 @@ const NavBar = () => {
     };
   }, []);
 
-const handleLogout = () => {
-  try {
-    //logout();            // limpia contexto + localStorage
-  } finally {
-    setOpen(false);      // cierra el menú
-    navigate("/login", { replace: true }); // redirección segura
-  }
-};
+  const handleLogout = () => {
+    try {
+    } finally {
+      setOpen(false);
+      navigate("/login", { replace: true });
+    }
+  };
 
-const goToPurchases = () => {
-  setOpen(false);
-  navigate("/mis-compras");
-};
+  const goToPurchases = () => {
+    setOpen(false);
+    navigate("/mis-compras");
+  };
 
-  // SEARCH STATE
+  const { items: marcas, status: marcasStatus } = useSelector(
+    (state) => state.marcas
+  );
+
+  const lineasByMarca = useSelector((state) => state.lineas.byMarca);
+
+  const {
+    items: coleccionables,
+    status: colStatus,
+  } = useSelector((state) => state.coleccionables);
+
+  useEffect(() => {
+    if (marcasStatus === "idle") {
+      dispatch(fetchMarcas());
+    }
+  }, [marcasStatus, dispatch]);
+
+  // ---------- SEARCH STATE ----------
   const [q, setQ] = useState("");
-  const [suggestions, setSuggestions] = useState({ brands: [], lines: [], items: [] });
+  const [suggestions, setSuggestions] = useState({
+    brands: [],
+    lines: [],
+    items: [],
+  });
   const [showSug, setShowSug] = useState(false);
   const [loadingSug, setLoadingSug] = useState(false);
-  const [allItems, setAllItems] = useState(null);
-  const [brands, setBrands] = useState([]);
-  const linesCache = useRef(new Map()); // marcaId -> [{id,nombre}]
-  const linesPrefetchAll = useRef(false);
   const searchRef = useRef(null);
 
-  // Load brands once
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const arr = await getMarcas();
-        if (!active) return;
-        const mapped = (Array.isArray(arr) ? arr : []).map((m) => ({
-          id: m?.id ?? m?.marcaId ?? m?._id ?? String(Math.random()),
-          nombre: m?.nombre ?? m?.name ?? m?.title ?? "Marca",
-        }));
-        setBrands(mapped);
-      } catch (_) {}
-    })();
-    return () => { active = false; };
-  }, []);
-
   function norm(s) {
-    return String(s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
+    return String(s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .trim();
   }
 
-  // Prefetch all lines across brands when the user starts searching (runs once)
   useEffect(() => {
     const term = norm(q);
-    if (!brands.length || linesPrefetchAll.current) return;
-    if (!term || term.length < 2) return;
-    let cancelled = false;
-    linesPrefetchAll.current = true;
-    (async () => {
-      for (const bm of brands) {
-        if (cancelled) break;
-        const key = String(bm.id);
-        if (!linesCache.current.has(key)) {
-          try {
-            const arr = await getLineasByMarca(key);
-            const mapped = (Array.isArray(arr) ? arr : []).map((l) => ({ id: l?.id ?? l?.lineaId ?? String(Math.random()), nombre: l?.nombre ?? l?.name ?? l?.titulo ?? "L��nea", marcaId: key, marcaNombre: bm.nombre }));
-            linesCache.current.set(key, mapped);
-          } catch (_) { linesCache.current.set(key, []); }
-        }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [brands, q]);
+    if (!term || term.length < 2) {
+      setSuggestions({ brands: [], lines: [], items: [] });
+      return;
+    }
 
-  // Debounced suggestions
-  useEffect(() => {
-    const term = norm(q);
-    if (!term || term.length < 2) { setSuggestions({ brands: [], lines: [], items: [] }); return; }
     let cancelled = false;
     setLoadingSug(true);
-    const timer = setTimeout(async () => {
+
+    if (colStatus === "idle") {
+      dispatch(fetchColeccionables());
+    }
+
+    const timer = setTimeout(() => {
       try {
-        // Brands
-        const b = brands.filter((m) => norm(m.nombre).includes(term)).slice(0, 5);
+        // ---- BRANDS ----
+        const brandsNorm = (Array.isArray(marcas) ? marcas : []).map((m) => {
+          const id = m?.id ?? m?.marcaId ?? m?._id ?? String(m.id || "");
+          const nombre = m?.nombre ?? m?.name ?? m?.title ?? "Marca";
+          return { id, nombre, raw: m };
+        });
 
-        // Lines: ensure lines for top brand hits
-        const linesArr = [];
-        for (const bm of b) {
+        const filtBrands = brandsNorm
+          .filter((m) => norm(m.nombre).includes(term))
+          .slice(0, 5);
+
+        // ---- LÍNEAS ----
+        filtBrands.forEach((bm) => {
           const key = String(bm.id);
-          if (!linesCache.current.has(key)) {
-            try {
-              const arr = await getLineasByMarca(key);
-              const mapped = (Array.isArray(arr) ? arr : []).map((l) => ({ id: l?.id ?? l?.lineaId ?? String(Math.random()), nombre: l?.nombre ?? l?.name ?? l?.titulo ?? "Línea", marcaId: key, marcaNombre: bm.nombre }));
-              linesCache.current.set(key, mapped);
-            } catch (_) { linesCache.current.set(key, []); }
+          const entry = lineasByMarca?.[key];
+          if (!entry || entry.status === "idle") {
+            dispatch(fetchLineasByMarca(key));
           }
-          linesArr.push(...(linesCache.current.get(key) || []));
-        }
-        const l = Array.from(new Set([
-          ...linesArr.filter((ln) => norm(ln.nombre).includes(term)),
-          ...Array.from(linesCache.current.values()).flat().filter((ln) => norm(ln.nombre).includes(term)),
-        ])).slice(0, 5);
+        });
 
-        // Items: load all once then filter
-        if (!allItems) {
-          try { setAllItems(await getColeccionables({})); } catch (_) {}
-        }
-        const itemsSource = Array.isArray(allItems) ? allItems : [];
-        const it = itemsSource.filter((x) => norm(x?.nombre).includes(term)).slice(0, 6);
+        const allLines = Object.entries(lineasByMarca || {}).flatMap(
+          ([marcaId, entry]) => {
+            if (!entry || !Array.isArray(entry.items)) return [];
+            const marcaMatch = brandsNorm.find(
+              (b) => String(b.id) === String(marcaId)
+            );
+            const marcaNombre = marcaMatch?.nombre ?? "Marca";
+            return entry.items.map((l) => ({
+              id: l?.id ?? l?.lineaId ?? l?.lineaID ?? String(l.id || ""),
+              nombre: l?.nombre ?? l?.name ?? l?.titulo ?? "Línea",
+              marcaId,
+              marcaNombre,
+            }));
+          }
+        );
 
-        if (!cancelled) setSuggestions({ brands: b, lines: l, items: it });
+        const filtLines = allLines
+          .filter((ln) => norm(ln.nombre).includes(term))
+          .slice(0, 5);
+
+        // ---- ITEMS (COLECCIONABLES) ----
+        const itemsSource = Array.isArray(coleccionables)
+          ? coleccionables
+          : [];
+        const filtItems = itemsSource
+          .filter((x) => norm(x?.nombre ?? x?.name ?? "").includes(term))
+          .slice(0, 6);
+
+        if (!cancelled) {
+          setSuggestions({
+            brands: filtBrands,
+            lines: filtLines,
+            items: filtItems,
+          });
+        }
       } finally {
         if (!cancelled) setLoadingSug(false);
       }
     }, 250);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [q, brands, allItems]);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [q, marcas, lineasByMarca, coleccionables, colStatus, dispatch]);
 
   // Hide suggestions on outside click
   useEffect(() => {
     function onDoc(e) {
-      if (searchRef.current && !searchRef.current.contains(e.target)) setShowSug(false);
+      if (searchRef.current && !searchRef.current.contains(e.target))
+        setShowSug(false);
     }
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
   function onSubmitSearch(e) {
     e.preventDefault();
     const term = norm(q);
     if (!term) return;
-    // Exact item match
-    const itemsSource = Array.isArray(allItems) ? allItems : [];
-    const exactItem = itemsSource.find((x) => norm(x?.nombre) === term);
-    if (exactItem) { navigate(`/coleccionable/${exactItem.id}`); setShowSug(false); return; }
-    // Exact brand
-    const exactBrand = brands.find((m) => norm(m.nombre) === term);
-    if (exactBrand) { navigate(`/coleccionables?marcaId=${encodeURIComponent(exactBrand.id)}`); setShowSug(false); return; }
-    // Exact line
-    const allLines = Array.from(linesCache.current.values()).flat();
-    const exactLine = allLines.find((ln) => norm(ln.nombre) === term);
-    if (exactLine) { navigate(`/coleccionables?marcaId=${encodeURIComponent(exactLine.marcaId)}&lineaId=${encodeURIComponent(exactLine.id)}`); setShowSug(false); return; }
-    const partialLine = allLines.find((ln) => norm(ln.nombre).includes(term));
-    if (partialLine) { navigate(`/coleccionables?marcaId=${encodeURIComponent(partialLine.marcaId)}&lineaId=${encodeURIComponent(partialLine.id)}`); setShowSug(false); return; }
-    // Fallback: go to list with fuzzy query
+
+    // ITEMS exactos
+    const itemsSource = Array.isArray(coleccionables) ? coleccionables : [];
+    const exactItem = itemsSource.find(
+      (x) => norm(x?.nombre ?? x?.name ?? "") === term
+    );
+    if (exactItem) {
+      navigate(`/coleccionable/${exactItem.id}`);
+      setShowSug(false);
+      return;
+    }
+
+    // BRANDS exactas
+    const brandsNorm = (Array.isArray(marcas) ? marcas : []).map((m) => {
+      const id = m?.id ?? m?.marcaId ?? m?._id ?? String(m.id || "");
+      const nombre = m?.nombre ?? m?.name ?? m?.title ?? "Marca";
+      return { id, nombre, raw: m };
+    });
+
+    const exactBrand = brandsNorm.find(
+      (m) => norm(m.nombre) === term
+    );
+    if (exactBrand && exactBrand.id) {
+      navigate(
+        `/coleccionables?marcaId=${encodeURIComponent(exactBrand.id)}`
+      );
+      setShowSug(false);
+      return;
+    }
+
+    // LÍNEAS exactas / parciales
+    const allLines = Object.entries(lineasByMarca || {}).flatMap(
+      ([marcaId, entry]) => {
+        if (!entry || !Array.isArray(entry.items)) return [];
+        const marcaMatch = brandsNorm.find(
+          (b) => String(b.id) === String(marcaId)
+        );
+        const marcaNombre = marcaMatch?.nombre ?? "Marca";
+        return entry.items.map((l) => ({
+          id: l?.id ?? l?.lineaId ?? l?.lineaID ?? String(l.id || ""),
+          nombre: l?.nombre ?? l?.name ?? l?.titulo ?? "Línea",
+          marcaId,
+          marcaNombre,
+        }));
+      }
+    );
+
+    const exactLine = allLines.find(
+      (ln) => norm(ln.nombre) === term
+    );
+    if (exactLine) {
+      navigate(
+        `/coleccionables?marcaId=${encodeURIComponent(
+          exactLine.marcaId
+        )}&lineaId=${encodeURIComponent(exactLine.id)}`
+      );
+      setShowSug(false);
+      return;
+    }
+
+    const partialLine = allLines.find((ln) =>
+      norm(ln.nombre).includes(term)
+    );
+    if (partialLine) {
+      navigate(
+        `/coleccionables?marcaId=${encodeURIComponent(
+          partialLine.marcaId
+        )}&lineaId=${encodeURIComponent(partialLine.id)}`
+      );
+      setShowSug(false);
+      return;
+    }
+
+    // Fallback: listado por query
     navigate(`/coleccionables?q=${encodeURIComponent(q)}`);
     setShowSug(false);
   }
@@ -215,8 +297,14 @@ const goToPurchases = () => {
       {/* LEFT: logo + nav links */}
       <div className="flex items-center gap-10">
         <div className="flex items-center gap-3 text-primary">
-          <img src={logo} alt="Ishimura Logo" className="w-10 h-10 object-contain" />
-          <h2 className="text-xl font-bold tracking-wide">ISHIMURA COLLECTIBLES</h2>
+          <img
+            src={logo}
+            alt="Ishimura Logo"
+            className="w-10 h-10 object-contain"
+          />
+          <h2 className="text-xl font-bold tracking-wide">
+            ISHIMURA COLLECTIBLES
+          </h2>
         </div>
 
         <nav className="hidden md:flex items-center gap-8">
@@ -265,7 +353,10 @@ const goToPurchases = () => {
 
       {/* CENTER: search bar */}
       <div className="hidden lg:flex justify-center" ref={searchRef}>
-        <form onSubmit={onSubmitSearch} className="relative block w-full max-w-[34rem] transition-all duration-300 focus-within:max-w-[46rem]">
+        <form
+          onSubmit={onSubmitSearch}
+          className="relative block w-full max-w-[34rem] transition-all duration-300 focus-within:max-w-[46rem]"
+        >
           <span className="sr-only">Search</span>
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white/40 dark:text-black/40 pointer-events-none">
             <span className="material-symbols-outlined">search</span>
@@ -275,62 +366,97 @@ const goToPurchases = () => {
             placeholder="Buscar marcas, líneas o figuras"
             type="text"
             value={q}
-            onChange={(e) => { setQ(e.target.value); setShowSug(true); }}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setShowSug(true);
+            }}
             onFocus={() => setShowSug(true)}
           />
-          {showSug && (suggestions.brands.length + suggestions.lines.length + suggestions.items.length > 0 || loadingSug) && (
-            <div className="dropdown-enter absolute left-1/2 -translate-x-1/2 z-[9999] mt-2 w-[40rem] max-w-[90vw] rounded-lg bg-black/80 p-2 shadow-lg ring-1 ring-white/10 backdrop-blur-sm dark:bg-white/80 dark:ring-black/10 max-h-[60vh] overflow-y-auto overflow-x-hidden">
-              {loadingSug && <div className="px-3 py-2 text-sm text-white/60 dark:text-black/60">Buscando…</div>}
-              {suggestions.brands.length > 0 && (
-                <div className="py-1 space-y-1">
-                  <div className="px-3 pb-1 text-xs uppercase tracking-wide text-white/50 dark:text-black/50">Marcas</div>
-                  {suggestions.brands.map((m) => (
-                    <button
-                      type="button"
-                      key={`b-${m.id}`}
-                      className="block w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent whitespace-normal break-words"
-                      onClick={() => { navigate(`/coleccionables?marcaId=${encodeURIComponent(m.id)}`); setShowSug(false); }}
-                    >
-                      {m.nombre}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {suggestions.lines.length > 0 && (
-                <div className="py-1 space-y-1">
-                  <div className="px-3 pb-1 text-xs uppercase tracking-wide text-white/50 dark:text-black/50">Líneas</div>
-                  {suggestions.lines.map((l) => (
-                    <button
-                      type="button"
-                      key={`l-${l.id}`}
-                      className="block w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent whitespace-normal break-words"
-                      onClick={() => {
-                        navigate(`/coleccionables?marcaId=${encodeURIComponent(l.marcaId)}&lineaId=${encodeURIComponent(l.id)}`);
-                        setShowSug(false);
-                      }}
-                    >
-                      {l.nombre} <span className="text-white/40 dark:text-black/40">· {l.marcaNombre}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {suggestions.items.length > 0 && (
-                <div className="py-1 space-y-1">
-                  <div className="px-3 pb-1 text-xs uppercase tracking-wide text-white/50 dark:text-black/50">Coleccionables</div>
-                  {suggestions.items.map((it) => (
-                    <button
-                      type="button"
-                      key={`i-${it.id}`}
-                      className="block w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent whitespace-normal break-words"
-                      onClick={() => { navigate(`/coleccionable/${it.id}`); setShowSug(false); }}
-                    >
-                      {it.nombre}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {showSug &&
+            (suggestions.brands.length +
+              suggestions.lines.length +
+              suggestions.items.length >
+              0 ||
+              loadingSug) && (
+              <div className="dropdown-enter absolute left-1/2 -translate-x-1/2 z-[9999] mt-2 w-[40rem] max-w-[90vw] rounded-lg bg-black/80 p-2 shadow-lg ring-1 ring-white/10 backdrop-blur-sm dark:bg-white/80 dark:ring-black/10 max-h-[60vh] overflow-y-auto overflow-x-hidden">
+                {loadingSug && (
+                  <div className="px-3 py-2 text-sm text-white/60 dark:text-black/60">
+                    Buscando…
+                  </div>
+                )}
+                {suggestions.brands.length > 0 && (
+                  <div className="py-1 space-y-1">
+                    <div className="px-3 pb-1 text-xs uppercase tracking-wide text-white/50 dark:text-black/50">
+                      Marcas
+                    </div>
+                    {suggestions.brands.map((m) => (
+                      <button
+                        type="button"
+                        key={`b-${m.id}`}
+                        className="block w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent whitespace-normal break-words"
+                        onClick={() => {
+                          navigate(
+                            `/coleccionables?marcaId=${encodeURIComponent(
+                              m.id
+                            )}`
+                          );
+                          setShowSug(false);
+                        }}
+                      >
+                        {m.nombre}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {suggestions.lines.length > 0 && (
+                  <div className="py-1 space-y-1">
+                    <div className="px-3 pb-1 text-xs uppercase tracking-wide text-white/50 dark:text-black/50">
+                      Líneas
+                    </div>
+                    {suggestions.lines.map((l) => (
+                      <button
+                        type="button"
+                        key={`l-${l.id}`}
+                        className="block w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent whitespace-normal break-words"
+                        onClick={() => {
+                          navigate(
+                            `/coleccionables?marcaId=${encodeURIComponent(
+                              l.marcaId
+                            )}&lineaId=${encodeURIComponent(l.id)}`
+                          );
+                          setShowSug(false);
+                        }}
+                      >
+                        {l.nombre}{" "}
+                        <span className="text-white/40 dark:text-black/40">
+                          · {l.marcaNombre}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {suggestions.items.length > 0 && (
+                  <div className="py-1 space-y-1">
+                    <div className="px-3 pb-1 text-xs uppercase tracking-wide text-white/50 dark:text-black/50">
+                      Coleccionables
+                    </div>
+                    {suggestions.items.map((it) => (
+                      <button
+                        type="button"
+                        key={`i-${it.id}`}
+                        className="block w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent whitespace-normal break-words"
+                        onClick={() => {
+                          navigate(`/coleccionable/${it.id}`);
+                          setShowSug(false);
+                        }}
+                      >
+                        {it.nombre}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
         </form>
       </div>
 
@@ -340,12 +466,16 @@ const goToPurchases = () => {
           <>
             <NavLink to="/wishlist">
               <button className="flex items-center justify-center rounded-full bg-primary/20 size-10 text-white hover:bg-primary/30 dark:text-black dark:hover:bg-primary/25">
-                <span className="material-symbols-outlined text-[22px]">favorite_border</span>
+                <span className="material-symbols-outlined text-[22px]">
+                  favorite_border
+                </span>
               </button>
             </NavLink>
             <NavLink to="/carrito">
               <button className="flex items-center justify-center rounded-full bg-primary/20 size-10 text-white hover:bg-primary/30 dark:text-black dark:hover:bg-primary/25">
-                <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
+                <span className="material-symbols-outlined text-[22px]">
+                  shopping_cart
+                </span>
               </button>
             </NavLink>
           </>
@@ -370,57 +500,6 @@ const goToPurchases = () => {
           </NavLink>
         ) : (
           <div className="relative" ref={menuRef}>
-            <button
-              aria-haspopup="menu"
-              aria-expanded={open}
-              onClick={() => setOpen((v) => !v)}
-              className="
-                flex items-center justify-center rounded-full size-10
-                bg-primary/20 hover:bg-primary/30
-                dark:bg-primary/10 dark:hover:bg-primary/25
-                text-white dark:text-black
-                transition-all duration-300
-              "
-              title={user.email}
-            >
-              <AvatarInitial email={user.email} />
-            </button>
-
-            {open && (
-              <div
-                role="menu"
-                className="absolute right-0 mt-2 w-64 rounded-xl border border-white/10 dark:border-black/10
-                          bg-[#0f1715]/80 dark:bg-white/80 backdrop-blur-md shadow-lg z-50 overflow-hidden"
-              >
-                <div className="px-4 py-3">
-                  <p className="text-xs uppercase tracking-wide text-white/60 dark:text-black/60">
-                    Signed in as
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-white dark:text-black break-all">
-                    {user.email}
-                  </p>
-                </div>
-                <div className="h-px bg-white/10 dark:bg-black/10" />
-                <div className="flex flex-col">
-                  <button
-                    onClick={goToPurchases}
-                    role="menuitem"
-                    className="w-full text-left px-4 py-3 text-sm font-semibold text-white hover:bg-white/10 dark:text-black dark:hover:bg-black/5"
-                  >
-                    Mis compras
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    role="menuitem"
-                    className="w-full text-left px-4 py-3 text-sm font-semibold
-                              text-red-300 hover:text-red-200 hover:bg-white/5
-                              dark:text-red-600 dark:hover:text-red-700 dark:hover:bg-black/5"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 

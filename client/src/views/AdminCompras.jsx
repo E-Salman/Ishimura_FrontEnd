@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchAdminOrders } from "../redux/adminOrdersSlice";
 
-const BASE = "http://localhost:4002";
-const ORDERS_URL = `${BASE}/ordenes/admin/detalle`;
+// --- Helpers de mapeo y formato ---
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
@@ -65,10 +66,13 @@ function formatMoney(amount) {
 
 export default function AdminCompras() {
   const { isAdmin, token } = useAuth();
+  const dispatch = useDispatch();
 
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const {
+    items: rawOrders,
+    status,
+    error,
+  } = useSelector((state) => state.adminOrders);
 
   const [q, setQ] = useState(""); // búsqueda por nro orden / email
   const [minTotal, setMinTotal] = useState("");
@@ -78,42 +82,12 @@ export default function AdminCompras() {
 
   useEffect(() => {
     if (!isAdmin || !token) return;
+    if (status === "idle") {
+      dispatch(fetchAdminOrders(token));
+    }
+  }, [isAdmin, token, status, dispatch]);
 
-    const controller = new AbortController();
-
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await fetch(ORDERS_URL, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          signal: controller.signal,
-        });
-
-        if (res.status === 401 || res.status === 403) {
-          throw new Error("No autorizado. Iniciá sesión con una cuenta admin.");
-        }
-        if (!res.ok) {
-          throw new Error(`Error HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        const arr = Array.isArray(data) ? data.map(normalizeOrder) : [];
-        setOrders(arr);
-      } catch (e) {
-        if (e.name === "AbortError") return;
-        setError(e.message || "No se pudieron cargar las compras.");
-      } finally {
-        setLoading(false);
-      }
-    })();
-
-    return () => controller.abort();
-  }, [isAdmin, token]);
-
+  // Si no es admin, misma vista de antes
   if (!isAdmin) {
     return (
       <main className="mx-auto max-w-4xl px-4 py-12">
@@ -132,6 +106,12 @@ export default function AdminCompras() {
     );
   }
 
+  const orders = useMemo(
+    () =>
+      Array.isArray(rawOrders) ? rawOrders.map((o) => normalizeOrder(o)) : [],
+    [rawOrders]
+  );
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     const min = minTotal !== "" ? Number(minTotal) : null;
@@ -144,11 +124,11 @@ export default function AdminCompras() {
 
         if (!term) return true;
         const matchesNumero = String(o.id ?? "")
-            .toLowerCase()
-            .includes(term);
+          .toLowerCase()
+          .includes(term);
         const matchesEmail = String(o.email ?? "")
-            .toLowerCase()
-            .includes(term);
+          .toLowerCase()
+          .includes(term);
 
         return matchesNumero || matchesEmail;
       })
@@ -162,6 +142,8 @@ export default function AdminCompras() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const start = (page - 1) * pageSize;
   const pageItems = filtered.slice(start, start + pageSize);
+
+  const isLoading = status === "loading";
 
   return (
     <main className="flex-1">
@@ -194,34 +176,33 @@ export default function AdminCompras() {
               setPage(1);
             }}
           />
-         <input
+          <input
             type="number"
             min={0}
             className="rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white focus:border-primary/50 focus:outline-none"
             placeholder="Precio mín."
             value={minTotal}
             onChange={(e) => {
-                const v = e.target.value;
-                setMinTotal(v === "" ? "" : Math.max(0, Number(v)));
-                setPage(1);
+              const v = e.target.value;
+              setMinTotal(v === "" ? "" : Math.max(0, Number(v)));
+              setPage(1);
             }}
-            />
-
-            <input
+          />
+          <input
             type="number"
             min={0}
             className="rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white focus:border-primary/50 focus:outline-none"
             placeholder="Precio máx."
             value={maxTotal}
             onChange={(e) => {
-                const v = e.target.value;
-                setMaxTotal(v === "" ? "" : Math.max(0, Number(v)));
-                setPage(1);
+              const v = e.target.value;
+              setMaxTotal(v === "" ? "" : Math.max(0, Number(v)));
+              setPage(1);
             }}
-            />
+          />
         </div>
 
-        {loading && (
+        {isLoading && (
           <div className="rounded-xl border border-white/10 bg-black/70 p-6 text-white/70">
             Cargando compras…
           </div>
@@ -233,13 +214,13 @@ export default function AdminCompras() {
           </div>
         )}
 
-        {!loading && !error && filtered.length === 0 && (
+        {!isLoading && !error && filtered.length === 0 && (
           <div className="rounded-xl border border-white/10 bg-black/60 px-5 py-8 text-center text-white/60">
             No hay compras registradas todavía.
           </div>
         )}
 
-        {!loading && !error && filtered.length > 0 && (
+        {!isLoading && !error && filtered.length > 0 && (
           <>
             <div className="overflow-hidden rounded-lg border border-white/10 bg-black/60">
               <table className="min-w-full text-sm">
@@ -301,9 +282,7 @@ export default function AdminCompras() {
                   {page} / {totalPages}
                 </span>
                 <button
-                  onClick={() =>
-                    setPage((p) => Math.min(totalPages, p + 1))
-                  }
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                   className="rounded bg-white/10 px-3 py-1 hover:bg-white/20 disabled:opacity-40"
                 >
