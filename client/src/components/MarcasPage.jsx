@@ -19,25 +19,38 @@ export default function MarcasPage() {
   }, [status, dispatch]);
 
   const marcas = useMemo(() => {
-    const mapMarca = (m) => ({
-      id:
+    const mapMarca = (m) => {
+      const id =
         m?.id ??
         m?._id ??
         m?.marcaId ??
         m?.marcaID ??
         crypto.randomUUID?.() ??
-        String(Math.random()),
-      title: m?.name ?? m?.nombre ?? m?.title ?? "Marca",
-      description: m?.description ?? m?.descripcion ?? "",
-      image: m?.imageUrl ?? m?.imagenUrl ?? m?.imagen ?? m?.image ?? null,
-      slug:
-        m?.slug ??
-        (m?.name ?? m?.nombre ?? "marca")
-          ?.toString()
-          ?.toLowerCase()
-          ?.replace(/\s+/g, "-") ??
-        "marca",
-    });
+        String(Math.random());
+
+      // El backend no está devolviendo la URL de imagen en /marcas.
+      // Usamos el endpoint de primera imagen como fallback directo.
+      const image =
+        m?.imageUrl ??
+        m?.imagenUrl ??
+        m?.imagen ??
+        m?.image ??
+        (id ? `${import.meta.env.VITE_API_URL ?? '/api'}/marcasImages/${id}/imagenes/primera` : null);
+
+      return {
+        id,
+        title: m?.name ?? m?.nombre ?? m?.title ?? "Marca",
+        description: m?.description ?? m?.descripcion ?? "",
+        image,
+        slug:
+          m?.slug ??
+          (m?.name ?? m?.nombre ?? "marca")
+            ?.toString()
+            ?.toLowerCase()
+            ?.replace(/\s+/g, "-") ??
+          "marca",
+      };
+    };
 
     return Array.isArray(rawMarcas) ? rawMarcas.map(mapMarca) : [];
   }, [rawMarcas]);
