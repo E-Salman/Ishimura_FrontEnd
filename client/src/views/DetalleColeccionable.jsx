@@ -3,15 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   getColeccionableDetalle,
   getColeccionableFirstImageUrl,
-  addToCart,
-  addToWishlist,
-  getWishlist,
-  removeFromWishlist,
 } from "../lib/api";
+import { useDispatch, useSelector } from "react-redux";
+import { addCartItem } from "../redux/cartSlice";
+import { addToWishlistThunk, fetchWishlist, removeFromWishlistThunk, selectWishlistItems } from "../redux/wishlistSlice";
 import { useAuth } from "../context/AuthContext";
 
 const DetalleColeccionable = () => {
   const { id } = useParams();
+  const dispatch = useDispatch();
+  const wishlist = useSelector(selectWishlistItems);
   const [coleccionable, setColeccionable] = useState(null);
   const [imagen, setImagen] = useState(null);
   const [mensaje, setMensaje] = useState("");
@@ -45,7 +46,7 @@ const DetalleColeccionable = () => {
   const agregarAlCarrito = async () => {
     let skipWishlist = false;
     try {      
-      await addToCart(token, id, { cantidad: 1 });
+      await dispatch(addCartItem({ coleccionableId: id, cantidad: 1 })).unwrap();
       setMensaje("Producto agregado al carrito");
       setTimeout(() => setMensaje(""), 2000);
     } catch (error) {
@@ -62,25 +63,20 @@ const DetalleColeccionable = () => {
     if (skipWishlist) return;
 
     try {
-      const data = await getWishlist(token);
-      const list = Array.isArray(data) ? data : [];
-      const row = list.find(
+      await dispatch(fetchWishlist()).unwrap();
+      const row = wishlist.find(
         (w) => String(w.coleccionableId) === String(id)
       );
       if (row) {
-        await removeFromWishlist(token, row.id);
+        await dispatch(removeFromWishlistThunk({ itemId: row.id })).unwrap();
       }
     } catch (_) {}
   };
 
   const agregarAWishlist = async () => {
     try {
-      const ok = await addToWishlist(token, id);
-      if (ok) {
-        setMensaje("Agregado a tu wishlist");
-      } else {
-        setMensaje("No se pudo agregar a la wishlist");
-      }
+      await dispatch(addToWishlistThunk({ coleccionableId: id })).unwrap();
+      setMensaje("Agregado a tu wishlist");
       setTimeout(() => setMensaje(""), 2000);
     } catch (error) {
       console.error("Error al agregar a wishlist:", error);

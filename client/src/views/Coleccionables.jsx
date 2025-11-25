@@ -1,7 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
-import { getBaseUrl, getMarcas, getLineasByMarca, getColeccionables, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist, getPricePreview, addToCart, getWishlist, removeFromWishlist } from '../lib/api';
+import { useDispatch, useSelector } from 'react-redux';
+import { addCartItem, selectCartItems } from '../redux/cartSlice';
+import { addToWishlistThunk, fetchWishlist, removeFromWishlistThunk, selectWishlistItems } from '../redux/wishlistSlice';
+import {
+  fetchMarcas as fetchMarcasCat,
+  fetchLineasByMarca as fetchLineasCat,
+  fetchColeccionables as fetchColeccionablesCat,
+  selectColeccionables,
+  selectColeccionablesError,
+  selectColeccionablesStatus,
+  selectLineasByMarcaCat,
+  selectMarcasCat,
+} from '../redux/coleccionablesSlice';
+import { getColeccionableFirstImageUrl, getColeccionableDetalle, getPricePreview } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
 const SORTS = [
@@ -13,14 +26,15 @@ const SORTS = [
 
 export default function ColeccionablesView() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialMarca = searchParams.get('marcaId');
   const initialLinea = searchParams.get('lineaId');
   const initialSort = searchParams.get('sort') || 'alpha-desc';
   const initialQ = searchParams.get('q') || '';
 
-  const [marcas, setMarcas] = useState([]);
-  const [lineas, setLineas] = useState([]);
+  const marcas = useSelector(selectMarcasCat);
+  const lineas = useSelector((state) => selectLineasByMarcaCat(state, marcaId || ""));
   const [marcaId, setMarcaId] = useState(initialMarca || '');
   const [lineaId, setLineaId] = useState(initialLinea || '');
   const [sort, setSort] = useState(initialSort);
@@ -31,64 +45,35 @@ export default function ColeccionablesView() {
   const [lineOpen, setLineOpen] = useState(false);
   const lineRef = useRef(null);
 
+  const itemsStore = useSelector(selectColeccionables);
+  const loadingStatus = useSelector(selectColeccionablesStatus);
+  const error = useSelector(selectColeccionablesError);
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [q, setQ] = useState(initialQ);
-  const [wishlist, setWishlist] = useState([]);
+  const wishlist = useSelector(selectWishlistItems);
   const { token } = useAuth();
   useEffect(() => { setQ(searchParams.get('q') || ''); }, [searchParams]);
 
   // Load marcas at start
   useEffect(() => {
-    const controller = new AbortController();
-    getMarcas(controller.signal)
-      .then((json) => {
-        const mapped = (Array.isArray(json) ? json : []).map((m) => ({
-          id: m?.id ?? m?._id ?? m?.marcaId ?? m?.marcaID ?? String(Math.random()),
-          nombre: m?.name ?? m?.nombre ?? m?.title ?? 'Marca',
-        }));
-        setMarcas(mapped);
-      })
-      .catch(() => {})
-      .finally(() => {});
-    return () => controller.abort();
-  }, []);
+    dispatch(fetchMarcasCat());
+  }, [dispatch]);
 
   // Load wishlist once
   useEffect(() => {
-    const controller = new AbortController();
     async function loadWishlist() {
-      try {
-        const data = await getWishlist(controller.signal);
-        const list = Array.isArray(data) ? data : [];
-        setWishlist(list);
-      } catch (_) {
-        // ignorar errores de wishlist para no romper la UX
-      }
+      if (!token) return;
+      dispatch(fetchWishlist());
     }
     loadWishlist();
-    return () => controller.abort();
-  }, []);
+  }, [token, dispatch]);
 
   // Load lineas when marca changes
   useEffect(() => {
-    setLineas([]);
     if (!initialLinea) setLineaId('');
     if (!marcaId) return;
-    const controller = new AbortController();
-    const BASE = getBaseUrl();
-    getLineasByMarca(marcaId, controller.signal)
-      .then((arr) => {
-        const mapped = (Array.isArray(arr) ? arr : []).map((l) => ({
-          id: l?.id ?? l?.lineaId ?? l?._id ?? String(Math.random()),
-          nombre: l?.nombre ?? l?.name ?? l?.titulo ?? 'Línea',
-        }));
-        setLineas(mapped);
-      })
-      .catch(() => setLineas([]));
-    return () => controller.abort();
-  }, [marcaId]);
+    dispatch(fetchLineasCat({ marcaId }));
+  }, [dispatch, marcaId, initialLinea]);
 
   // Update URL params when filters change
   useEffect(() => {
@@ -150,33 +135,18 @@ export default function ColeccionablesView() {
 
   // Load items according to filters
   useEffect(() => {
+    dispatch(fetchColeccionablesCat({ marcaId: marcaId || null, lineaId: lineaId || null, token }));
+  }, [dispatch, marcaId, lineaId, token]);
+
+  // Enriquecer items con precios/imágenes
+  useEffect(() => {
     const controller = new AbortController();
-    let revoked = [];
-    async function load() {
+    const revoked = [];
+    async function enrich() {
       try {
-        setLoading(true);
-        setError(null);
-        let data = await getColeccionables({ marcaId: marcaId || null, lineaId: lineaId || null }, controller.signal);
-        // Prefetch stocks map en un solo request si es posible
-        const BASE = getBaseUrl();
-        try {
-          const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-          const resMap = await fetch(`${BASE}/catalogo`, { signal: controller.signal, headers });
-          if (resMap.ok) {
-            const arr = await resMap.json();
-            const stockMap = new Map();
-            (Array.isArray(arr) ? arr : []).forEach((row) => {
-              const id = row?.coleccionableId ?? row?.id ?? row?.coleccionableID;
-              if (id != null) stockMap.set(String(id), Number(row?.stock ?? 0));
-            });
-            data = data.map((it) => ({ ...it, stock: stockMap.get(String(it.id)) ?? it.stock }));
-          }
-        } catch (_) {}
-        // Completar precio con preview (promos) + detalle/imágenes si faltan
         const completed = await Promise.all(
-          data.map(async (it) => {
+          (itemsStore || []).map(async (it) => {
             let enriched = { ...it };
-            // Intentar obtener preview de precio (detecta promo)
             try {
               const q = await getPricePreview(it.id, { qty: 1 }, controller.signal);
               const lista = Number(q?.precioLista ?? q?.lista ?? enriched?.precio ?? 0);
@@ -188,7 +158,6 @@ export default function ColeccionablesView() {
               }
             } catch (_) {}
 
-            // Completar precio desde detalle si sigue faltando
             if (enriched?.precio == null) {
               try {
                 const det = await getColeccionableDetalle(it.id, controller.signal);
@@ -197,7 +166,6 @@ export default function ColeccionablesView() {
               } catch (_) {}
             }
 
-            // Completar imagen
             if (!enriched.imagen) {
               try {
                 const url = await getColeccionableFirstImageUrl(it.id, controller.signal);
@@ -205,31 +173,18 @@ export default function ColeccionablesView() {
                 enriched.imagen = url;
               } catch (_) {}
             }
-            // Obtener stock por item (autoritativo)
-            try {
-              const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-              const resS = await fetch(`${BASE}/catalogo/${encodeURIComponent(it.id)}`, { signal: controller.signal, headers });
-              if (resS.ok) {
-                const dto = await resS.json();
-                enriched.stock = Number(dto?.stock ?? dto?.cantidad ?? 0);
-              }
-            } catch (_) {}
             return enriched;
           })
         );
         setItems(completed);
-      } catch (e) {
-        if (e?.name !== 'AbortError') setError(e?.message || String(e));
-      } finally {
-        setLoading(false);
-      }
+      } catch (_) {}
     }
-    load();
+    enrich();
     return () => {
       controller.abort();
-      for (const u of revoked) URL.revokeObjectURL(u);
+      revoked.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
     };
-  }, [marcaId, lineaId]);
+  }, [itemsStore]);
 
   function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, ''); }
   function levenshtein(a, b) {
@@ -280,22 +235,14 @@ export default function ColeccionablesView() {
   }, [filteredItems, sort]);
 
   const wishlistIdSet = useMemo(
-    () => new Set(wishlist.map((w) => String(w.coleccionableId))),
+    () => new Set((wishlist || []).map((w) => String(w.coleccionableId))),
     [wishlist]
   );
 
   const handleAddToWishlist = async ({ id }) => {
     try {
-      const ok = await addToWishlist(token, id);
-      if (ok) {
-        try {
-          const data = await getWishlist(token);
-          const list = Array.isArray(data) ? data : [];
-          setWishlist(list);
-        } catch (_) {}
-      } else {
-        console.warn('No se pudo agregar a la wishlist');
-      }
+      await dispatch(addToWishlistThunk({ coleccionableId: id })).unwrap();
+      await dispatch(fetchWishlist());
     } catch (e) {
       console.warn('Wishlist error', e);
     }
@@ -437,11 +384,11 @@ export default function ColeccionablesView() {
       {error && (
         <p className="mb-4 text-sm text-red-400">Error al cargar coleccionables: {error}</p>
       )}
-      {loading && (
+      {loadingStatus === 'loading' && (
         <p className="mb-4 text-sm text-white/60">Cargando…</p>
       )}
 
-      {!loading && (
+      {loadingStatus !== 'loading' && (
         <ColeccionablesGrid
           items={sortedItems.map((it) => ({
             ...it,
@@ -453,20 +400,15 @@ export default function ColeccionablesView() {
               (w) => String(w.coleccionableId) === String(id)
             );
             try {
-              await addToCart(token, id, { cantidad: 1 });
+              await dispatch(addCartItem({ coleccionableId: id, cantidad: 1 })).unwrap();
             } catch (e) {
               console.warn('Cart error', e);
-              const msg = String(e?.message || '');
-              // Si no hay token, no tocamos la wishlist
-              if (msg.includes('No auth token')) {
-                return;
-              }
+              return;
             }
             if (row) {
               try {
-                await removeFromWishlist(token, row.id);
+                await dispatch(removeFromWishlistThunk({ itemId: row.id })).unwrap();
               } catch (_) {}
-              setWishlist((prev) => prev.filter((w) => w.id !== row.id));
             }
           }}
           addToCartText="Agregar al carrito"

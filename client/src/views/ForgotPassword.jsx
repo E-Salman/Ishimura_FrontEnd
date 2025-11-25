@@ -1,14 +1,22 @@
 // src/views/ForgotPassword.jsx
+import axios from "axios";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+
+const BASE = "http://localhost:4002";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    // TODO: acá iría tu llamada al backend para enviar el mail de reset
-    alert(`Te enviamos un enlace de reset a: ${email}`);
+    try {
+      await axios.post(`${BASE}/auth/forgot-password`, { email });
+      alert(`Te enviamos un enlace de reset a: ${email}`);
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "No se pudo enviar el correo";
+      alert(msg);
+    }
   };
 
   return (
@@ -33,15 +41,13 @@ export default function ForgotPassword() {
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="block w-full rounded-lg border border-gray-700 bg-black px-3 py-3 text-white placeholder-white/50
-                         focus:border-primary focus:outline-none"
+              className="block w-full rounded-lg border border-gray-700 bg-black px-3 py-3 text-white placeholder-white/50 focus:border-primary focus:outline-none"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-black hover:bg-primary/90
-                       focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-black hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
           >
             Send Reset Link
           </button>

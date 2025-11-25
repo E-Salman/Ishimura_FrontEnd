@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -26,11 +27,9 @@ export default function CrearColeccionable() {
   // Cargar marcas
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${BASE}/marcas`, { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((arr) => setMarcas(Array.isArray(arr) ? arr : []))
-      .catch(() => {})
-      .finally(() => {});
+    axios.get(`${BASE}/marcas`, { signal: controller.signal })
+      .then((r) => setMarcas(Array.isArray(r.data) ? r.data : []))
+      .catch(() => {});
     return () => controller.abort();
   }, []);
 
@@ -40,9 +39,8 @@ export default function CrearColeccionable() {
     setLineaId("");
     if (!marcaId) return;
     const controller = new AbortController();
-    fetch(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`, { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((arr) => setLineas(Array.isArray(arr) ? arr : []))
+    axios.get(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`, { signal: controller.signal })
+      .then((r) => setLineas(Array.isArray(r.data) ? r.data : []))
       .catch(() => setLineas([]));
     return () => controller.abort();
   }, [marcaId]);
@@ -64,33 +62,8 @@ export default function CrearColeccionable() {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
-      const res = await fetch(`${BASE}/coleccionable`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const raw = await res.text().catch(() => "");
-        let friendly = `Error ${res.status}`;
-        try {
-          const j = raw ? JSON.parse(raw) : null;
-          const detail = j?.detail || j?.message || j?.error || j?.title || raw;
-          const code = j?.code || j?.errorCode;
-          if (
-            res.status === 409 &&
-            (/(ALREADY|EXIST)/i.test(String(code || "")) || /existe/i.test(String(detail || "")))
-          ) {
-            friendly = "Ese coleccionable ya existe en la línea seleccionada. Cambiá el nombre o la línea.";
-          } else {
-            friendly = String(detail || friendly);
-          }
-        } catch (_) {
-          // si no es JSON, dejamos un resumen corto
-          if (res.status === 409) friendly = "Ese coleccionable ya existe en la línea seleccionada.";
-        }
-        throw new Error(friendly);
-      }
-      const json = await res.json().catch(() => null);
+      const res = await axios.post(`${BASE}/coleccionable`, payload, { headers });
+      const json = res.data ?? null;
       const newId = json?.id ?? json?.coleccionableId ?? json?.coleccionableID ?? null;
 
       // Subir imágenes si hay

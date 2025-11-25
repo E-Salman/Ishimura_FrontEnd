@@ -19,4 +19,7 @@ const authSlice = createSlice({
 });
 
 export const { setLogin, logout } = authSlice.actions;
+export const selectToken = (state) => state.auth.token;
+export const selectEmail = (state) => state.auth.email;
+export const selectIsAdmin = (state) => isAdminFromToken(state.auth.token);
 export default authSlice.reducer;

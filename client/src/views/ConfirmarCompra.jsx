@@ -2,11 +2,14 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createOrder } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useSelector } from "react-redux";
+import { selectCartItems } from "../redux/cartSlice";
 
 const ConfirmarCompra = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const carrito = location.state?.carrito || [];
+  const carritoStore = useSelector(selectCartItems);
+  const carrito = location.state?.carrito || carritoStore;
   const { token } = useAuth();
 
   const [direccion, setDireccion] = useState({
