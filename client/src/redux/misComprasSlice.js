@@ -7,7 +7,7 @@ const BASE = "http://localhost:4002";
 export const fetchMisCompras = createAsyncThunk(
   "misCompras/fetch",
   async (_arg, { getState, rejectWithValue, signal }) => {
-    const token = getState().login.token || localStorage.getItem("ishimura_token");
+    const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
 
     try {

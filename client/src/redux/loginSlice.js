@@ -10,11 +10,8 @@ export const authLogin = createAsyncThunk(
       const headers = {
         "Content-Type": "application/json",
       };
-
       const body = JSON.stringify({ email, password });
-
       const { data } = await axios.post(URL, body, { headers });
-
       return data;
     }  
       
@@ -57,11 +54,9 @@ const loginSlice = createSlice({
       .addCase(authLogin.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
-
         state.role = action.payload.role;
         state.token = action.payload.access_token;
         state.email = action.meta.arg.email;
-
         state.kaomojiCount = 0;
       })
       .addCase(authLogin.rejected, (state, action) => {

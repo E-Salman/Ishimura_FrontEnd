@@ -11,14 +11,7 @@ const BotonWishlist = ({ coleccionableId }) => {
       .unwrap()
       .then(() => alert("Agregado a tu wishlist"))
       .catch((error) => {
-        if (typeof error === "string") {
-        // viene de rejectWithValue()
-        alert(error);
-      } else {
-        // error estándar
-        alert("Error inesperado, no se pudo agregar a la wishlist");
-      }
-      alert(error)
+        alert(error)
       })
   };
 

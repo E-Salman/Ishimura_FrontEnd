@@ -4,9 +4,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 const BASE = "http://localhost:4002";
 const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : undefined);
 
-export const fetchCart = createAsyncThunk(
-  "cart/fetch",
-  async (_arg, { getState, rejectWithValue, signal }) => {
+export const fetchCart = createAsyncThunk("cart/fetch", async (_arg, { getState, rejectWithValue, signal }) => {
     const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     const res = await axios.get(`${BASE}/carrito`, { signal, headers: authHeaders(token) });
@@ -23,9 +21,7 @@ export const addCartItem = createAsyncThunk("cart/add", async ({ coleccionableId
   }
 );
 
-export const updateCartQuantity = createAsyncThunk(
-  "cart/updateQty",
-  async ({ itemId, cantidad }, { getState, rejectWithValue, signal }) => {
+export const updateCartQuantity = createAsyncThunk("cart/updateQty", async ({ itemId, cantidad }, { getState, rejectWithValue, signal }) => {
     const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     const url = `${BASE}/carrito/${encodeURIComponent(itemId)}?cantidad=${encodeURIComponent(cantidad)}`;
@@ -34,9 +30,7 @@ export const updateCartQuantity = createAsyncThunk(
   }
 );
 
-export const removeCartItemThunk = createAsyncThunk(
-  "cart/remove",
-  async ({ itemId }, { getState, rejectWithValue, signal }) => {
+export const removeCartItemThunk = createAsyncThunk("cart/remove", async ({ itemId }, { getState, rejectWithValue, signal }) => {
     const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     await axios.delete(`${BASE}/carrito/${encodeURIComponent(itemId)}`, { signal, headers: authHeaders(token) });
@@ -100,5 +94,4 @@ const cartSlice = createSlice({
 export const selectCartItems = (state) => state.cart.items;
 export const selectCartStatus = (state) => state.cart.status;
 export const selectCartError = (state) => state.cart.error;
-
 export default cartSlice.reducer;

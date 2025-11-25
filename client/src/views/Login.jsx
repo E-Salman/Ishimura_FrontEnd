@@ -1,4 +1,3 @@
-// src/views/Login.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,6 +9,7 @@ export default function Login() {
   const { loading, error, kaomojiCount } = useSelector((state) => state.login);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [uiError, setUiError] = useState("");
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -23,11 +23,10 @@ export default function Login() {
         navigate("/home");
       })
       .catch(() => {
-  
+        setUiError("Email o contraseña incorrectos")
       });
   };
 
-  // Kaomoji según intentos fallidos
   const mood =
     kaomojiCount === 0
       ? "◝(ᵔᗜᵔ)◜"
@@ -73,16 +72,11 @@ export default function Login() {
             required
           />
 
-          {error && (
-            <p
-              className="text-sm text-red-400 dark:text-red-600"
-              role="alert"
-              aria-live="polite"
-            >
-              {error}
-            </p>
-          )}
-
+        {(uiError || error) && (
+  <p className="text-sm text-red-400 dark:text-red-600">
+    {uiError || error}
+  </p>
+)}
           <div className="text-right">
             <Link
               to="/forgot-password"
