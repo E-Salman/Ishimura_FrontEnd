@@ -78,6 +78,13 @@ export default function ColeccionablesView() {
     dispatch(fetchLineasCat({ marcaId }));
   }, [dispatch, marcaId, initialLinea]);
 
+  // Si se vuelve a "todas las marcas", limpiar la línea seleccionada
+  useEffect(() => {
+    if (!marcaId && lineaId) {
+      setLineaId('');
+    }
+  }, [marcaId, lineaId]);
+
   // Update URL params when filters change
   useEffect(() => {
     const next = {};
@@ -318,23 +325,23 @@ export default function ColeccionablesView() {
                   <button
                     type="button"
                     className="w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent"
-                    onClick={() => { setMarcaId(''); setMarcaOpen(false); }}
+                    onClick={() => { setMarcaId(''); setLineaId(''); setMarcaOpen(false); }}
                     role="option"
                     aria-selected={!marcaId}
                   >
                     Todas las marcas
                   </button>
                   {marcas.map((m) => (
-                    <button
-                      type="button"
-                      key={m.id}
-                      className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${String(m.id) === String(marcaId) ? 'font-bold' : ''}`}
-                      onClick={() => { setMarcaId(String(m.id)); setMarcaOpen(false); }}
-                      role="option"
-                      aria-selected={String(m.id) === String(marcaId)}
-                    >
-                      {m.nombre}
-                    </button>
+                  <button
+                    type="button"
+                    key={m.id}
+                    className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${String(m.id) === String(marcaId) ? 'font-bold' : ''}`}
+                    onClick={() => { setMarcaId(String(m.id)); setLineaId(''); setMarcaOpen(false); }}
+                    role="option"
+                    aria-selected={String(m.id) === String(marcaId)}
+                  >
+                    {m.nombre}
+                  </button>
                   ))}
                 </div>
               </div>
