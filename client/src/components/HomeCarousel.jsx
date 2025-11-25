@@ -1,7 +1,4 @@
 import { useEffect, useState } from "react";
-import ColeccionableDestacado from "./ColeccionableDestacado";
-import Coleccionable from "./Coleccionable";
-import { NavLink } from "react-router-dom";
 
 
 const HomeCarousel = () => {
@@ -9,7 +6,7 @@ const HomeCarousel = () => {
   const [coleccionables, setColeccionables] = useState([])
   const [imagenes, setImagenes] = useState([])
 
-  const URLBase = `http://localhost:4002/coleccionable/`
+  //const URLBase = `http://localhost:4002/coleccionable/`
 
   const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -23,7 +20,7 @@ const HomeCarousel = () => {
 
   const randomIds = getUniqueRandoms(5, 1, 22);
 
-  useEffect(() => {
+  /*useEffect(() => {
     const fetchData = async () => {
       try {
         const results = await Promise.all(
@@ -36,8 +33,6 @@ const HomeCarousel = () => {
 
             if (res1.ok && res2.ok) {
               const imagenBlob = URL.createObjectURL(blob);
-              //setColeccionables([...coleccionables, { coleccionableData }]);
-              //setImagenes([...imagenes, { imagenBlob }]);
               return { coleccionableData, imagenBlob };
             }
             else console.log("Imagen no encontrada para el coleccionable #" + id)
@@ -64,11 +59,10 @@ const HomeCarousel = () => {
     }, 3000);
     return () => clearInterval(interval);
   }, [coleccionables]);
-
   return (
     <section className="py-12 text-white">
       <div className="relative flex items-center justify-center">
-        {/* Arrows */}
+        {/* Arrows }
         <button
           onClick={prev}
           className="absolute left-0 z-10 bg-black/50 px-4 py-2 rounded-full hover:bg-black/70"
@@ -82,7 +76,7 @@ const HomeCarousel = () => {
           ›
         </button>
 
-        {/* Carousel Container */}
+        {/* Carousel Container }
         <div className="overflow-hidden w-[300px] sm:w-[400px] md:w-[500px] rounded-xl shadow-lg">
           {coleccionables.length > 0 && (
             <div
@@ -110,6 +104,29 @@ const HomeCarousel = () => {
               ))}
             </div>
           )}
+        </div>
+      </div>
+    </section>
+  );
+  */
+
+  return (
+    <section className="py-12 text-white">
+      <div className="relative flex items-center justify-center">
+        {/* Arrows */}
+        <button
+          className="absolute left-0 z-10 bg-black/50 px-4 py-2 rounded-full hover:bg-black/70"
+        >
+          ‹
+        </button>
+        <button
+          className="absolute right-0 z-10 bg-black/50 px-4 py-2 rounded-full hover:bg-black/70"
+        >
+          ›
+        </button>
+
+        {/* Carousel Container */}
+        <div className="overflow-hidden w-[300px] sm:w-[400px] md:w-[500px] rounded-xl shadow-lg">
         </div>
       </div>
     </section>

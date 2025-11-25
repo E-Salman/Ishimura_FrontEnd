@@ -1,26 +1,31 @@
-import React from "react";
-import { addToWishlist } from "../lib/api";
-import { useAuth } from "../context/AuthContext";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { addToWishlist } from "./redux/wishlistSlice";
 
 const BotonWishlist = ({ coleccionableId }) => {
-  const { token } = useAuth();
-  const agregarAWishlist = async () => {
-    try {
-      const ok = await addToWishlist(token, coleccionableId);
-      if (ok) {
-        alert("Agregado a tu wishlist");
+  const dispatch = useDispatch();
+  const { status } = useSelector((state) => state.wishlist);
+
+  const agregar = () => {
+    dispatch(addToWishlist(coleccionableId)) //addToWishlist es la funcion createasynthunk que exporta wishlistSlice
+      .unwrap()
+      .then(() => alert("Agregado a tu wishlist"))
+      .catch((error) => {
+        if (typeof error === "string") {
+        // viene de rejectWithValue()
+        alert(error);
       } else {
-        alert("No se pudo agregar a la wishlist");
+        // error estándar
+        alert("Error inesperado, no se pudo agregar a la wishlist");
       }
-    } catch (error) {
-      console.error("Error al agregar a wishlist:", error);
-      alert("Error de conexión con el servidor");
-    }
+      alert(error)
+      })      
   };
 
   return (
     <button
-      onClick={agregarAWishlist}
+      onClick={agregar}
+      disabled={status === "loading"}
       className="rounded-full bg-primary/20 p-2 text-white hover:bg-primary/30 transition-colors"
       title="Agregar a wishlist"
     >
@@ -30,4 +35,3 @@ const BotonWishlist = ({ coleccionableId }) => {
 };
 
 export default BotonWishlist;
-

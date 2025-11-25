@@ -9,11 +9,11 @@ export default function ColeccionablesGrid({
   className = '',
   addToCartText,
   addToCartClassName,
-   onQuantityChange,
-   showWishlistButton = true,
-   secondaryText,
-   secondaryClassName,
-   onSecondaryClick,
+  onQuantityChange,
+  showWishlistButton = true,
+  secondaryText,
+  secondaryClassName,
+  onSecondaryClick,
 }) {
   if (!Array.isArray(items) || items.length === 0) {
     return <p className="text-white/60">No hay coleccionables.</p>;

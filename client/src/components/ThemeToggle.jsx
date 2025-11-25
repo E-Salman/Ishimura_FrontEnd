@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 export default function ThemeToggle() {
+  //Cambiar localStorage o asi esta bien :thinking:?
   const [dark, setDark] = useState(() =>
     localStorage.theme
       ? localStorage.theme === "dark"
