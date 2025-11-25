@@ -3,10 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchWishlist,
-  removeFromWishlist,
-} from "../redux/wishlistSlice";
+import { fetchWishlist, removeFromWishlist } from "../redux/wishlistSlice";
 
 const BASE = "http://localhost:4002";
 const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
@@ -14,17 +11,14 @@ const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {
 const Wishlist = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { token } = useSelector((state) => state.login)
+
+  const { token } = useSelector((state) => state.login);
   const { items, loading, error } = useSelector((state) => state.wishlist);
-  //clearWishlistState,
+
   useEffect(() => {
-    if (!loading && token) {
+    if (token) {
       dispatch(fetchWishlist({ token }));
     }
-    return () => {
-      //dispatch(clearWishlistState());
-    };
-    fetchWishlist();
   }, [token]);
 
   const eliminarDeWishlist = async (id) => {
@@ -36,10 +30,26 @@ const Wishlist = () => {
     }
   };
 
+  // 🔥 ACOMODAMOS la wishlist para el grid
+  const itemsForGrid = useMemo(() => {
+    return items.map((raw) => {
+      const it = raw.coleccionable ?? raw;
+      return {
+        id: it.id ?? raw.coleccionableId,
+        nombre: it.nombre,
+        descripcion: it.descripcion ?? "",
+        precio: it.precio ?? null,
+        imagen: it.imagen ?? it.imageUrl ?? null,
+        _rowId: raw.id, // se usa para eliminar
+      };
+    });
+  }, [items]);
+
+  // 🔥 Usuario no logueado
   if (!token) {
     return (
       <main className="flex-1">
-        <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl px-4 py-16">
           <h1 className="mb-6 text-3xl font-black text-primary">Mi Wishlist</h1>
           <p className="text-center text-sm text-white/70">
             Tenés que iniciar sesión para ver tu wishlist.
@@ -49,14 +59,16 @@ const Wishlist = () => {
     );
   }
 
-  if (status === "loading") {
+  // 🔥 Loading
+  if (loading) {
     return <p className="px-4 py-8 text-sm text-white/70">Cargando wishlist...</p>;
   }
 
+  // 🔥 Lista vacía
   if (!error && itemsForGrid.length === 0) {
     return (
       <main className="flex-1">
-        <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl px-4 py-16">
           <h1 className="mb-6 text-3xl font-black text-primary">Mi Wishlist</h1>
           <p className="text-center text-sm text-white/70">
             Tu lista de deseos está vacía
@@ -67,7 +79,7 @@ const Wishlist = () => {
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="relative mx-auto w-full max-w-7xl px-4 py-12">
       <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-3xl font-black text-primary">Mi Wishlist</h1>
       </div>
@@ -81,9 +93,6 @@ const Wishlist = () => {
       <ColeccionablesGrid
         items={itemsForGrid}
         onAddToCart={async ({ id }) => {
-          const row = items.find(
-            (it) => String(it.coleccionableId) === String(id)
-          );
           try {
             await axios.post(
               `${BASE}/carrito/${encodeURIComponent(id)}?cantidad=1`,
@@ -92,11 +101,12 @@ const Wishlist = () => {
             );
           } catch (e) {
             console.warn("Error al agregar al carrito desde wishlist", e);
-            const msg = String(e?.message || "");
-            if (msg.includes("No auth token")) {
-              return;
-            }
           }
+
+          const row = items.find((x) =>
+            String(x.coleccionableId) === String(id)
+          );
+
           if (row) {
             await eliminarDeWishlist(row.id);
           }

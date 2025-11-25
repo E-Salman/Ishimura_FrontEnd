@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useAuth } from "../context/AuthContext.jsx";
 import {
   fetchMisCompras,
   selectMisCompras,
@@ -58,8 +57,8 @@ function formatMoney(amount) {
 }
 
 export default function MisCompras() {
-  const { user, token } = useAuth();
   const dispatch = useDispatch();
+  const { user, token } = useSelector((state) => state.login)
   const rawOrders = useSelector(selectMisCompras);
   const status = useSelector(selectMisComprasStatus);
   const error = useSelector(selectMisComprasError);
