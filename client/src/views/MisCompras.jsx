@@ -1,67 +1,37 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getUserOrders } from "../lib/api";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useAuth } from "../context/AuthContext.jsx";
+import {
+  clearMisCompras,
+  fetchMisCompras,
+} from "../redux/misComprasSlice.js";
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
-  const items = Array.isArray(base.items)
-    ? base.items
-    : Array.isArray(base.detalles)
-    ? base.detalles
-    : Array.isArray(base.detalle)
-    ? base.detalle
-    : Array.isArray(base.productos)
-    ? base.productos
-    : [];
+  const items = Array.isArray(base.items) ? base.items : [];
 
   const mappedItems = items.map((item, idx) => ({
-    key:
-      item?.id ??
-      item?.detalleId ??
-      item?.ordenDetalleId ??
-      `${base?.id ?? base?.ordenId ?? idx}-${idx}`,
-    nombre:
-      item?.nombre ??
-      item?.coleccionableNombre ??
-      item?.coleccionable?.nombre ??
-      item?.producto ??
-      `Item ${idx + 1}`,
-    cantidad: item?.cantidad ?? item?.qty ?? 1,
-    precio:
-      item?.precio ??
-      item?.precioUnitario ??
-      item?.monto ??
-      item?.importe ??
-      item?.coleccionable?.precio ??
-      null,
+    key: `${base?.numeroOrden ?? "orden"}-${idx}`,
+    nombre: item?.nombre ?? `Item ${idx + 1}`,
+    cantidad: item?.cantidad ?? 1,
+    precio: item?.precioUnitario ?? item?.precio ?? item?.subtotal ?? null,
+    subtotal: item?.subtotal ?? null,
   }));
 
   return {
-    id:
-      base?.id ??
-      base?.ordenId ??
-      base?.orderId ??
-      base?.codigo ??
-      base?.numero ??
-      base?.code ??
-      base?.uuid ??
-      null,
-    fecha:
-      base?.fecha ??
-      base?.fechaCreacion ??
-      base?.createdAt ??
-      base?.createdDate ??
-      base?.fechaCompra ??
-      base?.timestamp ??
-      null,
-    estado: base?.estado ?? base?.status ?? base?.estadoOrden ?? "Procesando",
+    id: base?.numeroOrden ?? null,
+    fecha: base?.creadaEn ?? null,
+    estado: base?.estado ?? "Procesando",
     total:
-      base?.total ??
-      base?.monto ??
-      base?.importe ??
-      base?.totalOrden ??
-      mappedItems.reduce((acc, it) => acc + Number(it.precio || 0) * Number(it.cantidad || 1), 0),
+      base?.montoTotal ??
+      mappedItems.reduce(
+        (acc, it) =>
+          acc +
+          Number(it.subtotal || 0) ||
+          Number(it.precio || 0) * Number(it.cantidad || 1),
+        0
+      ),
     items: mappedItems,
     raw: base,
   };
@@ -85,7 +55,7 @@ function formatDate(dateLike) {
 }
 
 function formatMoney(amount) {
-  if (amount == null || Number.isNaN(Number(amount))) return "—";
+  if (amount == null || Number.isNaN(Number(amount))) return "�?�";
   try {
     return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(amount);
   } catch (_) {
@@ -94,7 +64,7 @@ function formatMoney(amount) {
 }
 
 export default function MisCompras() {
-  const { email, token } = useSelector((state) => state.login)
+  const { user, token } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -106,7 +76,7 @@ export default function MisCompras() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getUserOrders(token, email, controller.signal);
+        const data = await getUserOrders(token, user, controller.signal);
         setOrders(Array.isArray(data) ? data.map(normalizeOrder) : []);
       } catch (e) {
         if (e?.message !== "No autorizado") {
@@ -135,6 +105,8 @@ export default function MisCompras() {
     );
   }
 
+  const isLoading = status === "loading";
+
   return (
     <main className="flex-1">
       <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
@@ -145,9 +117,9 @@ export default function MisCompras() {
           </p>
         </div>
 
-        {loading && (
+        {isLoading && (
           <div className="rounded-xl border border-white/10 bg-black/70 p-6 text-white/70">
-            Cargando tus compras…
+            Cargando tus compras...
           </div>
         )}
 
@@ -157,7 +129,7 @@ export default function MisCompras() {
           </div>
         )}
 
-        {!loading && !error && orders.length === 0 && (
+        {!isLoading && !error && orders.length === 0 && (
           <div className="rounded-xl border border-white/10 bg-black/60 px-5 py-8 text-center text-white/60">
             Aún no registramos compras en tu cuenta. Explorá la{" "}
             <Link to="/coleccionables" className="text-primary underline">tienda</Link> y completá tu
@@ -174,7 +146,9 @@ export default function MisCompras() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
                 <div>
                   <p className="text-sm text-white/50">Orden</p>
-                  <p className="text-lg font-semibold text-white">{order.id ?? "Sin ID"}</p>
+                  <p className="text-lg font-semibold text-white">
+                    {order.id ?? "Sin ID"}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-white/50">Fecha</p>
@@ -188,18 +162,27 @@ export default function MisCompras() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-white/50">Total</p>
-                  <p className="text-xl font-bold text-primary">{formatMoney(order.total)}</p>
+                  <p className="text-xl font-bold text-primary">
+                    {formatMoney(order.total)}
+                  </p>
                 </div>
               </div>
 
               <ul className="mt-4 space-y-3">
                 {order.items.map((item) => (
-                  <li key={item.key} className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <li
+                    key={item.key}
+                    className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
                     <div>
                       <p className="font-semibold text-white">{item.nombre}</p>
-                      <p className="text-sm text-white/60">Cantidad: {item.cantidad}</p>
+                      <p className="text-sm text-white/60">
+                        Cantidad: {item.cantidad}
+                      </p>
                     </div>
-                    <p className="text-sm font-semibold text-primary">{formatMoney(item.precio)}</p>
+                    <p className="text-sm font-semibold text-primary">
+                      {formatMoney(item.precio)}
+                    </p>
                   </li>
                 ))}
               </ul>

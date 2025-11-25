@@ -8,7 +8,6 @@ import {
   getWishlist,
   removeFromWishlist,
 } from "../lib/api";
-import { useAuth } from "../context/AuthContext";
 import {
   clearPromotions,
   fetchPromotions,
