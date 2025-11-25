@@ -26,8 +26,15 @@ async function fetchPricePreview(id, signal) {
     signal,
     validateStatus: () => true,
   });
+
+  // ⚠ asegura siempre un objeto, nunca string
+  if (!res.data || typeof res.data !== "object") {
+    return {};
+  }
+
   return res.data;
 }
+
 
 async function fetchDetalle(id, signal) {
   const res = await axios.get(`${BASE}/coleccionable/${id}`, { signal, validateStatus: () => true });
@@ -143,7 +150,6 @@ const newArrivalsSlice = createSlice({
   reducers: {
     clearNewArrivals: (state) => {
       state.items = [];
-      state.status = "idle";
       state.error = null;
       state.revokedUrls = [];
     },
