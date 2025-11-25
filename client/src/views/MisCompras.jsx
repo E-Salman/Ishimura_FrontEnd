@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getUserOrders } from "../lib/api";
+import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext.jsx";
+import {
+  clearMisCompras,
+  fetchMisCompras,
+} from "../redux/misComprasSlice.js";
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
@@ -61,7 +65,11 @@ function normalizeOrder(raw) {
       base?.monto ??
       base?.importe ??
       base?.totalOrden ??
-      mappedItems.reduce((acc, it) => acc + Number(it.precio || 0) * Number(it.cantidad || 1), 0),
+      mappedItems.reduce(
+        (acc, it) =>
+          acc + Number(it.precio || 0) * Number(it.cantidad || 1),
+        0
+      ),
     items: mappedItems,
     raw: base,
   };
@@ -85,7 +93,7 @@ function formatDate(dateLike) {
 }
 
 function formatMoney(amount) {
-  if (amount == null || Number.isNaN(Number(amount))) return "—";
+  if (amount == null || Number.isNaN(Number(amount))) return "�?�";
   try {
     return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(amount);
   } catch (_) {
@@ -95,31 +103,25 @@ function formatMoney(amount) {
 
 export default function MisCompras() {
   const { user, token } = useAuth();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { items: ordersRaw, status, error } = useSelector(
+    (state) => state.misCompras
+  );
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
-    if (!token) return;
-    const controller = new AbortController();
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getUserOrders(token, user, controller.signal);
-        setOrders(Array.isArray(data) ? data.map(normalizeOrder) : []);
-      } catch (e) {
-        if (e?.message !== "No autorizado") {
-          setError(e?.message || "No se pudieron cargar tus compras.");
-        } else {
-          setError("Iniciá sesión nuevamente para ver tus compras.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => controller.abort();
-  }, [token]);
+    if (!token || !user) return;
+    if (status === "idle") {
+      dispatch(fetchMisCompras({ token, user }));
+    }
+    return () => dispatch(clearMisCompras());
+  }, [token, user, status, dispatch]);
+
+  const orders = useMemo(
+    () => (Array.isArray(ordersRaw) ? ordersRaw.map((o) => normalizeOrder(o)) : []),
+    [ordersRaw]
+  );
 
   if (!user || !token) {
     return (
@@ -135,6 +137,8 @@ export default function MisCompras() {
     );
   }
 
+  const isLoading = status === "loading";
+
   return (
     <main className="flex-1">
       <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
@@ -145,9 +149,9 @@ export default function MisCompras() {
           </p>
         </div>
 
-        {loading && (
+        {isLoading && (
           <div className="rounded-xl border border-white/10 bg-black/70 p-6 text-white/70">
-            Cargando tus compras…
+            Cargando tus compras...
           </div>
         )}
 
@@ -157,7 +161,7 @@ export default function MisCompras() {
           </div>
         )}
 
-        {!loading && !error && orders.length === 0 && (
+        {!isLoading && !error && orders.length === 0 && (
           <div className="rounded-xl border border-white/10 bg-black/60 px-5 py-8 text-center text-white/60">
             Aún no registramos compras en tu cuenta. Explorá la{" "}
             <Link to="/coleccionables" className="text-primary underline">tienda</Link> y completá tu
@@ -174,7 +178,9 @@ export default function MisCompras() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
                 <div>
                   <p className="text-sm text-white/50">Orden</p>
-                  <p className="text-lg font-semibold text-white">{order.id ?? "Sin ID"}</p>
+                  <p className="text-lg font-semibold text-white">
+                    {order.id ?? "Sin ID"}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-white/50">Fecha</p>
@@ -188,18 +194,27 @@ export default function MisCompras() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-white/50">Total</p>
-                  <p className="text-xl font-bold text-primary">{formatMoney(order.total)}</p>
+                  <p className="text-xl font-bold text-primary">
+                    {formatMoney(order.total)}
+                  </p>
                 </div>
               </div>
 
               <ul className="mt-4 space-y-3">
                 {order.items.map((item) => (
-                  <li key={item.key} className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <li
+                    key={item.key}
+                    className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
                     <div>
                       <p className="font-semibold text-white">{item.nombre}</p>
-                      <p className="text-sm text-white/60">Cantidad: {item.cantidad}</p>
+                      <p className="text-sm text-white/60">
+                        Cantidad: {item.cantidad}
+                      </p>
                     </div>
-                    <p className="text-sm font-semibold text-primary">{formatMoney(item.precio)}</p>
+                    <p className="text-sm font-semibold text-primary">
+                      {formatMoney(item.precio)}
+                    </p>
                   </li>
                 ))}
               </ul>

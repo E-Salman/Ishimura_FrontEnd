@@ -1,7 +1,12 @@
 // src/views/Register.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx"; 
+import { useDispatch, useSelector } from "react-redux";
+import { useAuth } from "../context/AuthContext.jsx";
+import {
+  clearRegisterState,
+  registerUser,
+} from "../redux/registerSlice.js";
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -11,92 +16,63 @@ export default function Register() {
     email: "",
     password: "",
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [okMsg, setOkMsg] = useState("");
+  const [validationError, setValidationError] = useState("");
 
   const navigate = useNavigate();
-  const { login } = useAuth(); 
+  const dispatch = useDispatch();
+  const { login } = useAuth();
+  const { loading, error, success, response } = useSelector(
+    (state) => state.register
+  );
 
-  const URLregister = "http://localhost:4002/api/v1/auth/register";
+  useEffect(() => {
+    return () => {
+      dispatch(clearRegisterState());
+    };
+  }, [dispatch]);
 
-  const onSubmit = (e) => {
+  const validate = () => {
+    if (form.password.trim().length < 4) {
+      return "La contraseña debe tener al menos 4 caracteres.";
+    }
+    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
+      return "Ingresá un email válido.";
+    }
+    return "";
+  };
+
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setOkMsg("");
-
-    if (form.password.length < 4) {
-      setError("La contraseña debe tener al menos 4 caracteres.");
+    setValidationError("");
+    const validation = validate();
+    if (validation) {
+      setValidationError(validation);
+      dispatch(clearRegisterState());
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.email)) {
-      setError("Ingresá un email válido.");
-      return;
-    }
-
-    setLoading(true);
-fetch(URLregister, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    nombre: form.nombre,
-    apellido: form.apellido,
-    direccion: form.direccion,
-    email: form.email,
-    password: form.password,
-    rol: "USER",
-  }),
-})
-  .then(async (res) => {
-    if (!res.ok) {
-      let msg = "";
-      try {
-        const j = await res.json();
-        if (j?.message) msg = j.message;
-      } catch {
+    try {
+      const result = await dispatch(registerUser({ ...form })).unwrap();
+      const token = result?.access_token;
+      if (token) {
+        login({ email: form.email, token });
+        setOkMsg("¡Cuenta creada!");
+        setTimeout(() => navigate("/home"), 700);
+      } else {
+        setOkMsg("¡Cuenta creada! Iniciá sesión.");
+        setTimeout(() => navigate("/login"), 700);
       }
-
-      if (res.status === 422 || res.status === 500) {
-        throw new Error("Este email ya está registrado.");
-      }
-
-      if (msg) {
-        throw new Error(msg);
-      }
-      throw new Error(`Error (${res.status})`);
+    } catch (_) {
+      // error handled by slice state
     }
+  };
 
-    return res.json().catch(() => ({}));
-  })
-  .then((data) => {
-    const token = data?.access_token;
-
-    if (token) {
-      login({ email: form.email, token });
-      setOkMsg("¡Cuenta creada!");
-      setTimeout(() => navigate("/home"), 700);
-    } else {
-      setOkMsg("¡Cuenta creada! Iniciá sesión.");
-      setTimeout(() => navigate("/login"), 700);
-    }
-  })
-  .catch((err) => {
-    setError(err.message || "Error al registrarse");
-  })
-  .finally(() => setLoading(false));
-}
   return (
-    <div
-      className="flex min-h-screen items-center justify-center
-                 bg-background-dark text-white
-                 dark:bg-background-light dark:text-black"
-    >
-      <div
-        className="w-11/12 max-w-md rounded-xl border border-[#4FFFCF]/20 bg-[#1a1a1a] p-8
-                   dark:bg-white dark:border-black/10 dark:shadow-md"
-      >
+    <div className="flex min-h-screen items-center justify-center bg-background-dark text-white dark:bg-background-light dark:text-black">
+      <div className="w-11/12 max-w-md rounded-xl border border-[#4FFFCF]/20 bg-[#1a1a1a] p-8 dark:bg-white dark:border-black/10 dark:shadow-md">
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold">Create your account</h2>
           <p className="mt-2 text-sm text-white/70 dark:text-black/60">
@@ -111,10 +87,7 @@ fetch(URLregister, {
             placeholder="Nombre"
             value={form.nombre}
             onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-            className="w-full rounded-lg border border-[#4FFFCF]/30 bg-transparent px-4 py-3
-                       text-white placeholder-white/50 focus:border-[#4FFFCF] outline-none
-                       dark:text-black dark:placeholder-black/50 dark:bg-white dark:border-black/20
-                       dark:focus:border-[#0ea5a4]"
+            className="w-full rounded-lg border border-[#4FFFCF]/30 bg-transparent px-4 py-3 text-white placeholder-white/50 focus:border-[#4FFFCF] outline-none dark:text-black dark:placeholder-black/50 dark:bg-white dark:border-black/20 dark:focus:border-[#0ea5a4]"
             required
           />
 
@@ -124,10 +97,7 @@ fetch(URLregister, {
             placeholder="Apellido"
             value={form.apellido}
             onChange={(e) => setForm({ ...form, apellido: e.target.value })}
-            className="w-full rounded-lg border border-[#4FFFCF]/30 bg-transparent px-4 py-3
-                       text-white placeholder-white/50 focus:border-[#4FFFCF] outline-none
-                       dark:text-black dark:placeholder-black/50 dark:bg-white dark:border-black/20
-                       dark:focus:border-[#0ea5a4]"
+            className="w-full rounded-lg border border-[#4FFFCF]/30 bg-transparent px-4 py-3 text-white placeholder-white/50 focus:border-[#4FFFCF] outline-none dark:text-black dark:placeholder-black/50 dark:bg-white dark:border-black/20 dark:focus:border-[#0ea5a4]"
             required
           />
 
@@ -137,10 +107,7 @@ fetch(URLregister, {
             placeholder="Dirección"
             value={form.direccion}
             onChange={(e) => setForm({ ...form, direccion: e.target.value })}
-            className="w-full rounded-lg border border-[#4FFFCF]/30 bg-transparent px-4 py-3
-                       text-white placeholder-white/50 focus:border-[#4FFFCF] outline-none
-                       dark:text-black dark:placeholder-black/50 dark:bg-white dark:border-black/20
-                       dark:focus:border-[#0ea5a4]"
+            className="w-full rounded-lg border border-[#4FFFCF]/30 bg-transparent px-4 py-3 text-white placeholder-white/50 focus:border-[#4FFFCF] outline-none dark:text-black dark:placeholder-black/50 dark:bg-white dark:border-black/20 dark:focus:border-[#0ea5a4]"
             required
           />
 
@@ -150,10 +117,7 @@ fetch(URLregister, {
             placeholder="Email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full rounded-lg border border-[#4FFFCF]/30 bg-transparent px-4 py-3
-                       text-white placeholder-white/50 focus:border-[#4FFFCF] outline-none
-                       dark:text-black dark:placeholder-black/50 dark:bg-white dark:border-black/20
-                       dark:focus:border-[#0ea5a4]"
+            className="w-full rounded-lg border border-[#4FFFCF]/30 bg-transparent px-4 py-3 text-white placeholder-white/50 focus:border-[#4FFFCF] outline-none dark:text-black dark:placeholder-black/50 dark:bg-white dark:border-black/20 dark:focus:border-[#0ea5a4]"
             required
           />
 
@@ -163,15 +127,14 @@ fetch(URLregister, {
             placeholder="Contraseña"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="w-full rounded-lg border border-[#4FFFCF]/30 bg-transparent px-4 py-3
-                       text-white placeholder-white/50 focus:border-[#4FFFCF] outline-none
-                       dark:text-black dark:placeholder-black/50 dark:bg-white dark:border-black/20
-                       dark:focus:border-[#0ea5a4]"
+            className="w-full rounded-lg border border-[#4FFFCF]/30 bg-transparent px-4 py-3 text-white placeholder-white/50 focus:border-[#4FFFCF] outline-none dark:text-black dark:placeholder-black/50 dark:bg-white dark:border-black/20 dark:focus:border-[#0ea5a4]"
             required
           />
 
-          {error && (
-            <p className="text-sm text-red-400 dark:text-red-600">{error}</p>
+          {(validationError || error) && (
+            <p className="text-sm text-red-400 dark:text-red-600">
+              {validationError || error}
+            </p>
           )}
           {okMsg && (
             <p className="text-sm text-emerald-400 dark:text-emerald-700">
