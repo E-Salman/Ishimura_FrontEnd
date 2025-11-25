@@ -8,7 +8,6 @@ import {
   getWishlist,
   removeFromWishlist,
 } from "../lib/api";
-import { useAuth } from "../context/AuthContext";
 import {
   clearNewArrivals,
   fetchNewArrivals,
@@ -17,7 +16,7 @@ import {
 export default function NewArrivals() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { token } = useAuth();
+  const token = useSelector((state) => state.login.token)
   const { items, status, error } = useSelector((state) => state.newArrivals);
 
   useEffect(() => {

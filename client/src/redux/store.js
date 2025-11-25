@@ -12,6 +12,7 @@ import cartReducer from './cartSlice'
 import adminReducer from './adminSlice'
 import ordersReducer from './ordersSlice'
 import loginReducer from './loginSlice'
+import carouselReducer from './coleccionablesCarouselSlice'
 
 export const store = configureStore({
     reducer: { 
@@ -28,5 +29,6 @@ export const store = configureStore({
         admin: adminReducer,
         orders: ordersReducer,
         login: loginReducer,
+        colsCarousel: carouselReducer,
     }
 })

@@ -1,7 +1,7 @@
 import ColeccionableDestacado from "../components/ColeccionableDestacado";
 import HomeCarousel from "../components/HomeCarousel";
 import { NavLink } from "react-router-dom";
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { fetchDestacados } from "../redux/colDestacadosSlice";
 import { useDispatch } from "react-redux";
 

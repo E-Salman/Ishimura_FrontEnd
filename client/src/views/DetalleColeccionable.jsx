@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addCartItem } from "../redux/cartSlice";
 import { addToWishlistThunk, fetchWishlist, removeFromWishlistThunk, selectWishlistItems } from "../redux/wishlistSlice";
-import { useAuth } from "../context/AuthContext";
 import { fetchDetalle, selectDetalleCat } from "../redux/coleccionablesSlice";
 
 const DetalleColeccionable = () => {
@@ -11,7 +10,7 @@ const DetalleColeccionable = () => {
   const dispatch = useDispatch();
   const wishlist = useSelector(selectWishlistItems);
   const [mensaje, setMensaje] = useState("");
-  const { token } = useAuth();
+  const { token } = useSelector((state) => state.login)
   const navigate = useNavigate();
   const detalle = useSelector((state) => selectDetalleCat(state, id));
   const coleccionable = detalle;

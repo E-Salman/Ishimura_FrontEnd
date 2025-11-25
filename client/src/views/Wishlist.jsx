@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getWishlist, removeFromWishlist, addToCart } from "../lib/api";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
-import { useAuth } from "../context/AuthContext";
+import { useSelector } from "react-redux";
 
 const Wishlist = () => {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const token = useSelector((state) => state.login.token);
 
   useEffect(() => {
     const fetchWishlist = async () => {

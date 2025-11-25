@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { getColeccionables, getPricePreview, getColeccionableFirstImageUrl, getColeccionableDetalle, addToWishlist, addToCart, getWishlist, removeFromWishlist } from '../lib/api';
-import { useAuth } from '../context/AuthContext';
+import { useSelector } from 'react-redux';
 
 export default function Promotions() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { token } = useAuth();
+  const token = useSelector((state) => state.login.token)
 
   useEffect(() => {
     const controller = new AbortController();

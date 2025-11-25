@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getUserOrders } from "../lib/api";
-import { useAuth } from "../context/AuthContext.jsx";
+import { useSelector } from "react-redux";
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
@@ -94,7 +94,7 @@ function formatMoney(amount) {
 }
 
 export default function MisCompras() {
-  const { user, token } = useAuth();
+  const { email, token } = useSelector((state) => state.login)
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -106,7 +106,7 @@ export default function MisCompras() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getUserOrders(token, user, controller.signal);
+        const data = await getUserOrders(token, email, controller.signal);
         setOrders(Array.isArray(data) ? data.map(normalizeOrder) : []);
       } catch (e) {
         if (e?.message !== "No autorizado") {
@@ -121,7 +121,7 @@ export default function MisCompras() {
     return () => controller.abort();
   }, [token]);
 
-  if (!user || !token) {
+  if (!email || !token) {
     return (
       <main className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
@@ -141,7 +141,7 @@ export default function MisCompras() {
         <div className="mb-8">
           <h1 className="text-3xl font-black text-primary">Mis compras</h1>
           <p className="mt-2 text-sm text-white/60">
-            Historial de órdenes asociadas a tu cuenta ({user.email}).
+            Historial de órdenes asociadas a tu cuenta ({email.email}).
           </p>
         </div>
 

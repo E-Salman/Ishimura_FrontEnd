@@ -1,6 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
-import { useAuth } from "../context/AuthContext.jsx";
 import logo from "../../../assets/images/logoishimura.png";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -34,7 +33,7 @@ const linkActive = "text-primary";
 
 const NavBar = () => {
   const user = useSelector((state) => state.login.email);
-  const isAdmin = useSelector((state) => state.login.role=== 'ADMIN');
+  const isAdmin = useSelector((state) => state.login.role === 'ADMIN');
   const navigate = useNavigate();
   const dispatch = useDispatch();
 

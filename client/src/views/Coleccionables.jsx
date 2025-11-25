@@ -17,7 +17,6 @@ import {
   selectLineasByMarcaCat,
   selectMarcasCat,
 } from '../redux/coleccionablesSlice';
-import { useAuth } from '../context/AuthContext';
 
 const SORTS = [
   { id: 'alpha-desc', label: 'Alfabético Z→A' }, // default
@@ -54,7 +53,7 @@ export default function ColeccionablesView() {
   const wishlist = useSelector(selectWishlistItems);
   const detallesById = useSelector((state) => state.coleccionables.detallesById || {});
   const previewsById = useSelector((state) => state.coleccionables.previewsById || {});
-  const { token } = useAuth();
+  const token = useSelector((state) => state.login.token)
   useEffect(() => { setQ(searchParams.get('q') || ''); }, [searchParams]);
 
   // Load marcas at start
