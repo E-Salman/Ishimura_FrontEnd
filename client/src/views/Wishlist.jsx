@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getWishlist, removeFromWishlist, addToCart } from "../lib/api";
+import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
 import { useAuth } from "../context/AuthContext";
+
+const BASE = "http://localhost:4002";
+const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
 
 const Wishlist = () => {
   const [wishlist, setWishlist] = useState([]);
@@ -13,8 +16,11 @@ const Wishlist = () => {
   useEffect(() => {
     const fetchWishlist = async () => {
       try {
-        const data = await getWishlist(token);
-        setWishlist(data);
+        if (!token) return;
+        const res = await axios.get(`${BASE}/wishlist`, {
+          headers: authHeaders(token),
+        });
+        setWishlist(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
         console.error("Error al cargar wishlist:", error);
       } finally {
@@ -23,11 +29,13 @@ const Wishlist = () => {
     };
 
     fetchWishlist();
-  }, []);
+  }, [token]);
 
   const eliminarDeWishlist = async (id) => {
     try {
-      await removeFromWishlist(token, id);
+      await axios.delete(`${BASE}/wishlist/${encodeURIComponent(id)}`, {
+        headers: authHeaders(token),
+      });
       setWishlist((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
       console.error("Error al eliminar producto:", error);
@@ -70,7 +78,11 @@ const Wishlist = () => {
             (it) => String(it.coleccionableId) === String(id)
           );
           try {
-            await addToCart(token, id, { cantidad: 1 });
+            await axios.post(
+              `${BASE}/carrito/${encodeURIComponent(id)}?cantidad=1`,
+              null,
+              { headers: authHeaders(token) }
+            );
           } catch (e) {
             console.warn("Error al agregar al carrito desde wishlist", e);
             const msg = String(e?.message || "");
