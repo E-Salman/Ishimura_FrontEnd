@@ -96,7 +96,7 @@ const wishlistSlice = createSlice({
             .addCase(addToWishlist.rejected, (state, action) => {
                 state.loading = false;
                 state.error =
-                    action.payload || action.error.message || "Error al agregar a wishlist";
+                    action.payload || action.error.message;
             })
 
             // FETCH ALL
@@ -112,7 +112,7 @@ const wishlistSlice = createSlice({
                 state.loading = false;
                 state.error =
                     action.payload ||
-                    action.error.message ||
+                    action.error.message
       })
 
             // REMOVE
@@ -129,7 +129,7 @@ const wishlistSlice = createSlice({
                 state.loading = false;
                 state.error =
                     action.payload ||
-                    action.error.message ||
+                    action.error.message
       });
     },
 });
