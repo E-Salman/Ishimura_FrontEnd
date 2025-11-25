@@ -8,6 +8,9 @@ import marcasReducer from "./marcasSlice";
 import coleccionablesReducer from "./coleccionablesSlice";
 import themeReducer from "./themeSlice";
 import adminOrdersReducer from "./adminOrdersSlice";
+import cartReducer from './cartSlice'
+import adminReducer from './adminSlice'
+import ordersReducer from './ordersSlice'
 
 export const store = configureStore({
     reducer: { 
@@ -20,5 +23,8 @@ export const store = configureStore({
         coleccionables: coleccionablesReducer,
         theme: themeReducer,
         adminOrders: adminOrdersReducer,
+        cart: cartReducer,
+        admin: adminReducer,
+        orders: ordersReducer,
     }
 })
