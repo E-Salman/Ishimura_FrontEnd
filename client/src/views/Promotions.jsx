@@ -9,10 +9,9 @@ const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {
 
 export default function Promotions() {
   const navigate = useNavigate();
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
   const { token } = useAuth();
+  const { items, status, error } = useSelector((state) => state.promotions);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -116,7 +115,7 @@ export default function Promotions() {
       controller.abort();
       revoked.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
     };
-  }, []);
+  }, [status, dispatch]);
 
   const moveFromWishlistToCart = async (coleccionableId) => {
     try {
@@ -146,19 +145,29 @@ export default function Promotions() {
     } catch (_) {}
   };
 
+  const isLoading = status === "loading";
+
   return (
     <div className="relative mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="text-center">
-        <h1 className="text-4xl font-black tracking-tight text-primary sm:text-5xl md:text-6xl">Promociones</h1>
+        <h1 className="text-4xl font-black tracking-tight text-primary sm:text-5xl md:text-6xl">
+          Promociones
+        </h1>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">
           Aprovechá los coleccionables con descuento y ofertas activas.
         </p>
       </div>
 
-      {error && <p className="mt-8 text-center text-sm text-red-400">Error al cargar promociones: {error}</p>}
-      {loading && <p className="mt-8 text-center text-sm text-white/60">Cargando...</p>}
+      {error && (
+        <p className="mt-8 text-center text-sm text-red-400">
+          Error al cargar promociones: {error}
+        </p>
+      )}
+      {isLoading && (
+        <p className="mt-8 text-center text-sm text-white/60">Cargando...</p>
+      )}
 
-      {!loading && (
+      {!isLoading && (
         <div className="mt-12">
           <ColeccionablesGrid
             items={items}

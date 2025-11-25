@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext.jsx";
 import {
   fetchMisCompras,
@@ -11,6 +12,7 @@ import {
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
+  const items = Array.isArray(base.items) ? base.items : [];
   const items = Array.isArray(base.items) ? base.items : [];
 
   const mappedItems = items.map((item, idx) => ({
@@ -87,6 +89,8 @@ export default function MisCompras() {
     );
   }
 
+  const isLoading = status === "loading";
+
   return (
     <main className="flex-1">
       <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
@@ -99,7 +103,7 @@ export default function MisCompras() {
 
         {status === "loading" && (
           <div className="rounded-xl border border-white/10 bg-black/70 p-6 text-white/70">
-            Cargando tus compras…
+            Cargando tus compras...
           </div>
         )}
 
@@ -126,7 +130,9 @@ export default function MisCompras() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
                 <div>
                   <p className="text-sm text-white/50">Orden</p>
-                  <p className="text-lg font-semibold text-white">{order.id ?? "Sin ID"}</p>
+                  <p className="text-lg font-semibold text-white">
+                    {order.id ?? "Sin ID"}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-white/50">Fecha</p>
@@ -140,12 +146,18 @@ export default function MisCompras() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-white/50">Total</p>
-                  <p className="text-xl font-bold text-primary">{formatMoney(order.total)}</p>
+                  <p className="text-xl font-bold text-primary">
+                    {formatMoney(order.total)}
+                  </p>
                 </div>
               </div>
 
               <ul className="mt-4 space-y-3">
                 {order.items.map((item) => (
+                  <li
+                    key={item.key}
+                    className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
                   <li
                     key={item.key}
                     className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
@@ -161,7 +173,9 @@ export default function MisCompras() {
                         ) : null}
                       </p>
                     </div>
-                    <p className="text-sm font-semibold text-primary">{formatMoney(item.precio)}</p>
+                    <p className="text-sm font-semibold text-primary">
+                      {formatMoney(item.precio)}
+                    </p>
                   </li>
                 ))}
               </ul>
