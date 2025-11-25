@@ -1,17 +1,20 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
 import {
   addToWishlist,
   addToCart,
   getWishlist,
-  removeFromWishlist,
 } from "../lib/api";
 import {
   clearNewArrivals,
   fetchNewArrivals,
 } from "../redux/newArrivalsSlice";
+
+const BASE = "http://localhost:4002";
+const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
 
 export default function NewArrivals() {
   const navigate = useNavigate();
@@ -30,7 +33,11 @@ export default function NewArrivals() {
 
   const moveFromWishlistToCart = async (coleccionableId) => {
     try {
-      await addToCart(token, coleccionableId, { cantidad: 1 });
+      await axios.post(
+        `${BASE}/carrito/${encodeURIComponent(coleccionableId)}?cantidad=1`,
+        null,
+        { headers: authHeaders(token) }
+      );
     } catch (e) {
       console.warn("Cart error", e);
       const msg = String(e?.message || "");
@@ -40,13 +47,15 @@ export default function NewArrivals() {
       }
     }
     try {
-      const data = await getWishlist(token);
-      const list = Array.isArray(data) ? data : [];
+      const res = await axios.get(`${BASE}/wishlist`, { headers: authHeaders(token) });
+      const list = Array.isArray(res.data) ? res.data : [];
       const row = list.find(
         (w) => String(w.coleccionableId) === String(coleccionableId)
       );
       if (row) {
-        await removeFromWishlist(token, row.id);
+        await axios.delete(`${BASE}/wishlist/${encodeURIComponent(row.id)}`, {
+          headers: authHeaders(token),
+        });
       }
     } catch (_) {}
   };
@@ -79,7 +88,11 @@ export default function NewArrivals() {
             items={items}
             onAddToWishlist={async ({ id }) => {
               try {
-                await addToWishlist(token, id);
+                await axios.post(
+                  `${BASE}/wishlist`,
+                  { coleccionableId: id },
+                  { headers: { "Content-Type": "application/json", ...authHeaders(token) } }
+                );
               } catch (_) {}
             }}
             onAddToCart={({ id }) => moveFromWishlistToCart(id)}

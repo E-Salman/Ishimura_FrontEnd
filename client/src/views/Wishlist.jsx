@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { addToCart } from "../lib/api";
+import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
 import {
   fetchWishlist,
   removeFromWishlist,
 } from "../redux/wishlistSlice";
+
+const BASE = "http://localhost:4002";
+const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
 
 const Wishlist = () => {
   const navigate = useNavigate();
@@ -21,23 +23,8 @@ const Wishlist = () => {
     return () => {
       //dispatch(clearWishlistState());
     };
-  }, [loading, token, dispatch]);
-
-  const itemsForGrid = useMemo(
-    () =>
-      Array.isArray(items)
-        ? items.map((item) => ({
-          id: item.coleccionableId,
-          nombre: item.nombre,
-          descripcion: "En tu wishlist",
-          precio: item.precio,
-          imagen: item.imagenUrl || item.imagenurl || null,
-          stock: 1,
-          _rowId: item.id,
-        }))
-        : [],
-    [items]
-  );
+    fetchWishlist();
+  }, [token]);
 
   const eliminarDeWishlist = async (id) => {
     if (!token) return;
@@ -97,7 +84,11 @@ const Wishlist = () => {
             (it) => String(it.coleccionableId) === String(id)
           );
           try {
-            await addToCart(token, id, { cantidad: 1 });
+            await axios.post(
+              `${BASE}/carrito/${encodeURIComponent(id)}?cantidad=1`,
+              null,
+              { headers: authHeaders(token) }
+            );
           } catch (e) {
             console.warn("Error al agregar al carrito desde wishlist", e);
             const msg = String(e?.message || "");

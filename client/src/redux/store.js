@@ -18,6 +18,7 @@ import cartReducer from './cartSlice';
 import adminReducer from './adminSlice';
 import ordersReducer from './ordersSlice';
 import carouselReducer from './coleccionablesCarouselSlice'
+import misComprasReducer from './misComprasSlice'
 
 export const store = configureStore({
     reducer: {
@@ -39,5 +40,6 @@ export const store = configureStore({
         admin: adminReducer,
         orders: ordersReducer,
         colsCarousel: carouselReducer,
-    }
+      misCompras: misComprasReducer,
+    }    
 });

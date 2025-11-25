@@ -1,39 +1,35 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext.jsx";
 import {
-  clearMisCompras,
   fetchMisCompras,
-} from "../redux/misComprasSlice.js";
+  selectMisCompras,
+  selectMisComprasError,
+  selectMisComprasStatus,
+} from "../redux/misComprasSlice";
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
   const items = Array.isArray(base.items) ? base.items : [];
+  const items = Array.isArray(base.items) ? base.items : [];
 
   const mappedItems = items.map((item, idx) => ({
-    key: `${base?.numeroOrden ?? "orden"}-${idx}`,
-    nombre: item?.nombre ?? `Item ${idx + 1}`,
-    cantidad: item?.cantidad ?? 1,
-    precio: item?.precioUnitario ?? item?.precio ?? item?.subtotal ?? null,
-    subtotal: item?.subtotal ?? null,
+    key: item.coleccionableId ?? idx, // fallback mínimo solo para la key de React
+    nombre: item.nombre,
+    cantidad: item.cantidad,
+    precio: item.precioUnitario,
+    subtotal: item.subtotal,
   }));
 
   return {
-    id: base?.numeroOrden ?? null,
-    fecha: base?.creadaEn ?? null,
-    estado: base?.estado ?? "Procesando",
-    total:
-      base?.montoTotal ??
-      mappedItems.reduce(
-        (acc, it) =>
-          acc +
-          Number(it.subtotal || 0) ||
-          Number(it.precio || 0) * Number(it.cantidad || 1),
-        0
-      ),
+    id: base.numeroOrden,
+    fecha: base.creadaEn,
+    total: base.montoTotal,
+    metodoPago: base.metodoPago,
     items: mappedItems,
-    raw: base,
+    emailUsuario: base.emailUsuario,
   };
 }
 
@@ -55,7 +51,7 @@ function formatDate(dateLike) {
 }
 
 function formatMoney(amount) {
-  if (amount == null || Number.isNaN(Number(amount))) return "�?�";
+  if (amount == null || Number.isNaN(Number(amount))) return "$0.00";
   try {
     return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(amount);
   } catch (_) {
@@ -65,33 +61,21 @@ function formatMoney(amount) {
 
 export default function MisCompras() {
   const { user, token } = useAuth();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const rawOrders = useSelector(selectMisCompras);
+  const status = useSelector(selectMisComprasStatus);
+  const error = useSelector(selectMisComprasError);
+  const orders = useMemo(
+    () => (Array.isArray(rawOrders) ? rawOrders.map(normalizeOrder) : []),
+    [rawOrders]
+  );
 
   useEffect(() => {
     if (!token) return;
-    const controller = new AbortController();
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getUserOrders(token, user, controller.signal);
-        setOrders(Array.isArray(data) ? data.map(normalizeOrder) : []);
-      } catch (e) {
-        if (e?.message !== "No autorizado") {
-          setError(e?.message || "No se pudieron cargar tus compras.");
-        } else {
-          setError("Iniciá sesión nuevamente para ver tus compras.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => controller.abort();
-  }, [token]);
+    dispatch(fetchMisCompras());
+  }, [token, dispatch]);
 
-  if (!email || !token) {
+  if (!user || !token) {
     return (
       <main className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
@@ -117,7 +101,7 @@ export default function MisCompras() {
           </p>
         </div>
 
-        {isLoading && (
+        {status === "loading" && (
           <div className="rounded-xl border border-white/10 bg-black/70 p-6 text-white/70">
             Cargando tus compras...
           </div>
@@ -129,7 +113,7 @@ export default function MisCompras() {
           </div>
         )}
 
-        {!isLoading && !error && orders.length === 0 && (
+        {status === "succeeded" && !error && orders.length === 0 && (
           <div className="rounded-xl border border-white/10 bg-black/60 px-5 py-8 text-center text-white/60">
             Aún no registramos compras en tu cuenta. Explorá la{" "}
             <Link to="/coleccionables" className="text-primary underline">tienda</Link> y completá tu
@@ -155,9 +139,9 @@ export default function MisCompras() {
                   <p className="text-white">{formatDate(order.fecha)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-white/50">Estado</p>
-                  <span className="inline-flex rounded-full bg-emerald-500/20 px-3 py-1 text-sm font-semibold text-emerald-300">
-                    {order.estado}
+                  <p className="text-sm text-white/50">Método</p>
+                  <span className="inline-flex rounded-full bg-slate-500/20 px-3 py-1 text-sm font-semibold text-slate-200">
+                    {order.metodoPago ?? "N/D"}
                   </span>
                 </div>
                 <div className="text-right">
@@ -174,10 +158,19 @@ export default function MisCompras() {
                     key={item.key}
                     className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
                   >
+                  <li
+                    key={item.key}
+                    className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
                     <div>
                       <p className="font-semibold text-white">{item.nombre}</p>
                       <p className="text-sm text-white/60">
                         Cantidad: {item.cantidad}
+                        {item.subtotal != null ? (
+                          <span className="ml-2 text-white/50">
+                            Subtotal: {formatMoney(item.subtotal)}
+                          </span>
+                        ) : null}
                       </p>
                     </div>
                     <p className="text-sm font-semibold text-primary">
