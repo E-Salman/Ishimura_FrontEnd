@@ -19,6 +19,7 @@ import loginReducer from "./loginSlice";
 import cartReducer from './cartSlice';
 import adminReducer from './adminSlice';
 import ordersReducer from './ordersSlice';
+import misComprasReducer from './misComprasSlice'
 
 export const store = configureStore({
   reducer: { 
@@ -41,5 +42,6 @@ export const store = configureStore({
     cart: cartReducer,
     admin: adminReducer,
     orders: ordersReducer,
+        misCompras: misComprasReducer,
   }
 });

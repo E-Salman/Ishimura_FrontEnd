@@ -14,6 +14,7 @@ import ForgotPassword from "./views/ForgotPassword";
 import HomeCarousel from "./components/HomeCarousel";
 import DetalleColeccionable from "./views/DetalleColeccionable";
 import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import CrearColeccionable from "./views/CrearColeccionable";
 import Footer from './components/Footer'
 import Coleccionables from "./views/Coleccionables";
@@ -33,8 +34,7 @@ function App() {
 
   const RequireAdmin = ({ children }) => {
   const role = useSelector((s) => s.login.role);
-  const token = useSelector((s) => s.login.token);
-  const ok = role === 'ADMIN' || isAdminFromToken(token);
+  const ok = role === 'ADMIN';
   return ok ? children : <Navigate to="/home" replace />;
 };
 

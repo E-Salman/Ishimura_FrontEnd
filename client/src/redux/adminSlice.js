@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { uploadColeccionableImages, uploadMarcaImages } from '../lib/api';
 
 const BASE = 'http://localhost:4002';
 const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : undefined);
@@ -179,8 +178,37 @@ export const uploadMarcaImagesThunk = createAsyncThunk(
   'admin/uploadMarcaImages',
   async ({ marcaId, files, token }, { rejectWithValue }) => {
     if (!marcaId) return rejectWithValue('marcaId requerido');
-    const res = await uploadMarcaImages(marcaId, files, { token });
-    if (!res?.ok) return rejectWithValue('Fallo la subida de imagenes de marca');
+    if (!Array.isArray(files) || files.length === 0) return { marcaId, ok: true };
+
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    const endpoints = [
+      { url: `${BASE}/marcasImages/${marcaId}/imagenes`, field: null },
+      { url: `${BASE}/marcas/${marcaId}/imagenes`, field: null },
+      { url: `${BASE}/imagenes/marca/${marcaId}`, field: null },
+      { url: `${BASE}/imagenes`, field: 'idMarca' },
+    ];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      let uploaded = false;
+      for (const entry of endpoints) {
+        const form = new FormData();
+        form.append('file', file, file.name);
+        if (entry.field) form.append(entry.field, String(marcaId));
+        try {
+          const res = await axios.post(entry.url, form, {
+            headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+          });
+          if (res.status >= 200 && res.status < 300) {
+            uploaded = true;
+            break;
+          }
+        } catch (_) {
+          // intenta siguiente endpoint
+        }
+      }
+      if (!uploaded) return rejectWithValue('Fallo la subida de imagenes de marca');
+    }
     return { marcaId, ok: true };
   }
 );
@@ -189,8 +217,36 @@ export const uploadColeccionableImagesThunk = createAsyncThunk(
   'admin/uploadColeccionableImages',
   async ({ coleccionableId, files, token }, { rejectWithValue }) => {
     if (!coleccionableId) return rejectWithValue('coleccionableId requerido');
-    const res = await uploadColeccionableImages(coleccionableId, files, { token });
-    if (!res?.ok) return rejectWithValue('Fallo la subida de imagenes del coleccionable');
+    if (!Array.isArray(files) || files.length === 0) return { coleccionableId, ok: true };
+
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    const endpoints = [
+      { url: `${BASE}/coleccionable/${coleccionableId}/imagenes`, field: null },
+      { url: `${BASE}/coleccionable/${coleccionableId}/imagen`, field: null },
+      { url: `${BASE}/imagenes`, field: 'idColeccionable' },
+    ];
+
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      let uploaded = false;
+      for (const entry of endpoints) {
+        const form = new FormData();
+        form.append('file', f, f.name);
+        if (entry.field) form.append(entry.field, String(coleccionableId));
+        try {
+          const res = await axios.post(entry.url, form, {
+            headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+          });
+          if (res.status >= 200 && res.status < 300) {
+            uploaded = true;
+            break;
+          }
+        } catch (_) {
+          // intenta siguiente endpoint
+        }
+      }
+      if (!uploaded) return rejectWithValue('Fallo la subida de imagenes del coleccionable');
+    }
     return { coleccionableId, ok: true };
   }
 );
