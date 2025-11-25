@@ -19,7 +19,7 @@ const BotonWishlist = ({ coleccionableId }) => {
         alert("Error inesperado, no se pudo agregar a la wishlist");
       }
       alert(error)
-      })      
+      })
   };
 
   return (

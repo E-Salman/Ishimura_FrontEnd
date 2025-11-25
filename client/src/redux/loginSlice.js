@@ -36,8 +36,6 @@ const loginSlice = createSlice({
       state.email = email || null;
       state.error = null;
       state.kaomojiCount = 0;
-      if (token) localStorage.setItem("ishimura_token", token);
-      if (email) localStorage.setItem("ishimura_email", email);
     },
     logout: (state) => {
       state.token = null;
@@ -45,8 +43,6 @@ const loginSlice = createSlice({
       state.email = null;
       state.error = null;
       state.kaomojiCount = 0;
-      localStorage.removeItem("ishimura_token");
-      localStorage.removeItem("ishimura_email");
     },
   },
   extraReducers: (builder) => {

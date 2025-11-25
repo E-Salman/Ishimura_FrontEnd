@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { isAdminFromToken } from "../lib/api";
@@ -143,12 +143,13 @@ export default function AdminPanel() {
     [dispatch]
   );
 
-  // Cargar marcas para filtros y gesti�n (Redux)
+  // Cargar marcas para filtros y gestión (Redux)
   useEffect(() => {
     refreshMarcas().catch(() => { });
   }, [refreshMarcas]);
 
-  // Cargar l�neas al elegir marca (Redux)
+  // Cargar lineas al elegir marca (Redux)
+  // Cargar lineas al elegir marca (Redux)
   useEffect(() => {
     setLineaId("");
     if (!marcaId) return;
@@ -200,7 +201,7 @@ export default function AdminPanel() {
   }
 
   async function deleteColeccionable(id) {
-    const sure = confirm(`�Borrar coleccionable ${id}? Esta acci�n es permanente.`);
+    const sure = confirm(`¿Borrar coleccionable ${id}? Esta acción es permanente.`);
     if (!sure) return;
     try {
       setBusyFlag(id, true);
@@ -211,7 +212,7 @@ export default function AdminPanel() {
   }
 
   async function deleteLinea(id) {
-    const sure = confirm(`�Borrar l�nea ${id}? Esto elimina sus coleccionables e im�genes.`);
+    const sure = confirm(`¿Borrar linea ${id}? Esto elimina sus coleccionables e imágenes.`);
     if (!sure) return;
     try {
       await dispatch(deleteLineaThunk({ id, token })).unwrap();
@@ -219,12 +220,12 @@ export default function AdminPanel() {
         dispatch(fetchLineasByMarca({ marcaId }));
       }
     } catch (e) {
-      alert(`No se pudo borrar la l�nea: ${e?.message || e}`);
+      alert(`No se pudo borrar la linea: ${e?.message || e}`);
     }
   }
 
   async function deleteMarca(id) {
-    const sure = confirm(`�Borrar marca ${id}? Esto elimina sus l�neas y coleccionables.`);
+    const sure = confirm(`¿Borrar marca ${id}? Esto elimina sus lineas y coleccionables.`);
     if (!sure) return;
     try {
       await dispatch(deleteMarcaThunk({ id, token })).unwrap();
@@ -239,7 +240,7 @@ export default function AdminPanel() {
     e?.preventDefault?.();
     const nombre = newMarca.nombre?.trim();
     if (!nombre) {
-      setNewMarcaError("Ingres� un nombre para la marca.");
+      setNewMarcaError("Ingresá un nombre para la marca.");
       return;
     }
     try {
@@ -256,7 +257,7 @@ export default function AdminPanel() {
         try {
           await dispatch(uploadMarcaImagesThunk({ marcaId: newId, files: [newMarcaFile], token })).unwrap();
         } catch (err) {
-          uploadNotice = err?.message || "Marca creada, pero fall� la carga de imagen.";
+          uploadNotice = err?.message || "Marca creada, pero fallá la carga de imagen.";
         }
       }
 
@@ -326,7 +327,7 @@ export default function AdminPanel() {
       saving: false,
       error: null,
     });
-    // El modal se encarga de cargar l�neas seg�n la marca seleccionada
+    // El modal se encarga de cargar lineas según la marca seleccionada
   }
   // Visibilidad anulada por solicitud: no se implementa ocultar/mostrar
 
@@ -358,7 +359,7 @@ export default function AdminPanel() {
       <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
         <div className="md:col-span-2">
           <input
-            placeholder="Buscar por nombre, id, marca, l�nea"
+            placeholder="Buscar por nombre, id, marca, linea"
             value={q}
             onChange={(e) => { setQ(e.target.value); setPage(1); }}
             className="w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
@@ -374,7 +375,7 @@ export default function AdminPanel() {
         </div>
         <div>
           <select value={lineaId} onChange={(e) => { setLineaId(e.target.value); setPage(1); }} disabled={!marcaId} className="w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white disabled:opacity-50 focus:border-primary/50 focus:outline-none">
-            <option value="">Todas las l�neas</option>
+            <option value="">Todas las lineas</option>
             {lineasList.map((l) => (
               <option key={l.id ?? l.lineaId} value={l.id ?? l.lineaId}>{l.nombre ?? l.name ?? l.titulo}</option>
             ))}
@@ -403,7 +404,7 @@ export default function AdminPanel() {
               <th className="px-3 py-3">Nombre</th>
               <th className="px-3 py-3">ID</th>
               <th className="px-3 py-3">Marca</th>
-              <th className="px-3 py-3">L�nea</th>
+              <th className="px-3 py-3">linea</th>
               <th className="px-3 py-3">Oferta</th>
               <th className="px-3 py-3">Stock</th>
               <th className="px-3 py-3">Estado</th>
@@ -413,7 +414,7 @@ export default function AdminPanel() {
           <tbody className="divide-y divide-white/10">
             {loading && (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-white/70">Cargando�</td>
+                <td colSpan={9} className="px-3 py-6 text-center text-white/70">Cargando!</td>
               </tr>
             )}
             {!loading && pageItems.length === 0 && (
@@ -438,14 +439,14 @@ export default function AdminPanel() {
                       <div className="h-12 w-12 rounded bg-white/10" />
                     )}
                   </td>
-                  <td className="px-3 py-2 font-medium">{d?.nombre ?? r?.nombre ?? "�"}</td>
+                  <td className="px-3 py-2 font-medium">{d?.nombre ?? r?.nombre ?? "OPOLOPOPL"}</td>
                   <td className="px-3 py-2 text-white/70">{r.id}</td>
                   <td className="px-3 py-2">{d?.marcaNombre ?? "-"}</td>
                   <td className="px-3 py-2">{d?.lineaNombre ?? "-"}</td>
                   <td className="px-3 py-2">
                     {discount != null && discount !== ''
                       ? <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-xs text-emerald-200">-{Number(discount)}%</span>
-                      : <span className="text-white/50">�</span>}
+                      : <span className="text-white/50">!</span>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
@@ -471,7 +472,7 @@ export default function AdminPanel() {
                         onClick={() => {
                           requestEdit(r.id);
                         }}
-                        className="rounded bg-white/10 px-2 py-1 text-white hover:bg-white/20">??</button>
+                        className="rounded bg-white/10 px-2 py-1 text-white hover:bg-white/20">✎</button>
                       <button title="Borrar" disabled={busy} onClick={() => deleteColeccionable(r.id)}
                         className="rounded bg-red-600 px-3 py-1 text-white hover:bg-red-500 disabled:opacity-50">Borrar</button>
                     </div>
@@ -483,7 +484,7 @@ export default function AdminPanel() {
         </table>
       </div>
 
-      {/* Paginaci�n */}
+      {/* Paginación */}
       <div className="mt-4 flex items-center justify-between">
         <div className="text-sm text-white/60">Mostrando {pageItems.length} de {filtered.length}</div>
         <div className="flex items-center gap-2">
@@ -491,12 +492,12 @@ export default function AdminPanel() {
           <span className="text-white/70">{page} / {totalPages}</span>
           <button disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded bg-white/10 px-3 py-1 text-white/80 hover:bg-white/20 disabled:opacity-50">Next</button>
           <select value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(1); }} className="rounded-md border border-white/10 bg-black/60 px-2 py-1 text-white focus:border-primary/50 focus:outline-none">
-            {[10, 20, 50].map((n) => <option key={n} value={n}>{n}/p�gina</option>)}
+            {[10, 20, 50].map((n) => <option key={n} value={n}>{n}/página</option>)}
           </select>
         </div>
       </div>
 
-      {/* Gesti�n r�pida de marcas/l�neas (borrado en cascada) */}
+      {/* Gestión rápida de marcas/lineas (borrado en cascada) */}
       <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
           <h2 className="mb-3 text-xl font-bold text-primary">Marcas</h2>
@@ -513,7 +514,7 @@ export default function AdminPanel() {
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wide text-white/60">Im�genes</label>
+              <label className="block text-xs uppercase tracking-wide text-white/60">Imágenes</label>
               <input
                 key={newMarcaFileKey}
                 ref={newMarcaFileInputRef}
@@ -541,7 +542,7 @@ export default function AdminPanel() {
                   Elegir archivo
                 </button>
                 <span className="text-sm text-white/80">
-                  {newMarcaFile ? newMarcaFile.name : "Ning�n archivo seleccionado"}
+                  {newMarcaFile ? newMarcaFile.name : "Ningún archivo seleccionado"}
                 </span>
               </div>
               <p className="mt-1 text-xs text-white/50">Formatos admitidos: JPG o PNG.</p>
@@ -589,7 +590,7 @@ export default function AdminPanel() {
           </div>
         </div>
         <div>
-          <h2 className="mb-3 text-xl font-bold text-primary">L�neas</h2>
+          <h2 className="mb-3 text-xl font-bold text-primary">lineas</h2>
           <form onSubmit={handleCreateLinea} className="mb-4 space-y-3 rounded-lg border border-white/10 bg-black/40 p-3">
             <div>
               <label className="block text-xs uppercase tracking-wide text-white/60">Marca *</label>
@@ -621,7 +622,7 @@ export default function AdminPanel() {
               ))}
             </div>
           ) : (
-            <p className="text-white/60">Eleg� una marca arriba para ver sus l�neas.</p>
+            <p className="text-white/60">Elegí una marca arriba para ver sus lineas.</p>
           )}
         </div>
       </div>
@@ -721,7 +722,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
       .catch(() => { });
   }, [dispatch, local.id, token]);
 
-  // cargar l�neas al seleccionar marca
+  // cargar lineas al seleccionar marca
   useEffect(() => {
     if (!local.marcaId) { setLines([]); return; }
     dispatch(fetchLineasByMarca({ marcaId: local.marcaId }));
@@ -740,7 +741,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
       const scopeId = promoLocal.scopeId ?? local.id;
       const valorNum = promoLocal.valor === '' ? null : Number(promoLocal.valor);
       if (!scopeId) throw new Error('Falta scopeId para la promo');
-      if (valorNum !== null && Number.isNaN(valorNum)) throw new Error('Valor de promo inv�lido');
+      if (valorNum !== null && Number.isNaN(valorNum)) throw new Error('Valor de promo inválido');
       const payloadPOST = {
         tipo: promoLocal.tipo,
         valor: valorNum,
@@ -820,7 +821,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
               <input value={local.nombre} onChange={(e) => setLocal({ ...local, nombre: e.target.value })} required className="mt-1 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none" />
             </div>
             <div>
-              <label className="block text-xs text-white/70">Descripci�n</label>
+              <label className="block text-xs text-white/70">Descripción</label>
               <textarea value={local.descripcion} onChange={(e) => setLocal({ ...local, descripcion: e.target.value })} rows={3} className="mt-1 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none" />
             </div>
             <div>
@@ -837,7 +838,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
                   <div className="text-xs text-white/70">
                     <div>{promoLocal.tipo === 'PERCENT' ? `-${promoLocal.valor}%` : `$${promoLocal.valor}`}</div>
                     <div className="text-[11px] text-white/50">
-                      {promoLocal.inicio ? `Inicio: ${promoLocal.inicio}` : 'Inicio: ahora'}{promoLocal.fin ? ` � Fin: ${promoLocal.fin}` : ' � Sin fin'}
+                      {promoLocal.inicio ? `Inicio: ${promoLocal.inicio}` : 'Inicio: ahora'}{promoLocal.fin ? ` ********* Fin: ${promoLocal.fin}` : ' ********* Sin fin'}
                     </div>
                   </div>
                 ) : (
@@ -857,7 +858,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-white/70">L�nea</label>
+                <label className="block text-xs text-white/70">linea</label>
                 <select value={local.lineaId || ''} onChange={(e) => setLocal({ ...local, lineaId: e.target.value })} disabled={!local.marcaId} className="mt-1 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white disabled:opacity-50 focus:border-primary/50 focus:outline-none">
                   <option value="">Seleccionar</option>
                   {lines.map((l) => (
@@ -867,7 +868,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
               </div>
             </div>
 
-            {/* Im�genes */}
+            {/* Imágenes */}
             <div className="pt-2">
               <label className="mb-1 block text-xs text-white/70">Imagen principal</label>
               <div className="flex items-start gap-4">

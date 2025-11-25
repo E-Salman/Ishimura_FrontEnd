@@ -44,9 +44,7 @@ export const removeCartItemThunk = createAsyncThunk(
   }
 );
 
-export const clearCartThunk = createAsyncThunk(
-  "cart/clear",
-  async (_arg, { getState, rejectWithValue, signal }) => {
+export const clearCartThunk = createAsyncThunk("cart/clear", async (_arg, { getState, rejectWithValue, signal }) => {
     const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     await axios.delete(`${BASE}/carrito/vaciar`, { signal, headers: authHeaders(token) });

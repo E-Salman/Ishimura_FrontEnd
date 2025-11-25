@@ -7,7 +7,7 @@ const BASE = "http://localhost:4002";
 export const fetchMisCompras = createAsyncThunk(
   "misCompras/fetch",
   async (_arg, { getState, rejectWithValue, signal }) => {
-    const token = getState().login.token;
+    const token = getState().login.token || localStorage.getItem("ishimura_token");
     if (!token) return rejectWithValue("No auth token");
 
     try {
@@ -17,9 +17,23 @@ export const fetchMisCompras = createAsyncThunk(
         validateStatus: () => true,
       });
 
-      if (res.status === 401) return rejectWithValue("No autorizado");
-      if (!Array.isArray(res.data)) return rejectWithValue("Respuesta inesperada");
-      return res.data;
+      if (res.status === 401 || res.status === 403) {
+        return rejectWithValue("No autorizado");
+      }
+      const data = res.data;
+      if (Array.isArray(data)) return data;
+      const maybeArray =
+        data?.items ||
+        data?.content ||
+        data?.ordenes ||
+        data?.orders ||
+        data?.lista;
+      if (Array.isArray(maybeArray)) return maybeArray;
+      if (data && typeof data === "object") {
+        const vals = Object.values(data).find((v) => Array.isArray(v));
+        if (Array.isArray(vals)) return vals;
+      }
+      return rejectWithValue("Respuesta inesperada");
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || "Error al cargar compras";
       return rejectWithValue(msg);
