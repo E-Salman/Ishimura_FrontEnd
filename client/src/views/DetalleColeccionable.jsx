@@ -1,47 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  getColeccionableDetalle,
-  getColeccionableFirstImageUrl,
-} from "../lib/api";
 import { useDispatch, useSelector } from "react-redux";
 import { addCartItem } from "../redux/cartSlice";
 import { addToWishlistThunk, fetchWishlist, removeFromWishlistThunk, selectWishlistItems } from "../redux/wishlistSlice";
 import { useAuth } from "../context/AuthContext";
+import { fetchDetalle, selectDetalleCat } from "../redux/coleccionablesSlice";
 
 const DetalleColeccionable = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const wishlist = useSelector(selectWishlistItems);
-  const [coleccionable, setColeccionable] = useState(null);
-  const [imagen, setImagen] = useState(null);
   const [mensaje, setMensaje] = useState("");
   const { token } = useAuth();
   const navigate = useNavigate();
+  const detalle = useSelector((state) => selectDetalleCat(state, id));
+  const coleccionable = detalle;
+  const imagen = detalle?.imagenUrl;
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getColeccionableDetalle(id);
-        setColeccionable(data);
-
-        try {
-          const url = await getColeccionableFirstImageUrl(id);
-          setImagen(url);
-        } catch (_) {
-          // imagen opcional
-        }
-      } catch (err) {
-        console.error("Error fetching data", err);
-      }
-    };
-
-    fetchData();
-
-    return () => {
-      if (imagen) URL.revokeObjectURL(imagen);
-    };
-  }, [id, imagen]);
+    dispatch(fetchDetalle({ id, token }));
+  }, [dispatch, id, token]);
 
   const agregarAlCarrito = async () => {
     let skipWishlist = false;

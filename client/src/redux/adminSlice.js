@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { uploadColeccionableImages, uploadMarcaImages } from '../lib/api';
 
 const BASE = 'http://localhost:4002';
 const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : undefined);
@@ -144,6 +145,22 @@ export const deleteColeccionable = createAsyncThunk(
   }
 );
 
+export const createColeccionable = createAsyncThunk(
+  'admin/createColeccionable',
+  async ({ data, token }, { rejectWithValue }) => {
+    const payload = {
+      nombre: data.nombre?.trim() ?? '',
+      descripcion: data.descripcion?.trim() ?? '',
+      precio: data.precio ?? null,
+      linea: data.lineaId ?? data.linea ?? null,
+      imagenes: Array.isArray(data.imagenes) ? data.imagenes : [],
+    };
+    const headers = { ...authHeaders(token), 'Content-Type': 'application/json' };
+    const res = await axios.post(`${BASE}/coleccionable`, payload, { headers });
+    return res.data;
+  }
+);
+
 // Editar coleccionable
 export const updateColeccionable = createAsyncThunk(
   'admin/updateColeccionable',
@@ -162,6 +179,60 @@ export const updateColeccionable = createAsyncThunk(
   }
 );
 
+export const uploadMarcaImagesThunk = createAsyncThunk(
+  'admin/uploadMarcaImages',
+  async ({ marcaId, files, token }, { rejectWithValue }) => {
+    if (!marcaId) return rejectWithValue('marcaId requerido');
+    const res = await uploadMarcaImages(marcaId, files, { token });
+    if (!res?.ok) return rejectWithValue('Fallo la subida de imagenes de marca');
+    return { marcaId, ok: true };
+  }
+);
+
+export const uploadColeccionableImagesThunk = createAsyncThunk(
+  'admin/uploadColeccionableImages',
+  async ({ coleccionableId, files, token }, { rejectWithValue }) => {
+    if (!coleccionableId) return rejectWithValue('coleccionableId requerido');
+    const res = await uploadColeccionableImages(coleccionableId, files, { token });
+    if (!res?.ok) return rejectWithValue('Fallo la subida de imagenes del coleccionable');
+    return { coleccionableId, ok: true };
+  }
+);
+
+export const fetchActivePromo = createAsyncThunk(
+  'admin/fetchActivePromo',
+  async ({ coleccionableId, token }, { rejectWithValue, signal }) => {
+    if (!coleccionableId) return rejectWithValue('coleccionableId requerido');
+    const headers = authHeaders(token);
+    const res = await axios.get(`${BASE}/promociones/activas`, {
+      params: { coleccionableId },
+      signal,
+      headers,
+      validateStatus: () => true,
+    });
+    if (res.status !== 200) return rejectWithValue(`HTTP ${res.status}`);
+    const list = Array.isArray(res.data) ? res.data : [];
+    const found = list.find(
+      (p) =>
+        String(p?.scopeType || '').toUpperCase() === 'ITEM' &&
+        String(p?.scopeId) === String(coleccionableId)
+    );
+    return { coleccionableId, promo: found || null };
+  }
+);
+
+export const savePromo = createAsyncThunk(
+  'admin/savePromo',
+  async ({ data, token }, { rejectWithValue }) => {
+    const headers = { ...authHeaders(token), 'Content-Type': 'application/json' };
+    const res = await axios.post(`${BASE}/promociones`, data, { headers, validateStatus: () => true });
+    if (res.status !== 200 && res.status !== 201) {
+      return rejectWithValue(res?.data?.message || `HTTP ${res.status}`);
+    }
+    return res.data ?? data;
+  }
+);
+
 const initialState = {
   catalogo: [],
   detallesById: {},
@@ -170,6 +241,7 @@ const initialState = {
   status: 'idle',
   error: null,
   busyById: {},
+  promosById: {},
 };
 
 const adminSlice = createSlice({
@@ -182,9 +254,9 @@ const adminSlice = createSlice({
     revokeImagen(state, { payload: { id } }) {
       const det = state.detallesById[id];
       if (det?.imagenUrl) {
-        try { URL.revokeObjectURL(det.imagenUrl); } catch (_) { }
+        URL.revokeObjectURL(det.imagenUrl);
+        det.imagenUrl = null;
       }
-      if (det) det.imagenUrl = null;
     },
   },
   extraReducers: (builder) => {
@@ -202,11 +274,6 @@ const adminSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(fetchDetalle.fulfilled, (state, action) => {
-        // Si hay una URL previa, revocarla
-        const prev = state.detallesById[action.payload.id];
-        if (prev?.imagenUrl && prev.imagenUrl !== action.payload.detalle.imagenUrl) {
-          try { URL.revokeObjectURL(prev.imagenUrl); } catch (_) { }
-        }
         state.detallesById[action.payload.id] = action.payload.detalle;
       })
       .addCase(fetchMarcas.fulfilled, (state, action) => {
@@ -260,6 +327,20 @@ const adminSlice = createSlice({
               }
             : r
         );
+      })
+      .addCase(fetchActivePromo.fulfilled, (state, action) => {
+        const { coleccionableId, promo } = action.payload;
+        state.promosById[coleccionableId] = promo;
+      })
+      .addCase(savePromo.fulfilled, (state, action) => {
+        const id =
+          action.payload?.scopeId ??
+          action.payload?.coleccionableId ??
+          action.payload?.coleccionableID ??
+          null;
+        if (id != null) {
+          state.promosById[id] = action.payload;
+        }
       });
   },
 });
@@ -275,5 +356,6 @@ export const selectLineasByMarca = (state, marcaId) =>
 export const selectAdminStatus = (state) => state.admin.status;
 export const selectAdminError = (state) => state.admin.error;
 export const selectBusy = (state, id) => !!state.admin.busyById[id];
+export const selectPromoById = (state, id) => state.admin.promosById[id];
 
 export default adminSlice.reducer;

@@ -1,16 +1,19 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { createOrder } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { selectCartItems } from "../redux/cartSlice";
+import { createOrderThunk, selectOrderError, selectOrderStatus } from "../redux/ordersSlice";
 
 const ConfirmarCompra = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const carritoStore = useSelector(selectCartItems);
   const carrito = location.state?.carrito || carritoStore;
+  const dispatch = useDispatch();
   const { token } = useAuth();
+  const orderStatus = useSelector(selectOrderStatus);
+  const orderError = useSelector(selectOrderError);
 
   const [direccion, setDireccion] = useState({
     calle: "",
@@ -44,11 +47,11 @@ const ConfirmarCompra = () => {
     };
 
     try {
-      await createOrder(token, payload);
+      await dispatch(createOrderThunk({ token, data: payload })).unwrap();
       setMensaje("Compra confirmada");
       setTimeout(() => navigate("/home"), 2000);
     } catch (error) {
-      setMensaje("" + error);
+      setMensaje(error?.message || String(error));
     }
   };
 
@@ -159,6 +162,9 @@ const ConfirmarCompra = () => {
 
         {mensaje && (
           <p className="mt-4 text-sm font-semibold text-primary">{mensaje}</p>
+        )}
+        {orderStatus === "failed" && orderError && (
+          <p className="mt-2 text-sm text-red-400">{orderError}</p>
         )}
 
         <div className="mt-8 flex justify-end gap-4">

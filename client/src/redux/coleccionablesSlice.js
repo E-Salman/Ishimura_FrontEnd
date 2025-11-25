@@ -58,6 +58,31 @@ export const fetchDetalle = createAsyncThunk(
   }
 );
 
+export const fetchPricePreview = createAsyncThunk(
+  'coleccionables/fetchPricePreview',
+  async ({ id, qty = 1 }, { signal }) => {
+    const res = await axios.get(
+      `${BASE}/precio/preview?coleccionableId=${encodeURIComponent(id)}&qty=${encodeURIComponent(qty)}`,
+      { signal }
+    );
+    return { id, preview: res.data ?? null };
+  }
+);
+
+export const fetchFirstImage = createAsyncThunk(
+  'coleccionables/fetchFirstImage',
+  async ({ id, token }, { signal }) => {
+    const res = await axios.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
+      signal,
+      headers: authHeaders(token),
+      responseType: 'blob',
+    });
+    const blob = res.data;
+    const imagenUrl = URL.createObjectURL(blob);
+    return { id, imagenUrl };
+  }
+);
+
 const initialState = {
   items: [],
   status: 'idle',
@@ -65,20 +90,13 @@ const initialState = {
   marcas: [],
   lineasByMarca: {},
   detallesById: {},
+  previewsById: {},
 };
 
 const coleccionablesSlice = createSlice({
   name: 'coleccionables',
   initialState,
-  reducers: {
-    revokeImagen(state, { payload: { id } }) {
-      const det = state.detallesById[id];
-      if (det?.imagenUrl) {
-        try { URL.revokeObjectURL(det.imagenUrl); } catch (_) {}
-        det.imagenUrl = null;
-      }
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchMarcas.fulfilled, (state, action) => {
@@ -100,21 +118,24 @@ const coleccionablesSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(fetchDetalle.fulfilled, (state, action) => {
-        const prev = state.detallesById[action.payload.id];
-        if (prev?.imagenUrl && prev.imagenUrl !== action.payload.detalle.imagenUrl) {
-          try { URL.revokeObjectURL(prev.imagenUrl); } catch (_) {}
-        }
         state.detallesById[action.payload.id] = action.payload.detalle;
+      })
+      .addCase(fetchPricePreview.fulfilled, (state, action) => {
+        state.previewsById[action.payload.id] = action.payload.preview;
+      })
+      .addCase(fetchFirstImage.fulfilled, (state, action) => {
+        const current = state.detallesById[action.payload.id] || {};
+        state.detallesById[action.payload.id] = { ...current, imagenUrl: action.payload.imagenUrl };
       });
   },
 });
 
-export const { revokeImagen } = coleccionablesSlice.actions;
 export const selectColeccionables = (state) => state.coleccionables.items;
 export const selectColeccionablesStatus = (state) => state.coleccionables.status;
 export const selectColeccionablesError = (state) => state.coleccionables.error;
 export const selectMarcasCat = (state) => state.coleccionables.marcas;
 export const selectLineasByMarcaCat = (state, marcaId) => state.coleccionables.lineasByMarca[marcaId] || [];
 export const selectDetalleCat = (state, id) => state.coleccionables.detallesById[id];
+export const selectPreviewById = (state, id) => state.coleccionables.previewsById[id];
 
 export default coleccionablesSlice.reducer;

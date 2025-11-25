@@ -1,8 +1,7 @@
 ﻿﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import axios from "axios";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { uploadColeccionableImages, uploadMarcaImages, isAdminFromToken } from "../lib/api";
+import { isAdminFromToken } from "../lib/api";
 import {
   fetchCatalogo,
   fetchDetalle,
@@ -21,7 +20,9 @@ import {
   updateStock as updateStockThunk,
   setBusy,
   updateColeccionable as updateColeccionableThunk,
-  revokeImagen,
+  uploadMarcaImagesThunk,
+  fetchActivePromo,
+  savePromo,
 } from "../redux/adminSlice";
 
 const BASE = "http://localhost:4002";
@@ -75,10 +76,6 @@ export default function AdminPanel() {
       if (newMarcaPreview) {
         try { URL.revokeObjectURL(newMarcaPreview); } catch (_) { }
       }
-      // revocar blobs de detalles cargados
-      Object.keys(detallesStore).forEach((id) => {
-        dispatch(revokeImagen({ id }));
-      });
     };
   }, [newMarcaPreview, detallesStore, dispatch]);
 
@@ -240,10 +237,6 @@ export default function AdminPanel() {
     try {
       setCreatingMarca(true);
       setNewMarcaError(null);
-      const headers = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
       const payload = {
         nombre,
       };
@@ -253,10 +246,7 @@ export default function AdminPanel() {
       let uploadNotice = null;
       if (newMarcaFile && newId != null) {
         try {
-          const up = await uploadMarcaImages(newId, [newMarcaFile], { token });
-          if (!up?.ok) {
-            uploadNotice = "Marca creada, pero la imagen no se pudo subir.";
-          }
+          await dispatch(uploadMarcaImagesThunk({ marcaId: newId, files: [newMarcaFile], token })).unwrap();
         } catch (err) {
           uploadNotice = err?.message || "Marca creada, pero falló la carga de imagen.";
         }
@@ -695,18 +685,12 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
   useEffect(() => {
     if (!local?.id) return;
     setPromoLocal((prev) => ({ ...prev, scopeId: local.id }));
-    const controller = new AbortController();
-    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-    axios.get(`${base}/promociones/activas`, {
-      params: { coleccionableId: local.id },
-      signal: controller.signal,
-      headers,
-    })
+    dispatch(fetchActivePromo({ coleccionableId: local.id, token }))
+      .unwrap()
       .then((res) => {
-        const list = Array.isArray(res.data) ? res.data : [];
-        const found = list.find((p) => String(p?.scopeType).toUpperCase?.() === "ITEM" && String(p?.scopeId) === String(local.id));
-        setPromo(found || null);
-        if (found?.valor != null && String(found?.tipo).toUpperCase() === "PERCENT") {
+        const found = res?.promo || null;
+        setPromo(found);
+        if (found?.valor != null && String(found?.tipo || "").toUpperCase() === "PERCENT") {
           setLocal((s) => ({ ...s, descuento: found.valor }));
           setPromoLocal((prev) => ({
             ...prev,
@@ -721,8 +705,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
         }
       })
       .catch(() => { });
-    return () => controller.abort();
-  }, [base, local.id, token]);
+  }, [dispatch, local.id, token]);
 
   // cargar líneas al seleccionar marca
   useEffect(() => {
@@ -738,10 +721,6 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
     e.preventDefault();
     try {
       setLocal((s) => ({ ...s, saving: true, error: null }));
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
       console.log('Submitting edit for coleccionable:', promo?.id ?? local?.id ?? '(sin id)');
       const discountValue = local.descuento === '' ? null : Number(local.descuento);
       const scopeId = promoLocal.scopeId ?? local.id;
@@ -770,7 +749,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
           nPromocion.setActiva(p.isActiva());
           nPromocion.setStackable(p.isStackable());
           repo.save(nPromocion); */
-      const resPOST = await axios.post(`${base}/promociones`, payloadPOST, { headers });
+      await dispatch(savePromo({ data: payloadPOST, token })).unwrap();
       const payload = {
         nombre: local.nombre?.trim(),
         descripcion: local.descripcion?.trim() || '',

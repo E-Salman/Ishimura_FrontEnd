@@ -2,19 +2,21 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { useDispatch, useSelector } from 'react-redux';
-import { addCartItem, selectCartItems } from '../redux/cartSlice';
+import { addCartItem } from '../redux/cartSlice';
 import { addToWishlistThunk, fetchWishlist, removeFromWishlistThunk, selectWishlistItems } from '../redux/wishlistSlice';
 import {
   fetchMarcas as fetchMarcasCat,
   fetchLineasByMarca as fetchLineasCat,
   fetchColeccionables as fetchColeccionablesCat,
+  fetchDetalle,
+  fetchPricePreview,
+  fetchFirstImage,
   selectColeccionables,
   selectColeccionablesError,
   selectColeccionablesStatus,
   selectLineasByMarcaCat,
   selectMarcasCat,
 } from '../redux/coleccionablesSlice';
-import { getColeccionableFirstImageUrl, getColeccionableDetalle, getPricePreview } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
 const SORTS = [
@@ -33,10 +35,10 @@ export default function ColeccionablesView() {
   const initialSort = searchParams.get('sort') || 'alpha-desc';
   const initialQ = searchParams.get('q') || '';
 
-  const marcas = useSelector(selectMarcasCat);
-  const lineas = useSelector((state) => selectLineasByMarcaCat(state, marcaId || ""));
   const [marcaId, setMarcaId] = useState(initialMarca || '');
   const [lineaId, setLineaId] = useState(initialLinea || '');
+  const marcas = useSelector(selectMarcasCat);
+  const lineas = useSelector((state) => selectLineasByMarcaCat(state, marcaId || ""));
   const [sort, setSort] = useState(initialSort);
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef(null);
@@ -48,9 +50,10 @@ export default function ColeccionablesView() {
   const itemsStore = useSelector(selectColeccionables);
   const loadingStatus = useSelector(selectColeccionablesStatus);
   const error = useSelector(selectColeccionablesError);
-  const [items, setItems] = useState([]);
   const [q, setQ] = useState(initialQ);
   const wishlist = useSelector(selectWishlistItems);
+  const detallesById = useSelector((state) => state.coleccionables.detallesById || {});
+  const previewsById = useSelector((state) => state.coleccionables.previewsById || {});
   const { token } = useAuth();
   useEffect(() => { setQ(searchParams.get('q') || ''); }, [searchParams]);
 
@@ -138,53 +141,21 @@ export default function ColeccionablesView() {
     dispatch(fetchColeccionablesCat({ marcaId: marcaId || null, lineaId: lineaId || null, token }));
   }, [dispatch, marcaId, lineaId, token]);
 
-  // Enriquecer items con precios/imágenes
+  // Enriquecer items con precios/imágenes via Redux
   useEffect(() => {
-    const controller = new AbortController();
-    const revoked = [];
-    async function enrich() {
-      try {
-        const completed = await Promise.all(
-          (itemsStore || []).map(async (it) => {
-            let enriched = { ...it };
-            try {
-              const q = await getPricePreview(it.id, { qty: 1 }, controller.signal);
-              const lista = Number(q?.precioLista ?? q?.lista ?? enriched?.precio ?? 0);
-              const efectivo = Number(q?.precioEfectivo ?? q?.efectivo ?? enriched?.precio ?? 0);
-              const hasPromo = (Number(q?.discount ?? 0) > 0) || (efectivo > 0 && lista > 0 && efectivo < lista) || Boolean(q?.promocionId);
-              if (hasPromo) {
-                enriched.precio = efectivo || enriched.precio || null;
-                enriched.precioAnterior = (lista && efectivo && efectivo < lista) ? lista : (enriched.precioAnterior ?? null);
-              }
-            } catch (_) {}
-
-            if (enriched?.precio == null) {
-              try {
-                const det = await getColeccionableDetalle(it.id, controller.signal);
-                enriched.precio = det?.precio ?? enriched?.precio ?? null;
-                if (!enriched.descripcion) enriched.descripcion = det?.descripcion || '';
-              } catch (_) {}
-            }
-
-            if (!enriched.imagen) {
-              try {
-                const url = await getColeccionableFirstImageUrl(it.id, controller.signal);
-                if (url.startsWith('blob:')) revoked.push(url);
-                enriched.imagen = url;
-              } catch (_) {}
-            }
-            return enriched;
-          })
-        );
-        setItems(completed);
-      } catch (_) {}
-    }
-    enrich();
-    return () => {
-      controller.abort();
-      revoked.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
-    };
-  }, [itemsStore]);
+    (itemsStore || []).forEach((it) => {
+      if (!detallesById[it.id]) {
+        dispatch(fetchDetalle({ id: it.id, token }));
+      }
+      if (!previewsById[it.id]) {
+        dispatch(fetchPricePreview({ id: it.id, qty: 1 }));
+      }
+      const hasImage = detallesById[it.id]?.imagenUrl;
+      if (!hasImage && it.firstImageId != null) {
+        dispatch(fetchFirstImage({ id: it.id, token }));
+      }
+    });
+  }, [dispatch, itemsStore, detallesById, previewsById, token]);
 
   function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, ''); }
   function levenshtein(a, b) {
@@ -211,11 +182,35 @@ export default function ColeccionablesView() {
     return 1 - dist / maxLen;
   }
 
+  const enrichedItems = useMemo(() => {
+    return (itemsStore || []).map((it) => {
+      const det = detallesById[it.id] || {};
+      const preview = previewsById[it.id] || null;
+      const lista = Number(preview?.precioLista ?? preview?.lista ?? det?.precioAnterior ?? it?.precioAnterior ?? NaN);
+      const efectivo = Number(preview?.precioEfectivo ?? preview?.efectivo ?? det?.precio ?? it?.precio ?? NaN);
+      let precio = it.precio ?? det.precio ?? null;
+      let precioAnterior = it.precioAnterior ?? det.precioAnterior ?? null;
+      if (!Number.isNaN(efectivo) && efectivo != null) {
+        precio = efectivo;
+      }
+      if (!Number.isNaN(lista) && lista && (precio == null || precio < lista)) {
+        precioAnterior = lista;
+      }
+      return {
+        ...it,
+        descripcion: it.descripcion ?? det.descripcion ?? '',
+        precio,
+        precioAnterior,
+        imagen: det.imagenUrl ?? it.imagen ?? null,
+      };
+    });
+  }, [itemsStore, detallesById, previewsById]);
+
   const filteredItems = useMemo(() => {
-    if (!q) return [...items];
+    if (!q) return [...enrichedItems];
     const term = q;
-    return items.filter((it) => similarity(it?.nombre || '', term) >= 0.75 || norm(it?.nombre).includes(norm(term)));
-  }, [items, q]);
+    return enrichedItems.filter((it) => similarity(it?.nombre || '', term) >= 0.75 || norm(it?.nombre).includes(norm(term)));
+  }, [enrichedItems, q]);
 
   const sortedItems = useMemo(() => {
     const arr = [...filteredItems];

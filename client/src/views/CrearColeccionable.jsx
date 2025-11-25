@@ -1,14 +1,20 @@
-import axios from "axios";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { uploadColeccionableImages, isAdminFromToken } from "../lib/api";
-
-const BASE = "http://localhost:4002";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  createColeccionable,
+  uploadColeccionableImagesThunk,
+  fetchMarcas,
+  fetchLineasByMarca,
+  selectMarcas,
+  selectLineasByMarca,
+} from "../redux/adminSlice";
 
 export default function CrearColeccionable() {
   const navigate = useNavigate();
-  const { token, isAdmin } = useAuth();  
+  const dispatch = useDispatch();
+  const { token, isAdmin } = useAuth();
   const [marcas, setMarcas] = useState([]);
   const [lineas, setLineas] = useState([]);
   const [marcaId, setMarcaId] = useState("");
@@ -24,26 +30,27 @@ export default function CrearColeccionable() {
   const [uploading, setUploading] = useState(false);
   const [fileNotice, setFileNotice] = useState("");
 
-  // Cargar marcas
-  useEffect(() => {
-    const controller = new AbortController();
-    axios.get(`${BASE}/marcas`, { signal: controller.signal })
-      .then((r) => setMarcas(Array.isArray(r.data) ? r.data : []))
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
+  const marcasStore = useSelector(selectMarcas);
+  const lineasStore = useSelector((state) => selectLineasByMarca(state, marcaId || ""));
 
-  // Cargar líneas por marca
+  useEffect(() => {
+    dispatch(fetchMarcas());
+  }, [dispatch]);
+
+  useEffect(() => {
+    setMarcas(Array.isArray(marcasStore) ? marcasStore : []);
+  }, [marcasStore]);
+
+  useEffect(() => {
+    setLineas(Array.isArray(lineasStore) ? lineasStore : []);
+  }, [lineasStore]);
+
   useEffect(() => {
     setLineas([]);
     setLineaId("");
     if (!marcaId) return;
-    const controller = new AbortController();
-    axios.get(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`, { signal: controller.signal })
-      .then((r) => setLineas(Array.isArray(r.data) ? r.data : []))
-      .catch(() => setLineas([]));
-    return () => controller.abort();
-  }, [marcaId]);
+    dispatch(fetchLineasByMarca({ marcaId }));
+  }, [dispatch, marcaId]);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -58,26 +65,19 @@ export default function CrearColeccionable() {
         linea: lineaId ? Number(lineaId) : null,
         imagenes: [],
       };
-      const headers = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-      const res = await axios.post(`${BASE}/coleccionable`, payload, { headers });
-      const json = res.data ?? null;
-      const newId = json?.id ?? json?.coleccionableId ?? json?.coleccionableID ?? null;
+      const created = await dispatch(createColeccionable({ data: payload, token })).unwrap();
+      const newId = created?.id ?? created?.coleccionableId ?? created?.coleccionableID ?? null;
 
-      // Subir imágenes si hay
       if (newId && files.length > 0) {
         setUploading(true);
-        const up = await uploadColeccionableImages(newId, files, { token });
-        setUploading(false);
-        if (!up?.ok) {
-          throw new Error("Coleccionable creado, pero no se pudieron subir imágenes");
+        try {
+          await dispatch(uploadColeccionableImagesThunk({ coleccionableId: newId, files, token })).unwrap();
+        } finally {
+          setUploading(false);
         }
       }
 
-      setOkMsg(`Creado con éxito${newId ? ` (ID: ${newId})` : ""}${files.length ? " con imágenes" : ""}`);
-      // limpiar
+      setOkMsg(`Creado con exito${newId ? ` (ID: ${newId})` : ""}${files.length ? " con imagenes" : ""}`);
       setNombre("");
       setDescripcion("");
       setPrecio("");
@@ -96,7 +96,7 @@ export default function CrearColeccionable() {
     return (
       <div className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="text-3xl font-black text-primary">No autorizado</h1>
-        <p className="mt-2 text-white/70">Necesitás permisos de administrador para crear coleccionables.</p>
+        <p className="mt-2 text-white/70">Necesitas permisos de administrador para crear coleccionables.</p>
       </div>
     );
   }
@@ -114,7 +114,7 @@ export default function CrearColeccionable() {
           <input value={nombre} onChange={(e) => setNombre(e.target.value)} required className="mt-1 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-white/80">Descripción</label>
+          <label className="block text-sm font-medium text-white/80">Descripcion</label>
           <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none" />
         </div>
         <div>
@@ -133,7 +133,7 @@ export default function CrearColeccionable() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-white/80">Línea</label>
+            <label className="mb-1 block text-sm font-medium text-white/80">Linea</label>
             <select value={lineaId} onChange={(e) => setLineaId(e.target.value)} disabled={!marcaId} className="w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white disabled:opacity-50 focus:border-primary/50 focus:outline-none">
               <option value="">Seleccionar</option>
               {lineas.map((l) => (
@@ -143,9 +143,8 @@ export default function CrearColeccionable() {
           </div>
         </div>
 
-        {/* Imágenes */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-white/80">Imágenes</label>
+          <label className="mb-1 block text-sm font-medium text-white/80">Imagenes</label>
           <input
             type="file"
             accept="image/jpeg,image/png"
@@ -188,13 +187,13 @@ export default function CrearColeccionable() {
             </div>
           )}
           {uploading && (
-            <p className="mt-2 text-sm text-white/70">Subiendo imágenes…</p>
+            <p className="mt-2 text-sm text-white/70">Subiendo imagenes...</p>
           )}
         </div>
 
         <div className="flex gap-3 pt-2">
           <button type="submit" disabled={submitting} className="rounded-md bg-primary px-5 py-2 text-sm font-bold text-black hover:bg-primary/90 disabled:opacity-50">
-            {submitting ? 'Creando…' : 'Crear'}
+            {submitting ? 'Creando...' : 'Crear'}
           </button>
           <button type="button" onClick={() => navigate(-1)} className="rounded-md border border-white/10 px-5 py-2 text-sm font-semibold text-black dark:text-black hover:bg-white/5">
             Cancelar
