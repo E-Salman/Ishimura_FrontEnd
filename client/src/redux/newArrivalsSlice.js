@@ -69,20 +69,11 @@ const newArrivalsSlice = createSlice({
   initialState: {
     items: [],
     status: "idle",
-    error: null,
-    revokedUrls: [],
+  error: null,
+  revokedUrls: [],
   },
   reducers: {
     clearNewArrivals: (state) => {
-      if (Array.isArray(state.revokedUrls)) {
-        state.revokedUrls.forEach((url) => {
-          try {
-            if (typeof URL !== "undefined" && url?.startsWith?.("blob:")) {
-              URL.revokeObjectURL(url);
-            }
-          } catch (_) {}
-        });
-      }
       state.items = [];
       state.status = "idle";
       state.error = null;

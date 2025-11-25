@@ -33,8 +33,8 @@ const linkInactive =
 const linkActive = "text-primary";
 
 const NavBar = () => {
-  const user = null;
-  const isAdmin = false;
+  const user = useSelector((state) => state.login.email);
+  const isAdmin = useSelector((state) => state.login.role=== 'ADMIN');
   const navigate = useNavigate();
   const dispatch = useDispatch();
 

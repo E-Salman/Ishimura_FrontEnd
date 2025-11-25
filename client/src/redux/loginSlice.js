@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 export const authLogin = createAsyncThunk("auth/login", async ({ email, password },{rejectWithValue}) => {
-  const URL = "http://localhost:4002/api/v1/auth/authenticate";
+const URL = "http://localhost:4002/api/v1/auth/authenticate";
     if(!email || !password) return rejectWithValue("Email y contraseña son obligatorios")
     const headers = {
         "Content-Type": "application/json",
@@ -20,9 +20,9 @@ const loginSlice = createSlice({
     loading: false,
     error: null,
     kaomojiCount: 0,
+    email: null,
   },
   reducers: {
-    // 👉 para usar desde el register (o donde quieras dejar logueado a alguien manualmente)
     setLogin: (state, action) => {
       const { token, role, email } = action.payload || {};
       state.token = token || null;
@@ -43,8 +43,8 @@ const loginSlice = createSlice({
       state.role = null;
       state.error = null;
       state.kaomojiCount = 0;
-      localStorage.removeItem("ishimura_token");
-      localStorage.removeItem("ishimura_email");
+      //localStorage.removeItem("ishimura_token");
+      //localStorage.removeItem("ishimura_email");
     },
   },
     extraReducers: (builder) => {
@@ -59,6 +59,7 @@ const loginSlice = createSlice({
                 state.role = action.payload.data.role
                 state.token = action.payload.data.access_token
                 state.kaomojiCount = 0
+                state.email = action.meta.arg.email
             })
             .addCase(authLogin.rejected, (state, action) => {
                 state.loading = false

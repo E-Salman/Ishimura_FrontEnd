@@ -7,7 +7,7 @@ const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : u
 export const fetchCart = createAsyncThunk(
   "cart/fetch",
   async (_arg, { getState, rejectWithValue, signal }) => {
-    const token = getState().auth.token;
+    const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
     const res = await axios.get(`${BASE}/carrito`, { signal, headers: authHeaders(token) });
     return Array.isArray(res.data) ? res.data : [];

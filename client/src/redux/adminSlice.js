@@ -31,30 +31,26 @@ export const fetchDetalle = createAsyncThunk(
 
     // Promos activas para obtener descuento
     let descuento = detalle?.descuento ?? detalle?.discount ?? null;
-    try {
-      const promoRes = await axios.get(`${BASE}/promociones/activas`, {
-        params: { coleccionableId: id },
-        signal,
-        headers,
-      });
-      const arr = Array.isArray(promoRes.data) ? promoRes.data : [];
-      const found = arr.find((p) => String(p?.scopeType).toUpperCase?.() === 'ITEM' && String(p?.scopeId) === String(id));
-      if (found?.valor != null && String(found?.tipo).toUpperCase?.() === 'PERCENT') {
-        descuento = found.valor;
-      }
-    } catch (_) { }
+    const promoRes = await axios.get(`${BASE}/promociones/activas`, {
+      params: { coleccionableId: id },
+      signal,
+      headers,
+  validateStatus: (s) => s >= 200 && s < 500, // no lanza en 4xx/5xx
+  });
+  const arr = Array.isArray(promoRes.data) ? promoRes.data : [];
 
     // Imagen principal
     let imagenUrl = null;
-    try {
-      const imgRes = await axios.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
-        signal,
-        headers,
-        responseType: 'blob',
-      });
+    const imgRes = await axios.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
+      signal,
+      headers,
+      responseType: 'blob',
+      validateStatus: (s) => s === 200 || s === 404,
+    });
+    if (imgRes.status === 200) {
       const blob = imgRes.data;
       imagenUrl = URL.createObjectURL(blob);
-    } catch (_) { }
+    }
 
     return { id, detalle: { ...detalle, descuento, imagenUrl } };
   }
@@ -251,6 +247,9 @@ const adminSlice = createSlice({
     setBusy(state, { payload: { id, on } }) {
       state.busyById[id] = on;
     },
+    clearAdminError(state) {
+      state.error = null;
+    },
     revokeImagen(state, { payload: { id } }) {
       const det = state.detallesById[id];
       if (det?.imagenUrl) {
@@ -275,6 +274,13 @@ const adminSlice = createSlice({
       })
       .addCase(fetchDetalle.fulfilled, (state, action) => {
         state.detallesById[action.payload.id] = action.payload.detalle;
+      })
+      .addCase(fetchDetalle.rejected, (state, action) => {
+        const id = action.meta?.arg?.id;
+        if (id != null) {
+          delete state.detallesById[id];
+        }
+        state.error = action.error?.message || 'No se pudo cargar el detalle';
       })
       .addCase(fetchMarcas.fulfilled, (state, action) => {
         state.marcas = Array.isArray(action.payload) ? action.payload : [];
@@ -345,7 +351,7 @@ const adminSlice = createSlice({
   },
 });
 
-export const { setBusy, revokeImagen } = adminSlice.actions;
+export const { setBusy, revokeImagen, clearAdminError } = adminSlice.actions;
 
 // Selectors
 export const selectCatalogo = (state) => state.admin.catalogo;
