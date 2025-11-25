@@ -1,8 +1,7 @@
 // src/views/Login.jsx
 import { use, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { authLogin } from "../redux/loginSlice.js";
 
 export default function Login() {

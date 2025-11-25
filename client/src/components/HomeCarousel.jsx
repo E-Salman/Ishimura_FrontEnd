@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { fetchColeccionablesCarousel } from "../redux/coleccionablesCarouselSlice";
 import { fetchColeccionables } from "/store/coleccionablesSlice";
 import { NavLink } from "react-router-dom";
 
@@ -9,7 +10,7 @@ const HomeCarousel = () => {
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
-    dispatch(fetchColeccionables());
+    dispatch(fetchColeccionablesCarousel());
   }, [dispatch]);
 
   useEffect(() => {

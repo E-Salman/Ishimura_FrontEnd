@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createColeccionable,
@@ -14,7 +13,7 @@ import {
 export default function CrearColeccionable() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { token, isAdmin } = useAuth();
+  const { token, role} = useSelector((state) => state.login)
   const [marcas, setMarcas] = useState([]);
   const [lineas, setLineas] = useState([]);
   const [marcaId, setMarcaId] = useState("");
@@ -92,7 +91,7 @@ export default function CrearColeccionable() {
     }
   }
 
-  if (!isAdmin) {
+  if (!(role === 'ADMIN')) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="text-3xl font-black text-primary">No autorizado</h1>

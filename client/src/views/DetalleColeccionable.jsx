@@ -2,16 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addCartItem } from "../redux/cartSlice";
-import { addToWishlistThunk, fetchWishlist, removeFromWishlistThunk, selectWishlistItems } from "../redux/wishlistSlice";
-import { useAuth } from "../context/AuthContext";
+import { addToWishlist, fetchWishlist, removeFromWishlist } from "../redux/wishlistSlice";
 import { fetchDetalle, selectDetalleCat } from "../redux/coleccionablesSlice";
 
 const DetalleColeccionable = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
-  const wishlist = useSelector(selectWishlistItems);
+  const wishlist = useSelector((state)=>state.wishlist);
   const [mensaje, setMensaje] = useState("");
-  const { token } = useAuth();
+  const { token } = useSelector((state) => state.login)
   const navigate = useNavigate();
   const detalle = useSelector((state) => selectDetalleCat(state, id));
   const coleccionable = detalle;
@@ -46,14 +45,14 @@ const DetalleColeccionable = () => {
         (w) => String(w.coleccionableId) === String(id)
       );
       if (row) {
-        await dispatch(removeFromWishlistThunk({ itemId: row.id })).unwrap();
+        await dispatch(removeFromWishlist({ itemId: row.id })).unwrap();
       }
     } catch (_) {}
   };
 
   const agregarAWishlist = async () => {
     try {
-      await dispatch(addToWishlistThunk({ coleccionableId: id })).unwrap();
+      await dispatch(addToWishlist({ coleccionableId: id })).unwrap();
       setMensaje("Agregado a tu wishlist");
       setTimeout(() => setMensaje(""), 2000);
     } catch (error) {

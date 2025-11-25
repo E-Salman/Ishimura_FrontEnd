@@ -1,7 +1,7 @@
 import ColeccionableDestacado from "../components/ColeccionableDestacado";
 import HomeCarousel from "../components/HomeCarousel";
 import { NavLink } from "react-router-dom";
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { fetchDestacados } from "../redux/colDestacadosSlice";
 import { useDispatch } from "react-redux";
 
@@ -20,7 +20,7 @@ const Home = () => {
             <div className="flex h-full grow flex-col">
                 <main className="flex flex-1 justify-center px-4 py-8 sm:px-6 lg:px-8">
                     <div className="w-full max-w-7xl">
-                        <div className="relative flex min-h-[500px] items-center justify-center rounded-xl bg-cover bg-center p-8 text-center text-white" style={{ backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.8) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAQC9BJKb4Xkbrt2eKzXz359C1ONzqzkHYJ-BWy1WWFMwIF-CQE4VmPZuNCoCvHpC7a5mZTrAaqoQ8TgRIxnYRQpVtNVEq7eTRkfLiODp_FRPJd0H4a44iGo9gR2FxFpYw-i8PAZRNqNtG7Qv3tLhOg93GhRwrFqUZNXfM2QPpsJWmSDHLHo46aEO-C-uI8CSuhNvQU1hK2W_q37UFI82cOQCfswIldz5RXrIZlYdOlyxTyueHar4B4bMrbY0EwDstMLhZ8RukUBXs");' }}>
+                        <div className="relative flex min-h-[500px] items-center justify-center rounded-xl bg-cover bg-center p-8 text-center text-white" style={{ backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.8) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAQC9BJKb4Xkbrt2eKzXz359C1ONzqzkHYJ-BWy1WWFMwIF-CQE4VmPZuNCoCvHpC7a5mZTrAaqoQ8TgRIxnYRQpVtNVEq7eTRkfLiODp_FRPJd0H4a44iGo9gR2FxFpYw-i8PAZRNqNtG7Qv3tLhOg93GhRwrFqUZNXfM2QPpsJWmSDHLHo46aEO-C-uI8CSuhNvQU1hK2W_q37UFI82cOQCfswIldz5RXrIZlYdOlyxTyueHar4B4bMrbY0EwDstMLhZ8RukUBXs")' }}>
                             <div className="flex flex-col items-center gap-4">
                                 <HomeCarousel />
                             </div>
