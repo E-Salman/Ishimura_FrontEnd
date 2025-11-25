@@ -7,8 +7,6 @@ import { fetchMarcas } from "../redux/marcasSlice";
 import { fetchLineasByMarca } from "../redux/lineasSlice";
 import { fetchColeccionables } from "../redux/coleccionablesSlice";
 import { logout } from "../redux/loginSlice";
-
-
 function AvatarInitial({ email }) {
   const initial = (email?.[0] || "?").toUpperCase();
   return (
@@ -38,12 +36,10 @@ const NavBar = () => {
   const dispatch = useDispatch();
 
   // ---- LOGIN STATE ----
-const { email, role, token } = useSelector((state) => state.login);
-
-// Solo confiamos en Redux
-const userEmail = email;
-const isLogged = Boolean(token && email);
-const isAdmin = role === "ADMIN";
+  const { email, role, token } = useSelector((state) => state.login);
+  const userEmail = email || localStorage.getItem("ishimura_email") || "";
+  const isLogged = Boolean(token && userEmail);
+  const isAdmin = role === "ADMIN";
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
@@ -63,14 +59,13 @@ const isAdmin = role === "ADMIN";
     };
   }, []);
 
-const handleLogout = () => {
-  dispatch(logout()); // limpia Redux
-  localStorage.removeItem("ishimura_token");
-  localStorage.removeItem("ishimura_email");
-
-  setOpen(false);
-  navigate("/login", { replace: true });
-};
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.removeItem("ishimura_token");
+    localStorage.removeItem("ishimura_email");
+    setOpen(false);
+    navigate("/login", { replace: true });
+  };
 
   const goToPurchases = () => {
     setOpen(false);
@@ -395,25 +390,26 @@ const handleLogout = () => {
         {!isLogged ? (
           <NavLink
             to="/login"
-            className="rounded-lg bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30 transition-colors
-                      dark:text-black dark:hover:bg-primary/25"
+            className="rounded-lg bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30 transition-colors dark:text-black dark:hover:bg-primary/25"
           >
             Login
           </NavLink>
         ) : (
           <div className="relative" ref={menuRef}>
-          {isLogged && (
-  <button
-    type="button"
-    onClick={() => setOpen((o) => !o)}
-    className="rounded-full border border-white/20 dark:border-black/20 bg-black/20 dark:bg-white/40"
-  >
-    <AvatarInitial email={email} />
-  </button>
-)}
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              className="flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-3 py-2 text-white hover:bg-black/30 dark:border-black/20 dark:bg-white/40 dark:text-black dark:hover:bg-white/50"
+            >
+              <AvatarInitial email={userEmail} />
+            </button>
 
             {open && (
-              <div className="absolute right-0 mt-2 w-48 rounded-lg bg-black/90 text-sm text-white shadow-lg dark:bg-white dark:text-black">
+              <div className="absolute right-0 mt-2 w-56 rounded-lg bg-black/90 text-sm text-white shadow-lg ring-1 ring-white/10 backdrop-blur-md dark:bg-white dark:text-black dark:ring-black/10">
+                <div className="px-4 py-3 border-b border-white/10 dark:border-black/10">
+                  <p className="text-[11px] uppercase tracking-wide text-white/60 dark:text-black/60">Sesión</p>
+                  <p className="mt-1 text-xs font-semibold break-all text-white dark:text-black">{userEmail}</p>
+                </div>
                 <button
                   className="block w-full px-4 py-2 text-left hover:bg-white/10 dark:hover:bg-black/10"
                   onClick={goToPurchases}
@@ -421,7 +417,7 @@ const handleLogout = () => {
                   Mis compras
                 </button>
                 <button
-                  className="block w-full px-4 py-2 text-left hover:bg-white/10 dark:hover:bg-black/10"
+                  className="block w-full px-4 py-2 text-left text-red-300 hover:bg-white/10 dark:text-red-600 dark:hover:bg-black/10"
                   onClick={handleLogout}
                 >
                   Cerrar sesión

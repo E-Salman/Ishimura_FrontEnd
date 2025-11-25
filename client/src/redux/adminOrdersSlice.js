@@ -2,25 +2,26 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const BASE = "http://localhost:4002";
-const ORDERS_URL = `${BASE}/ordenes/admin/detalle`;
+const ORDERS_URL = `${BASE}/admin/compras`;
 
 export const fetchAdminOrders = createAsyncThunk(
   "adminOrders/fetchAll",
   async (token, { rejectWithValue }) => {
-    if (!token) {
-      return rejectWithValue("No hay token de autenticación");
+    const authToken = token || localStorage.getItem("ishimura_token");
+    if (!authToken) {
+      return rejectWithValue("No hay token de autenticacion");
     }
 
     const res = await axios.get(ORDERS_URL, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${authToken}`,
       },
       validateStatus: () => true,
     });
 
     if (res.status === 401 || res.status === 403) {
       return rejectWithValue(
-        "No autorizado. Iniciá sesión con una cuenta admin."
+        "No autorizado. Inicia sesion con una cuenta admin."
       );
     }
 
@@ -61,3 +62,4 @@ const adminOrdersSlice = createSlice({
 });
 
 export default adminOrdersSlice.reducer;
+

@@ -143,12 +143,12 @@ export default function AdminPanel() {
     [dispatch]
   );
 
-  // Cargar marcas para filtros y gesti�n (Redux)
+  // Cargar marcas para filtros y gestion (Redux)
   useEffect(() => {
     refreshMarcas().catch(() => { });
   }, [refreshMarcas]);
 
-  // Cargar l�neas al elegir marca (Redux)
+  // Cargar lineas al elegir marca (Redux)
   useEffect(() => {
     setLineaId("");
     if (!marcaId) return;
@@ -239,7 +239,7 @@ export default function AdminPanel() {
     e?.preventDefault?.();
     const nombre = newMarca.nombre?.trim();
     if (!nombre) {
-      setNewMarcaError("Ingres� un nombre para la marca.");
+      setNewMarcaError("Ingrese un nombre para la marca.");
       return;
     }
     try {
