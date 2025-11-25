@@ -1,4 +1,3 @@
-// src/views/ForgotPassword.jsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -34,14 +33,14 @@ export default function ForgotPassword() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="block w-full rounded-lg border border-gray-700 bg-black px-3 py-3 text-white placeholder-white/50
-                         focus:border-primary focus:outline-none"
+                        focus:border-primary focus:outline-none"
             />
           </div>
 
           <button
             type="submit"
             className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-black hover:bg-primary/90
-                       focus:outline-none focus:ring-2 focus:ring-primary"
+                      focus:outline-none focus:ring-2 focus:ring-primary"
           >
             Send Reset Link
           </button>

@@ -1,34 +1,36 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  getCart,
-  removeCartItem,
-  updateCartItemQuantity,
-} from "../lib/api";
+  fetchCart,
+  removeCartItemThunk,
+  updateCartQuantity,
+} from "../redux/cartSlice";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
-import { useAuth } from "../context/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import { selectCartItems, selectCartStatus } from "../redux/cartSlice";
 
 const Carrito = () => {
-  const [carrito, setCarrito] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
-  const { token } = useAuth();
+  const dispatch = useDispatch();
+  const carrito = useSelector(selectCartItems);
+  const status = useSelector(selectCartStatus);
+  const token = useSelector((state) => state.auth.token);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCarrito = async () => {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
       try {
-        const data = await getCart(token);
-        setCarrito(data);
-        calcularTotal(data);
+        await dispatch(fetchCart()).unwrap();
       } catch (error) {
         console.error("Error al cargar el carrito:", error);
-      } finally {
-        setLoading(false);
       }
     };
     fetchCarrito();
-  }, []);
+  }, [token, navigate]);
 
   const calcularTotal = (items) => {
     const totalCalculado = items.reduce(
@@ -40,10 +42,7 @@ const Carrito = () => {
 
   const eliminarDelCarrito = async (idProducto) => {
     try {
-      await removeCartItem(token, idProducto);
-      const nuevoCarrito = carrito.filter((item) => item.id !== idProducto);
-      setCarrito(nuevoCarrito);
-      calcularTotal(nuevoCarrito);
+      await dispatch(removeCartItemThunk({ itemId: idProducto })).unwrap();
     } catch (error) {
       console.error("Error al eliminar producto:", error);
     }
@@ -55,14 +54,7 @@ const Carrito = () => {
         await eliminarDelCarrito(rowId);
         return;
       }
-      const updated = await updateCartItemQuantity(token, rowId, nuevaCantidad);
-      setCarrito((prev) => {
-        const next = prev.map((it) =>
-          it.id === rowId ? { ...it, cantidad: updated?.cantidad ?? nuevaCantidad } : it
-        );
-        calcularTotal(next);
-        return next;
-      });
+      await dispatch(updateCartQuantity({ itemId: rowId, cantidad: nuevaCantidad })).unwrap();
     } catch (error) {
       console.error("Error al actualizar cantidad:", error);
     }
@@ -72,7 +64,11 @@ const Carrito = () => {
     navigate("/confirmar-compra", { state: { carrito } });
   };
 
-  if (loading) return <p>Cargando carrito...</p>;
+  useEffect(() => {
+    calcularTotal(carrito);
+  }, [carrito]);
+
+  if (status === "loading") return <p>Cargando carrito...</p>;
   if (carrito.length === 0)
     return (
       <main className="flex-1">

@@ -1,74 +1,137 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { getWishlist, removeFromWishlist } from "../lib/api";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
 
-export const fetchWishlist = createAsyncThunk(
-  "wishlist/fetch",
-  async ({ token }, { rejectWithValue }) => {
-    if (!token) return rejectWithValue("No se encuentra logueado");
-    try {
-      const data = await getWishlist(token);
-      return Array.isArray(data) ? data : [];
-    } catch (error) {
-      return rejectWithValue(
-        error?.message || "No se pudo cargar la wishlist"
-      );
+const BASE = "http://localhost:4002";
+
+// Agregar a wishlist
+export const addToWishlist = createAsyncThunk(
+    "wishlist/add",
+    async (coleccionableId, { getState, rejectWithValue }) => {
+        const token = getState().auth.token;
+
+        if (!token) return rejectWithValue("No se encuentra logueado");
+
+        const headers = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        };
+
+        const { data } =
+            axios.post(
+                `${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`,
+                null,
+                { headers }
+            );
+
+        return data;
     }
-  }
 );
 
-export const removeWishlistItem = createAsyncThunk(
-  "wishlist/removeItem",
-  async ({ token, itemId }, { rejectWithValue }) => {
-    if (!token) return rejectWithValue("No se encuentra logueado");
-    if (!itemId) return rejectWithValue("Item inválido");
-    try {
-      await removeFromWishlist(token, itemId);
-      return itemId;
-    } catch (error) {
-      return rejectWithValue(
-        error?.message || "No se pudo eliminar el item de la wishlist"
-      );
+export const fetchWishlist = createAsyncThunk(
+    "wishlist/fetchAll",
+    async (_, { getState, rejectWithValue }) => {
+        const token = getState().auth.token;
+
+        if (!token) return rejectWithValue("No se encuentra logueado");
+
+        const headers = {
+            Authorization: `Bearer ${token}`,
+        };
+
+        try {
+            const { data } = await axios.get(`${BASE}/wishlist`, { headers });
+
+            return data;
+        } catch (err) {
+            return rejectWithValue(err.message);
+        }
     }
-  }
+);
+
+export const removeFromWishlist = createAsyncThunk(
+    "wishlist/remove",
+    async (wishlistItemId, { getState, rejectWithValue }) => {
+        const token = getState().auth.token;
+
+        if (!token) return rejectWithValue("No se encuentra logueado");
+
+        const headers = {
+            Authorization: `Bearer ${token}`,
+        };
+
+        try {
+            await axios.delete(`${BASE}/wishlist/${encodeURIComponent(wishlistItemId)}`, {
+                headers,
+            });
+            return wishlistItemId;
+        } catch (err) {
+            return rejectWithValue(err.message);
+        }
+    }
 );
 
 const wishlistSlice = createSlice({
-  name: "wishlist",
-  initialState: {
-    items: [],
-    status: "idle",
-    error: null,
-  },
-  reducers: {
-    clearWishlistState: (state) => {
-      state.items = [];
-      state.status = "idle";
-      state.error = null;
+    name: "wishlist",
+    initialState: {
+        items: [],
+        loading: false,
+        error: null,
+
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchWishlist.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
+    reducers: {},
+    extraReducers: (builder) => {
+        builder
+
+            // ADD
+            .addCase(addToWishlist.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(addToWishlist.fulfilled, (state, action) => {
+                state.loading = false;
+                state.error = null;
+                state.items = [...state.items, action.payload];
+
+            })
+            .addCase(addToWishlist.rejected, (state, action) => {
+                state.loading = false;
+                state.error =
+                    action.payload || action.error.message || "Error al agregar a wishlist";
+            })
+
+            // FETCH ALL
+            .addCase(fetchWishlist.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchWishlist.fulfilled, (state, action) => {
+                state.loading = false;
+                state.items = action.payload ?? [];
+            })
+            .addCase(fetchWishlist.rejected, (state, action) => {
+                state.loading = false;
+                state.error =
+                    action.payload ||
+                    action.error.message ||
       })
-      .addCase(fetchWishlist.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.items = action.payload ?? [];
-      })
-      .addCase(fetchWishlist.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload || action.error?.message;
-      })
-      .addCase(removeWishlistItem.fulfilled, (state, action) => {
-        const id = action.payload;
-        state.items = state.items.filter((it) => it.id !== id);
-      })
-      .addCase(removeWishlistItem.rejected, (state, action) => {
-        state.error = action.payload || action.error?.message;
+
+            // REMOVE
+            .addCase(removeFromWishlist.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(removeFromWishlist.fulfilled, (state, action) => {
+                state.loading = false;
+                const id = action.payload;
+                state.items = state.items.filter(it => it.id !== id);
+            })
+            .addCase(removeFromWishlist.rejected, (state, action) => {
+                state.loading = false;
+                state.error =
+                    action.payload ||
+                    action.error.message ||
       });
-  },
+    },
 });
 
-export const { clearWishlistState } = wishlistSlice.actions;
 export default wishlistSlice.reducer;
