@@ -13,17 +13,17 @@ import {
 const Wishlist = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { token } = useAuth();
-  const { items, status, error } = useSelector((state) => state.wishlist);
+  const { token } = useSelector((state) => state.login)
+  const { items, loading, error } = useSelector((state) => state.wishlist);
 
   useEffect(() => {
-    if (status === "idle" && token) {
+    if (!loading && token) {
       dispatch(fetchWishlist({ token }));
     }
     return () => {
       dispatch(clearWishlistState());
     };
-  }, [status, token, dispatch]);
+  }, [loading, token, dispatch]);
 
   const itemsForGrid = useMemo(
     () =>
