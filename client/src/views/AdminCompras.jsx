@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAdminOrders } from "../redux/adminOrdersSlice";
 
@@ -65,7 +64,7 @@ function formatMoney(amount) {
 }
 
 export default function AdminCompras() {
-  const { isAdmin, token } = useAuth();
+  const token = useSelector((state) => state.login.token);
   const dispatch = useDispatch();
 
   const {

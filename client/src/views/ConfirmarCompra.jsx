@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { useDispatch, useSelector } from "react-redux";
 import { selectCartItems } from "../redux/cartSlice";
 import { createOrderThunk, selectOrderError, selectOrderStatus } from "../redux/ordersSlice";
@@ -11,7 +10,7 @@ const ConfirmarCompra = () => {
   const carritoStore = useSelector(selectCartItems);
   const carrito = location.state?.carrito || carritoStore;
   const dispatch = useDispatch();
-  const { token } = useAuth();
+  const token = useSelector((state) => state.login.token)
   const orderStatus = useSelector(selectOrderStatus);
   const orderError = useSelector(selectOrderError);
 

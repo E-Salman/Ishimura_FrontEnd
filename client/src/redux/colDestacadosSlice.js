@@ -21,8 +21,8 @@ export const fetchDestacados = createAsyncThunk("colDestacados/fetchDestacados",
 
     const { data } = await axios.get(URLColeccionable, { headers }) //axios devuelve JSON de una
     const { data: blobImg } = await axios.get(URLImagen, { headers, responseType: "blob" })
-
-    return { colId, data, blobImg }
+    const imgURL = URL.createObjectURL(blobImg);
+    return { colId, data, imgURL }
 })
 
 const colDestacadosSlice = createSlice({
@@ -41,12 +41,12 @@ const colDestacadosSlice = createSlice({
             .addCase(fetchDestacados.fulfilled, (state, action) => {
                 state.coleccionables[action.payload.colId] = {
                     coleccionable: action.payload.data,
-                    imagen: action.payload.blobImg,
+                    imagen: action.payload.imgURL,
                     loading: false,
                     error: null
                 }
                 //state.coleccionables = [... state.coleccionables, action.payload.data] Para arreglos
-                //state.imagenes = [...state.imagenes, action.payload.blobImg]                
+                //state.imagenes = [...state.imagenes, action.payload.imgURL]                
             })
             .addCase(fetchDestacados.rejected, (state, action) => { //Rejected no recibe payload
                 state.coleccionables[action.meta.arg] = {

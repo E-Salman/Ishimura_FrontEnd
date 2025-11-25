@@ -2,11 +2,9 @@ import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
-import { useAuth } from "../context/AuthContext";
 import {
-  clearWishlistState,
   fetchWishlist,
-  removeWishlistItem,
+  removeFromWishlist,
 } from "../redux/wishlistSlice";
 
 const BASE = "http://localhost:4002";
@@ -17,34 +15,23 @@ const Wishlist = () => {
   const dispatch = useDispatch();
   const { token } = useSelector((state) => state.login)
   const { items, loading, error } = useSelector((state) => state.wishlist);
-
+  //clearWishlistState,
   useEffect(() => {
-    const fetchWishlist = async () => {
-      try {
-        if (!token) return;
-        const res = await axios.get(`${BASE}/wishlist`, {
-          headers: authHeaders(token),
-        });
-        setWishlist(Array.isArray(res.data) ? res.data : []);
-      } catch (error) {
-        console.error("Error al cargar wishlist:", error);
-      } finally {
-        setLoading(false);
-      }
+    if (!loading && token) {
+      dispatch(fetchWishlist({ token }));
+    }
+    return () => {
+      //dispatch(clearWishlistState());
     };
-
     fetchWishlist();
   }, [token]);
 
   const eliminarDeWishlist = async (id) => {
     if (!token) return;
     try {
-      await axios.delete(`${BASE}/wishlist/${encodeURIComponent(id)}`, {
-        headers: authHeaders(token),
-      });
-      setWishlist((prev) => prev.filter((item) => item.id !== id));
-    } catch (error) {
-      console.error("Error al eliminar producto:", error);
+      await dispatch(removeFromWishlist({ token, itemId: id })).unwrap();
+    } catch (e) {
+      console.error("Error al eliminar producto:", e);
     }
   };
 

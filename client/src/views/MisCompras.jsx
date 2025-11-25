@@ -97,7 +97,7 @@ export default function MisCompras() {
         <div className="mb-8">
           <h1 className="text-3xl font-black text-primary">Mis compras</h1>
           <p className="mt-2 text-sm text-white/60">
-            Historial de órdenes asociadas a tu cuenta ({user.email}).
+            Historial de órdenes asociadas a tu cuenta ({email.email}).
           </p>
         </div>
 

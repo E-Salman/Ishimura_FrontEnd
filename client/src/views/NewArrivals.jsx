@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
-import { useAuth } from "../context/AuthContext";
+import {
+  addToWishlist,
+  addToCart,
+  getWishlist,
+} from "../lib/api";
 import {
   clearNewArrivals,
   fetchNewArrivals,
@@ -15,7 +19,7 @@ const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {
 export default function NewArrivals() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { token } = useAuth();
+  const token = useSelector((state) => state.login.token)
   const { items, status, error } = useSelector((state) => state.newArrivals);
 
   useEffect(() => {
