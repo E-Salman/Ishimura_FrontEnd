@@ -57,16 +57,8 @@ function formatMoney(amount) {
 }
 
 export default function MisCompras() {
-  const loginToken = useSelector((state) => state.login?.token);
-  const loginEmail = useSelector((state) => state.login?.email);
-  const loginRole = useSelector((state) => state.login?.role);
-  const isAdmin = loginRole === "ADMIN";
-  const token = loginToken || localStorage.getItem("ishimura_token");
-  const user =
-    token && (loginEmail || localStorage.getItem("ishimura_email"))
-      ? { email: loginEmail || localStorage.getItem("ishimura_email"), token }
-      : null;
   const dispatch = useDispatch();
+  const { user, token } = useSelector((state) => state.login)
   const rawOrders = useSelector(selectMisCompras);
   const status = useSelector(selectMisComprasStatus);
   const error = useSelector(selectMisComprasError);

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { selectCartItems } from "../redux/cartSlice";
+import { clearCartThunk, selectCartItems } from "../redux/cartSlice";
 import { createOrderThunk, selectOrderError, selectOrderStatus } from "../redux/ordersSlice";
 
 const ConfirmarCompra = () => {
@@ -32,7 +32,7 @@ const ConfirmarCompra = () => {
 
   const handleConfirmar = async () => {
     if (!tarjeta || Object.values(direccion).some((v) => v === "")) {
-      setMensaje("Por favor completǭ todos los campos.");
+      setMensaje("Por favor completá todos los campos.");
       return;
     }
 
@@ -45,13 +45,16 @@ const ConfirmarCompra = () => {
       })),
     };
 
-    try {
-      await dispatch(createOrderThunk({ token, data: payload })).unwrap();
-      setMensaje("Compra confirmada");
-      setTimeout(() => navigate("/home"), 2000);
-    } catch (error) {
-      setMensaje(error?.message || String(error));
-    }
+    dispatch(createOrderThunk({ token, data: payload }))
+      .unwrap()
+      .then(() => {
+        setMensaje("Compra confirmada");
+        dispatch(clearCartThunk())
+        setTimeout(() => navigate("/home"), 2000);
+      })
+      .catch((error) => {
+        alert(error)
+      })
   };
 
   return (

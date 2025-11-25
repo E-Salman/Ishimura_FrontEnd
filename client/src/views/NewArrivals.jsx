@@ -4,11 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
 import {
-  addToWishlist,
-  addToCart,
-  getWishlist,
-} from "../lib/api";
-import {
   clearNewArrivals,
   fetchNewArrivals,
 } from "../redux/newArrivalsSlice";
@@ -23,13 +18,11 @@ export default function NewArrivals() {
   const { items, status, error } = useSelector((state) => state.newArrivals);
 
   useEffect(() => {
-    if (status === "idle") {
-      dispatch(fetchNewArrivals());
-    }
-    return () => {
-      dispatch(clearNewArrivals());
-    };
-  }, [status, dispatch]);
+  if (status === "idle") {
+    dispatch(fetchNewArrivals());
+  }
+}, [status, dispatch]);
+
 
   const moveFromWishlistToCart = async (coleccionableId) => {
     try {
