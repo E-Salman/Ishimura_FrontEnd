@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
@@ -14,36 +14,90 @@ const Wishlist = () => {
 
   const { token } = useSelector((state) => state.login);
   const { items, loading, error } = useSelector((state) => state.wishlist);
+  const [detailsById, setDetailsById] = useState({});
 
   useEffect(() => {
     if (token) {
-      dispatch(fetchWishlist({ token }));
+      dispatch(fetchWishlist());
     }
-  }, [token]);
+  }, [token, dispatch]);
 
   const eliminarDeWishlist = async (id) => {
     if (!token) return;
     try {
-      await dispatch(removeFromWishlist({ token, itemId: id })).unwrap();
+      await dispatch(removeFromWishlist(id)).unwrap();
     } catch (e) {
       console.error("Error al eliminar producto:", e);
     }
   };
 
-  // 🔥 ACOMODAMOS la wishlist para el grid
+  // Cargar detalles mínimos para mostrar nombre/imagen/precio
+  useEffect(() => {
+    if (!token) return;
+    const pending = items
+      .map((raw) => {
+        const it = raw.coleccionable ?? {};
+        const coleccionableId = it.id ?? raw.coleccionableId;
+        return coleccionableId;
+      })
+      .filter((id) => id != null && !detailsById[id]);
+
+    if (!pending.length) return;
+
+    (async () => {
+      const updates = {};
+      for (const cid of pending) {
+        try {
+          const detRes = await axios.get(`${BASE}/coleccionable/${cid}`, {
+            headers: authHeaders(token),
+            validateStatus: () => true,
+          });
+          const det = detRes.status === 200 ? detRes.data : {};
+          let imagenUrl = null;
+          try {
+            const imgRes = await axios.get(`${BASE}/coleccionable/${cid}/imagenes/0`, {
+              responseType: "blob",
+              headers: authHeaders(token),
+              validateStatus: (s) => s === 200 || s === 404,
+            });
+            if (imgRes.status === 200) {
+              imagenUrl = URL.createObjectURL(imgRes.data);
+            }
+          } catch (_) {}
+          updates[cid] = {
+            nombre: det?.nombre,
+            descripcion: det?.descripcion,
+            precio: det?.precio,
+            imagen: imagenUrl,
+          };
+        } catch (_) {}
+      }
+      if (Object.keys(updates).length) {
+        setDetailsById((prev) => ({ ...prev, ...updates }));
+      }
+    })();
+  }, [items, token, detailsById]);
+
+  // 🔥 ACOMODAMOS la wishlist para el grid (usando siempre id de coleccionable)
   const itemsForGrid = useMemo(() => {
-    return items.map((raw) => {
-      const it = raw.coleccionable ?? raw;
-      return {
-        id: it.id ?? raw.coleccionableId,
-        nombre: it.nombre,
-        descripcion: it.descripcion ?? "",
-        precio: it.precio ?? null,
-        imagen: it.imagen ?? it.imageUrl ?? null,
-        _rowId: raw.id, // se usa para eliminar
-      };
-    });
-  }, [items]);
+    return items
+      .map((raw) => {
+        const rowId = raw.id;
+        const it = raw.coleccionable ?? {};
+        const coleccionableId = it.id ?? raw.coleccionableId;
+        if (coleccionableId == null) return null;
+        const det = detailsById[coleccionableId] || {};
+        return {
+          id: coleccionableId, // id del coleccionable (para carrito y navegación)
+          nombre: det.nombre ?? it.nombre ?? "Coleccionable",
+          descripcion: det.descripcion ?? it.descripcion ?? "",
+          precio: det.precio ?? it.precio ?? null,
+          imagen: det.imagen ?? it.imagen ?? it.imageUrl ?? null,
+          _rowId: rowId, // id de la fila en wishlist (solo para eliminar)
+        };
+      })
+      .filter(Boolean);
+  }, [items, detailsById]);
 
   // 🔥 Usuario no logueado
   if (!token) {
@@ -101,14 +155,6 @@ const Wishlist = () => {
             );
           } catch (e) {
             console.warn("Error al agregar al carrito desde wishlist", e);
-          }
-
-          const row = items.find((x) =>
-            String(x.coleccionableId) === String(id)
-          );
-
-          if (row) {
-            await eliminarDeWishlist(row.id);
           }
         }}
         addToCartText="Agregar al carrito"

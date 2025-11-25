@@ -17,7 +17,7 @@ export const addToWishlist = createAsyncThunk(
         };
 
         const { data } =
-            axios.post(
+            await axios.post(
                 `${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`,
                 null,
                 { headers }
