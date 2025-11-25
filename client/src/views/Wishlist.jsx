@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
+import { useDispatch, useSelector } from "react-redux";
 import {
   fetchWishlist,
   removeFromWishlist,
