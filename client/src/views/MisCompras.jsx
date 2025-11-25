@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext.jsx";
 import {
   fetchMisCompras,
@@ -12,7 +11,6 @@ import {
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
-  const items = Array.isArray(base.items) ? base.items : [];
   const items = Array.isArray(base.items) ? base.items : [];
 
   const mappedItems = items.map((item, idx) => ({
@@ -152,33 +150,30 @@ export default function MisCompras() {
                 </div>
               </div>
 
-              <ul className="mt-4 space-y-3">
-                {order.items.map((item) => (
-                  <li
-                    key={item.key}
-                    className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                  <li
-                    key={item.key}
-                    className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <p className="font-semibold text-white">{item.nombre}</p>
-                      <p className="text-sm text-white/60">
-                        Cantidad: {item.cantidad}
-                        {item.subtotal != null ? (
-                          <span className="ml-2 text-white/50">
-                            Subtotal: {formatMoney(item.subtotal)}
-                          </span>
-                        ) : null}
-                      </p>
-                    </div>
-                    <p className="text-sm font-semibold text-primary">
-                      {formatMoney(item.precio)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+           <ul className="mt-4 space-y-3">
+  {order.items.map((item) => (
+    <li
+      key={item.key}
+      className="flex flex-col rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div>
+        <p className="font-semibold text-white">{item.nombre}</p>
+        <p className="text-sm text-white/60">
+          Cantidad: {item.cantidad}
+          {item.subtotal != null ? (
+            <span className="ml-2 text-white/50">
+              Subtotal: {formatMoney(item.subtotal)}
+            </span>
+          ) : null}
+        </p>
+      </div>
+
+      <p className="text-sm font-semibold text-primary">
+        {formatMoney(item.precio)}
+      </p>
+    </li>
+  ))}
+</ul>
             </article>
           ))}
         </div>

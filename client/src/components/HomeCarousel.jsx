@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchColeccionablesCarousel } from "../redux/coleccionablesCarouselSlice";
-import { fetchColeccionables } from "/store/coleccionablesSlice";
 import { NavLink } from "react-router-dom";
 
 const HomeCarousel = () => {
