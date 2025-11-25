@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAdminOrders } from "../redux/adminOrdersSlice";
-import { useAuth } from "../context/AuthContext.jsx";
 
 function normalizeOrder(raw) {
   const base = raw ?? {};
@@ -63,12 +62,10 @@ function formatMoney(amount) {
 }
 
 export default function AdminCompras() {
-  const auth = useAuth();
   const loginToken = useSelector((state) => state.login?.token);
   const loginRole = useSelector((state) => state.login?.role);
-  const token =
-    auth?.token || loginToken || localStorage.getItem("ishimura_token") || null;
-  const isAdmin = Boolean(auth?.isAdmin || loginRole === "ADMIN");
+  const token = loginToken || localStorage.getItem("ishimura_token") || null;
+  const isAdmin = Boolean(loginRole === "ADMIN");
   const dispatch = useDispatch();
 
   const {

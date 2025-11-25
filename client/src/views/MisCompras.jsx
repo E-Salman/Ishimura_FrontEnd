@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useAuth } from "../context/AuthContext.jsx";
 import {
   fetchMisCompras,
   selectMisCompras,
@@ -58,7 +57,15 @@ function formatMoney(amount) {
 }
 
 export default function MisCompras() {
-  const { user, token } = useAuth();
+  const loginToken = useSelector((state) => state.login?.token);
+  const loginEmail = useSelector((state) => state.login?.email);
+  const loginRole = useSelector((state) => state.login?.role);
+  const isAdmin = loginRole === "ADMIN";
+  const token = loginToken || localStorage.getItem("ishimura_token");
+  const user =
+    token && (loginEmail || localStorage.getItem("ishimura_email"))
+      ? { email: loginEmail || localStorage.getItem("ishimura_email"), token }
+      : null;
   const dispatch = useDispatch();
   const rawOrders = useSelector(selectMisCompras);
   const status = useSelector(selectMisComprasStatus);
@@ -73,7 +80,7 @@ export default function MisCompras() {
     dispatch(fetchMisCompras());
   }, [token, dispatch]);
 
-  if (!user || !token) {
+  if (!user || !token || isAdmin) {
     return (
       <main className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">

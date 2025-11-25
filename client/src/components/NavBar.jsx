@@ -410,12 +410,14 @@ const NavBar = () => {
                   <p className="text-[11px] uppercase tracking-wide text-white/60 dark:text-black/60">Sesión</p>
                   <p className="mt-1 text-xs font-semibold break-all text-white dark:text-black">{userEmail}</p>
                 </div>
-                <button
-                  className="block w-full px-4 py-2 text-left hover:bg-white/10 dark:hover:bg-black/10"
-                  onClick={goToPurchases}
-                >
-                  Mis compras
-                </button>
+                {!isAdmin && (
+                  <button
+                    className="block w-full px-4 py-2 text-left hover:bg-white/10 dark:hover:bg-black/10"
+                    onClick={goToPurchases}
+                  >
+                    Mis compras
+                  </button>
+                )}
                 <button
                   className="block w-full px-4 py-2 text-left text-red-300 hover:bg-white/10 dark:text-red-600 dark:hover:bg-black/10"
                   onClick={handleLogout}
