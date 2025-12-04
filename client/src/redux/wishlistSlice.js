@@ -3,28 +3,28 @@ import axios from "axios";
 
 const BASE = "http://localhost:4002";
 
+// Agregar a wishlist
 export const addToWishlist = createAsyncThunk(
-  "wishlist/add",
-  async ({ coleccionableId }, { getState, rejectWithValue }) => {
-    const token = getState().login.token;
-    if (!token) return rejectWithValue("No se encuentra logueado");
+    "wishlist/add",
+    async (coleccionableId, { getState, rejectWithValue }) => {
+        const token = getState().login.token;
 
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
+        if (!token) return rejectWithValue("No se encuentra logueado");
 
-    try {
-      const { data } = await axios.post(
-        `${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`,
-        null,
-        { headers }
-      );
-      return data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data ?? err.message);
+        const headers = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        };
+
+        const { data } =
+            await axios.post(
+                `${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`,
+                null,
+                { headers }
+            );
+
+        return data;
     }
-  }
 );
 
 export const fetchWishlist = createAsyncThunk(

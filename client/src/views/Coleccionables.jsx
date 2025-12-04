@@ -292,7 +292,7 @@ export default function ColeccionablesView() {
 
   const handleAddToWishlist = async ({ id }) => {
     try {
-      await dispatch(addToWishlist({ coleccionableId: id })).unwrap();
+      await dispatch(addToWishlist(id)).unwrap();
       await dispatch(fetchWishlist());
     } catch (e) {
       console.warn('Wishlist error', e);
