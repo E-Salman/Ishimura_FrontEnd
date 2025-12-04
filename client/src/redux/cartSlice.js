@@ -68,6 +68,7 @@ const cartSlice = createSlice({
         state.status = "failed";
         state.error = action.payload || action.error.message;
       })
+      
       .addCase(addCartItem.fulfilled, (state, action) => {
         state.items = action.payload && Array.isArray(action.payload)
           ? action.payload

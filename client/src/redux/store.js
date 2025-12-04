@@ -22,7 +22,6 @@ import ordersReducer from './ordersSlice';
 import carouselReducer from './coleccionablesCarouselSlice'
 import misComprasReducer from './misComprasSlice'
 
-// ✅ CONFIG de persist solo para login
 const loginPersistConfig = {
   key: "login",
   storage,
@@ -30,8 +29,6 @@ const loginPersistConfig = {
 };
 
 const persistedLoginReducer = persistReducer(loginPersistConfig, loginReducer);
-
-// 👉 combinamos reducers
 const rootReducer = combineReducers({
   posts: postReducer,
   wishlist: wishlistReducer,
