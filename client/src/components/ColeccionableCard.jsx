@@ -1,11 +1,11 @@
-function formatPrice(value, currency = "USD") {
+function formatPrice(value, moneda = "USD") {
   if (value == null || value === "") return "";
   const num = typeof value === "string" ? Number(value) : value;
   if (Number.isNaN(num)) return String(value);
   try {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency,
+      moneda,
     }).format(num);
   } catch (_) {
     return `$${num.toFixed?.(2) ?? num}`;
@@ -15,41 +15,36 @@ function formatPrice(value, currency = "USD") {
 export default function ColeccionableCard({
   id,
   nombre,
-  title,
   descripcion,
-  description,
   precio,
-  price,
   precioAnterior,
   listPrice,
   moneda = "USD",
-  currency = "USD",
   imagen,
-  image,
-  imageUrl,
+  imagenUrl,
   src,
   stock,
   onAddToCart,
+  addToCartText = "Add to Cart",
   onAddToWishlist,
   onClick,
   className = "",
-  addToCartText = "Add to Cart",
   addToCartClassName,
   inWishlist = false,
   showWishlistButton = true,
-  quantity,
+  cantidadCarrito,
   onQuantityChange,
   secondaryText,
   secondaryClassName,
   onSecondaryClick,
 }) {
-  const displayTitle = title ?? nombre ?? "Coleccionable";
-  const displayDesc = description ?? descripcion ?? "";
-  const currentPrice = price ?? precio;
+  const displayNombre = nombre ?? "Coleccionable";
+  const displayDesc = descripcion ?? "";
+  const currentPrice = precio;
   const oldPrice = listPrice ?? precioAnterior;
-  const imgSrc = image ?? imageUrl ?? imagen ?? src;
+  const imgSrc = imagen ?? imagenUrl ?? src;
   const priceStr =
-    currentPrice != null ? formatPrice(currentPrice, currency ?? moneda) : null;
+    currentPrice != null ? formatPrice(currentPrice, moneda ?? moneda) : null;
   const outOfStock = Number(stock) <= 0;
   const baseAddClass =
     "flex-1 rounded-md px-4 py-2 text-center text-xs font-bold transition-colors focus:outline-none ";
@@ -71,19 +66,19 @@ export default function ColeccionableCard({
         type="button"
         onClick={onClick}
         className="relative block w-full focus:outline-none"
-        aria-label={`Ver ${displayTitle}`}
+        aria-label={`Ver ${displayNombre}`}
       >
         <div className="relative aspect-[4/3] w-full bg-zinc-900">
           {imgSrc ? (
             <img
               src={imgSrc}
-              alt={displayTitle}
+              alt={displayNombre}
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-white/40">
-              No image
+              No imagen
             </div>
           )}
           {Number(stock) <= 0 && (
@@ -98,7 +93,7 @@ export default function ColeccionableCard({
       </button>
 
       <div className="p-5">
-        <h3 className="text-lg font-extrabold text-white">{displayTitle}</h3>
+        <h3 className="text-lg font-extrabold text-white">{displayNombre}</h3>
         {displayDesc ? (
           <p className="mt-1 line-clamp-2 text-sm text-white/60">
             {displayDesc}
@@ -113,27 +108,27 @@ export default function ColeccionableCard({
           )}
           {oldPrice != null && (
             <span className="text-sm text-white/50 line-through">
-              {formatPrice(oldPrice, currency ?? moneda)}
+              {formatPrice(oldPrice, moneda ?? moneda)}
             </span>
           )}
         </div>
 
-        {typeof quantity === "number" && onQuantityChange && (
+        {typeof cantidadCarrito === "number" && onQuantityChange && (
           <div className="mt-3 flex items-center gap-3">
             <button
               type="button"
               className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-sm font-bold text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-primary/40"
-              onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+              onClick={() => onQuantityChange((cantidadCarrito - 1))}
             >
               -
             </button>
             <span className="min-w-[2.5rem] rounded-md bg-white/5 px-3 py-1 text-center text-sm text-white">
-              {quantity}
+              {cantidadCarrito}
             </span>
             <button
               type="button"
               className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-sm font-bold text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-primary/40"
-              onClick={() => onQuantityChange(quantity + 1)}
+              onClick={() => onQuantityChange(cantidadCarrito + 1)}
             >
               +
             </button>
@@ -160,7 +155,7 @@ export default function ColeccionableCard({
                 onClick={() =>
                   onAddToWishlist?.({
                     id,
-                    nombre: displayTitle,
+                    nombre: displayNombre,
                     precio: currentPrice,
                   })
                 }
@@ -181,7 +176,7 @@ export default function ColeccionableCard({
             disabled={outOfStock}
             onClick={() =>
               !outOfStock &&
-              onAddToCart?.({ id, nombre: displayTitle, precio: currentPrice })
+              onAddToCart?.({ id, nombre: displayNombre, precio: currentPrice })
             }
             className={
               baseAddClass +
