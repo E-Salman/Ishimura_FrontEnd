@@ -15,6 +15,7 @@ const Carrito = () => {
   const carrito = useSelector(selectCartItems);
   const status = useSelector(selectCartStatus);
   const token = useSelector((state) => state.login.token);
+  const error = useSelector((state) => state.cart.error)
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,7 +25,7 @@ const Carrito = () => {
         return;
       }
       dispatch(fetchCart()).unwrap()
-        .catch((error) => {
+        .catch(() => {
           alert(error)
         })
     };
@@ -41,8 +42,8 @@ const Carrito = () => {
 
   const eliminarDelCarrito = (idProducto) => {
     dispatch(removeCartItemThunk({ itemId: idProducto })).unwrap()
-      .catch((error) => {
-        console.error(error);
+      .catch(() => {
+        alert(error)
       })
   };
 
@@ -52,7 +53,7 @@ const Carrito = () => {
       return;
     }
     dispatch(updateCartQuantity({ itemId: rowId, cantidad: nuevaCantidad })).unwrap()
-      .catch((error) => {
+      .catch(() => {
         alert(error)
       })
   };
