@@ -60,13 +60,7 @@ const DetalleColeccionable = () => {
       setMensaje("Agregado a tu wishlist");
       setTimeout(() => setMensaje(""), 2000);
     } catch (error) {
-      console.error("Error al agregar a wishlist:", error);
-      const msg = String(error?.message || "");
-      if (msg.includes("No auth token")) {
-        alert("Debes iniciar sesión para usar la wishlist.");
-      } else {
-        setMensaje("Error de conexión con el servidor");
-      }
+      setMensaje(error);      
     }
   };
 

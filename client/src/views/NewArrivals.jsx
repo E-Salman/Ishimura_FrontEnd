@@ -18,10 +18,10 @@ export default function NewArrivals() {
   const { items, status, error } = useSelector((state) => state.newArrivals);
 
   useEffect(() => {
-  if (status === "idle") {
-    dispatch(fetchNewArrivals());
-  }
-}, [status, dispatch]);
+    if (status === "idle") {
+      dispatch(fetchNewArrivals());
+    }
+  }, [status, dispatch]);
 
 
   const moveFromWishlistToCart = async (coleccionableId) => {
@@ -50,7 +50,7 @@ export default function NewArrivals() {
           headers: authHeaders(token),
         });
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const isLoading = status === "loading";
@@ -86,7 +86,7 @@ export default function NewArrivals() {
                   { coleccionableId: id },
                   { headers: { "Content-Type": "application/json", ...authHeaders(token) } }
                 );
-              } catch (_) {}
+              } catch (_) { }
             }}
             onAddToCart={({ id }) => moveFromWishlistToCart(id)}
             addToCartText="Agregar al carrito"

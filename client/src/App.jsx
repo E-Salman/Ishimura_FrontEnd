@@ -33,17 +33,15 @@ function App() {
   };
 
   const RequireAdmin = ({ children }) => {
-  const role = useSelector((s) => s.login.role);
-  const ok = role === 'ADMIN';
-  return ok ? children : <Navigate to="/home" replace />;
-};
-
-
+    const role = useSelector((s) => s.login.role);
+    const ok = role === 'ADMIN';
+    return ok ? children : <Navigate to="/home" replace />;
+  };
 
   return (
     <>
       <NavBar />
-      {/*<Navigation/>*/}      
+      {/*<Navigation/>*/}
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home />} />
@@ -66,7 +64,7 @@ function App() {
         <Route path="*" element={<div className="p-8">404 - Not found</div>} />
         <Route path="/carrito" element={<Carrito />} />
       </Routes>
-      <Footer/>
+      <Footer />
     </>
   );
 }

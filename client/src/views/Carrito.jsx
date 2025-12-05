@@ -15,19 +15,19 @@ const Carrito = () => {
   const carrito = useSelector(selectCartItems);
   const status = useSelector(selectCartStatus);
   const token = useSelector((state) => state.login.token);
+  const error = useSelector((state) => state.cart.error)
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCarrito = async () => {
+    const fetchCarrito = () => {
       if (!token) {
         navigate("/login");
         return;
       }
-      try {
-        await dispatch(fetchCart()).unwrap();
-      } catch (error) {
-        console.error("Error al cargar el carrito:", error);
-      }
+      dispatch(fetchCart()).unwrap()
+        .catch(() => {
+          alert(error)
+        })
     };
     fetchCarrito();
   }, [token, navigate]);
@@ -40,24 +40,22 @@ const Carrito = () => {
     setTotal(totalCalculado);
   };
 
-  const eliminarDelCarrito = async (idProducto) => {
-    try {
-      await dispatch(removeCartItemThunk({ itemId: idProducto })).unwrap();
-    } catch (error) {
-      console.error("Error al eliminar producto:", error);
-    }
+  const eliminarDelCarrito = (idProducto) => {
+    dispatch(removeCartItemThunk({ itemId: idProducto })).unwrap()
+      .catch(() => {
+        alert(error)
+      })
   };
 
-  const cambiarCantidad = async (rowId, nuevaCantidad) => {
-    try {
-      if (nuevaCantidad <= 0) {
-        await eliminarDelCarrito(rowId);
-        return;
-      }
-      await dispatch(updateCartQuantity({ itemId: rowId, cantidad: nuevaCantidad })).unwrap();
-    } catch (error) {
-      console.error("Error al actualizar cantidad:", error);
+  const cambiarCantidad = (rowId, nuevaCantidad) => {
+    if (nuevaCantidad <= 0) {
+      eliminarDelCarrito(rowId);
+      return;
     }
+    dispatch(updateCartQuantity({ itemId: rowId, cantidad: nuevaCantidad })).unwrap()
+      .catch(() => {
+        alert(error)
+      })
   };
 
   const confirmarCompra = () => {
@@ -82,14 +80,13 @@ const Carrito = () => {
     );
 
   const itemsForGrid = carrito.map((item) => ({
+    key: item.id,
     id: item.coleccionableId,
     nombre: item.nombre,
     descripcion: `Cantidad: ${item.cantidad}`,
     precio: item.precio,
-    imagen: item.imagenUrl || item.imagenurl || null,
-    stock: 1,
-    cantidad: item.cantidad,
-    _rowId: item.id,
+    imagen: item.imagenUrl,
+    cantidadCarrito: item.cantidad,
   }));
 
   return (
@@ -105,14 +102,12 @@ const Carrito = () => {
       <ColeccionablesGrid
         items={itemsForGrid}
         onAddToCart={({ id }) => {
-          const row = carrito.find(
-            (it) => String(it.coleccionableId) === String(id)
-          );
+          const row = carrito.find((it) => String(it.coleccionableId) === String(id));
           if (row) eliminarDelCarrito(row.id);
         }}
         addToCartText="Eliminar"
         addToCartClassName="bg-red-600 text-white hover:bg-red-500 focus:ring-2 focus:ring-red-500/50"
-        onQuantityChange={(it, cantidad) => cambiarCantidad(it._rowId, cantidad)}
+        onQuantityChange={(it, cantidadCarrito) => cambiarCantidad(it.key, cantidadCarrito)}
         onItemClick={(it) => navigate(`/coleccionable/${it.id}`)}
         className="mb-8"
         showWishlistButton={false}

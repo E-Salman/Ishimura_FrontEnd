@@ -10,10 +10,8 @@ export const fetchPromotions = createAsyncThunk(
   async (_, { signal, rejectWithValue }) => {
     const revokedUrls = [];
     try {
-      // 1) Traer catálogo base
       const all = await getColeccionables({}, signal);
 
-      // 2) Filtrar únicamente con datos del pricing preview (sin heurísticas)
       const withPreview = await Promise.all(
         all.map(async (it) => {
           try {
@@ -41,7 +39,6 @@ export const fetchPromotions = createAsyncThunk(
 
       const filtered = withPreview.filter(Boolean);
 
-      // 3) Completar imagen si falta
       const enriched = await Promise.all(
         filtered.map(async (it) => {
           if (it?.imagen) return it;
@@ -54,8 +51,7 @@ export const fetchPromotions = createAsyncThunk(
           }
         })
       );
-
-      // 4) Ordenar por mayor descuento
+      
       enriched.sort((a, b) => (b._discount || 0) - (a._discount || 0));
 
       return { items: enriched, revokedUrls };
@@ -83,7 +79,7 @@ const promotionsSlice = createSlice({
             if (typeof URL !== "undefined" && url?.startsWith?.("blob:")) {
               URL.revokeObjectURL(url);
             }
-          } catch (_) {}
+          } catch (_) { }
         });
       }
       state.items = [];

@@ -160,7 +160,7 @@ export default function ColeccionablesView() {
       const ca = a.charCodeAt(i - 1);
       for (let j = 1; j <= n; j++) {
         const cost = ca === b.charCodeAt(j - 1) ? 0 : 1;
-        dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + cost);
+        dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
       }
     }
     return dp[m][n];
@@ -332,16 +332,16 @@ export default function ColeccionablesView() {
                     Todas las marcas
                   </button>
                   {marcas.map((m) => (
-                  <button
-                    type="button"
-                    key={m.id}
-                    className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${String(m.id) === String(marcaId) ? 'font-bold' : ''}`}
-                    onClick={() => { setMarcaId(String(m.id)); setLineaId(''); setMarcaOpen(false); }}
-                    role="option"
-                    aria-selected={String(m.id) === String(marcaId)}
-                  >
-                    {m.nombre}
-                  </button>
+                    <button
+                      type="button"
+                      key={m.id}
+                      className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${String(m.id) === String(marcaId) ? 'font-bold' : ''}`}
+                      onClick={() => { setMarcaId(String(m.id)); setLineaId(''); setMarcaOpen(false); }}
+                      role="option"
+                      aria-selected={String(m.id) === String(marcaId)}
+                    >
+                      {m.nombre}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -446,7 +446,7 @@ export default function ColeccionablesView() {
             inWishlist: wishlistIdSet.has(String(it.id)),
           }))}
           onAddToWishlist={handleAddToWishlist}
-          onAddToCart={async ({ id }) => {            
+          onAddToCart={async ({ id }) => {
             const row = wishlistItems.find(
               (w) => String(w.coleccionableId) === String(id)
             );
@@ -459,7 +459,7 @@ export default function ColeccionablesView() {
             if (row) {
               try {
                 await dispatch(removeFromWishlist({ itemId: row.id })).unwrap();
-              } catch (_) {}
+              } catch (_) { }
             }
           }}
           addToCartText="Agregar al carrito"

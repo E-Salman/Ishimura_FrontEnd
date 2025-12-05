@@ -25,16 +25,17 @@ export default function ColeccionablesGrid({
     }>
       {items.map((it) => (
         <ColeccionableCard
-          key={it.id ?? it._id ?? crypto.randomUUID?.() ?? String(Math.random())}
-          id={it.id ?? it._id}
-          nombre={it.nombre ?? it.title}
-          descripcion={it.descripcion ?? it.description}
-          precio={it.precio ?? it.price}
-          precioAnterior={it.precioAnterior ?? it.listPrice}
-          imagen={it.imagen ?? it.imageUrl ?? it.image}
+          key={it.key}
+          id={it.id}
+          nombre={it.nombre}
+          descripcion={it.descripcion}
+          precio={it.precio}
+          precioAnterior={it.precioAnterior ?? it.listPrice} //Verificar si esto sirve cuando toque promociones
+          imagen={it.imagen}
+          imagenUrl={it.imagenUrl}
           stock={it.stock}
-          quantity={it.cantidad}
-          onQuantityChange={onQuantityChange ? (qty) => onQuantityChange(it, qty) : undefined}
+          cantidadCarrito={it.cantidadCarrito}
+          onQuantityChange={onQuantityChange ? (qty) => onQuantityChange(it, qty) : undefined}//probar sacar ? despues de q este todo funcionando de nuevo
           onAddToCart={onAddToCart}
           onAddToWishlist={onAddToWishlist}
           onClick={() => onItemClick?.(it)}
