@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from "./axiosClient";
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 const BASE = 'http://localhost:4002';
@@ -8,7 +8,7 @@ const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : u
 export const fetchCatalogo = createAsyncThunk(
   'admin/fetchCatalogo',
   async ({ token } = {}, { signal }) => {
-    const res = await axios.get(`${BASE}/catalogo`, { signal, headers: authHeaders(token) });
+    const res = await api.get(`${BASE}/catalogo`, { signal, headers: authHeaders(token) });
     const data = Array.isArray(res.data) ? res.data : [];
     return data.map((c) => ({
       id: c?.coleccionableId ?? c?.coleccionableID ?? c?.id ?? c?.idColeccionable ?? null,
@@ -25,12 +25,12 @@ export const fetchDetalle = createAsyncThunk(
   'admin/fetchDetalle',
   async ({ id, token }, { signal }) => {
     const headers = authHeaders(token);
-    const res = await axios.get(`${BASE}/coleccionable/${id}`, { signal, headers });
+    const res = await api.get(`${BASE}/coleccionable/${id}`, { signal, headers });
     const detalle = res.data;
 
     // Promos activas para obtener descuento
     let descuento = detalle?.descuento ?? detalle?.discount ?? null;
-    const promoRes = await axios.get(`${BASE}/promociones/activas`, {
+    const promoRes = await api.get(`${BASE}/promociones/activas`, {
       params: { coleccionableId: id },
       signal,
       headers,
@@ -40,7 +40,7 @@ export const fetchDetalle = createAsyncThunk(
 
     // Imagen principal
     let imagenUrl = null;
-    const imgRes = await axios.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
+    const imgRes = await api.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
       signal,
       headers,
       responseType: 'blob',
@@ -59,7 +59,7 @@ export const fetchDetalle = createAsyncThunk(
 export const fetchMarcas = createAsyncThunk(
   'admin/fetchMarcas',
   async (_arg, { signal }) => {
-    const res = await axios.get(`${BASE}/marcas`, { signal });
+    const res = await api.get(`${BASE}/marcas`, { signal });
     return res.data;
   }
 );
@@ -68,7 +68,7 @@ export const fetchMarcas = createAsyncThunk(
 export const fetchLineasByMarca = createAsyncThunk(
   'admin/fetchLineasByMarca',
   async ({ marcaId, signal }) => {
-    const res = await axios.get(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`, { signal });
+    const res = await api.get(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`, { signal });
     return { marcaId, lineas: res.data };
   }
 );
@@ -77,7 +77,7 @@ export const fetchLineasByMarca = createAsyncThunk(
 export const createMarca = createAsyncThunk(
   'admin/createMarca',
   async ({ nombre, token }, { rejectWithValue }) => {
-    const res = await axios.post(`${BASE}/marcas/crear`, { nombre }, { headers: { ...authHeaders(token), 'Content-Type': 'application/json' } });
+    const res = await api.post(`${BASE}/marcas/crear`, { nombre }, { headers: { ...authHeaders(token), 'Content-Type': 'application/json' } });
     return res.data;
   }
 );
@@ -85,7 +85,7 @@ export const createMarca = createAsyncThunk(
 export const deleteMarca = createAsyncThunk(
   'admin/deleteMarca',
   async ({ id, token }, { rejectWithValue }) => {
-    await axios.delete(`${BASE}/marcas/${id}`, { headers: authHeaders(token) });
+    await api.delete(`${BASE}/marcas/${id}`, { headers: authHeaders(token) });
     return id;
   }
 );
@@ -95,7 +95,7 @@ export const createLinea = createAsyncThunk(
   'admin/createLinea',
   async ({ nombre, marcaId, token }, { rejectWithValue }) => {
     const body = { idMarca: marcaId, nombre };
-    const res = await axios.post(`${BASE}/lineas/crear`, body, { headers: { ...authHeaders(token), 'Content-Type': 'application/json' } });
+    const res = await api.post(`${BASE}/lineas/crear`, body, { headers: { ...authHeaders(token), 'Content-Type': 'application/json' } });
     return res.data;
   }
 );
@@ -103,7 +103,7 @@ export const createLinea = createAsyncThunk(
 export const deleteLinea = createAsyncThunk(
   'admin/deleteLinea',
   async ({ id, token }, { rejectWithValue }) => {
-    await axios.delete(`${BASE}/lineas/${id}`, { headers: authHeaders(token) });
+    await api.delete(`${BASE}/lineas/${id}`, { headers: authHeaders(token) });
     return id;
   }
 );
@@ -119,10 +119,10 @@ export const updateStock = createAsyncThunk(
     else if (mode === 'set') { url = `${BASE}/catalogo/${id}/cambiarstock?nuevoStock=${encodeURIComponent(value)}`; method = 'put'; }
     else return rejectWithValue('Modo inválido');
 
-    await axios({ url, method, headers: authHeaders(token) });
+    await api({ url, method, headers: authHeaders(token) });
 
     try {
-      const one = await axios.get(`${BASE}/catalogo/${id}`, { headers: authHeaders(token) });
+      const one = await api.get(`${BASE}/catalogo/${id}`, { headers: authHeaders(token) });
       const dto = one.data;
       return { id, stock: dto?.stock ?? dto?.cantidad ?? value };
     } catch (_) {
@@ -135,7 +135,7 @@ export const updateStock = createAsyncThunk(
 export const deleteColeccionable = createAsyncThunk(
   'admin/deleteColeccionable',
   async ({ id, token }, { rejectWithValue }) => {
-    await axios.delete(`${BASE}/coleccionable/${id}`, { headers: authHeaders(token) });
+    await api.delete(`${BASE}/coleccionable/${id}`, { headers: authHeaders(token) });
     return id;
   }
 );
@@ -151,7 +151,7 @@ export const createColeccionable = createAsyncThunk(
       imagenes: Array.isArray(data.imagenes) ? data.imagenes : [],
     };
     const headers = { ...authHeaders(token), 'Content-Type': 'application/json' };
-    const res = await axios.post(`${BASE}/coleccionable`, payload, { headers });
+    const res = await api.post(`${BASE}/coleccionable`, payload, { headers });
     return res.data;
   }
 );
@@ -167,7 +167,7 @@ export const updateColeccionable = createAsyncThunk(
       linea: data.lineaId ?? data.linea ?? null,
       imagenes: Array.isArray(data.imagenes) ? data.imagenes : [],
     };
-    const res = await axios.put(`${BASE}/coleccionable/${encodeURIComponent(id)}`, payload, {
+    const res = await api.put(`${BASE}/coleccionable/${encodeURIComponent(id)}`, payload, {
       headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
     });
     return { id, updated: res.data ?? payload };
@@ -196,7 +196,7 @@ export const uploadMarcaImagesThunk = createAsyncThunk(
         form.append('file', file, file.name);
         if (entry.field) form.append(entry.field, String(marcaId));
         try {
-          const res = await axios.post(entry.url, form, {
+          const res = await api.post(entry.url, form, {
             headers: { ...headers, 'Content-Type': 'multipart/form-data' },
           });
           if (res.status >= 200 && res.status < 300) {
@@ -234,7 +234,7 @@ export const uploadColeccionableImagesThunk = createAsyncThunk(
         form.append('file', f, f.name);
         if (entry.field) form.append(entry.field, String(coleccionableId));
         try {
-          const res = await axios.post(entry.url, form, {
+          const res = await api.post(entry.url, form, {
             headers: { ...headers, 'Content-Type': 'multipart/form-data' },
           });
           if (res.status >= 200 && res.status < 300) {
@@ -256,7 +256,7 @@ export const fetchActivePromo = createAsyncThunk(
   async ({ coleccionableId, token }, { rejectWithValue, signal }) => {
     if (!coleccionableId) return rejectWithValue('coleccionableId requerido');
     const headers = authHeaders(token);
-    const res = await axios.get(`${BASE}/promociones/activas`, {
+    const res = await api.get(`${BASE}/promociones/activas`, {
       params: { coleccionableId },
       signal,
       headers,
@@ -277,7 +277,7 @@ export const savePromo = createAsyncThunk(
   'admin/savePromo',
   async ({ data, token }, { rejectWithValue }) => {
     const headers = { ...authHeaders(token), 'Content-Type': 'application/json' };
-    const res = await axios.post(`${BASE}/promociones`, data, { headers, validateStatus: () => true });
+    const res = await api.post(`${BASE}/promociones`, data, { headers, validateStatus: () => true });
     if (res.status !== 200 && res.status !== 201) {
       return rejectWithValue(res?.data?.message || `HTTP ${res.status}`);
     }

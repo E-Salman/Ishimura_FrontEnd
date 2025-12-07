@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "./axiosClient";
 
 const BASE = "http://localhost:4002";
 const ORDERS_URL = `${BASE}/admin/compras`;
@@ -12,7 +12,7 @@ export const fetchAdminOrders = createAsyncThunk(
       return rejectWithValue("No hay token de autenticacion");
     }
 
-    const res = await axios.get(ORDERS_URL, {
+    const res = await api.get(ORDERS_URL, {
       headers: {
         Authorization: `Bearer ${authToken}`,
       },

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "./axiosClient";
 
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const getUniqueRandoms = (count, min, max) => {
@@ -25,10 +25,10 @@ export const fetchColeccionablesCarousel = createAsyncThunk("coleccionablesCarou
       const results = await Promise.all(
         randomIds.map(async (id) => {
           try {
-            const coleccionableRes = await axios.get(URLBase + id, {
+            const coleccionableRes = await api.get(URLBase + id, {
               validateStatus: (s) => s === 200,
             });
-            const imagenRes = await axios.get(URLBase + id + "/imagenes/0", {
+            const imagenRes = await api.get(URLBase + id + "/imagenes/0", {
               responseType: "blob",
               validateStatus: (s) => s === 200 || s === 404,
             });

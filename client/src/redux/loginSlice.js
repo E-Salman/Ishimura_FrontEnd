@@ -1,6 +1,6 @@
 // src/redux/loginSlice.js
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "./axiosClient";
 
 export const authLogin = createAsyncThunk(
   "auth/login",
@@ -11,7 +11,7 @@ export const authLogin = createAsyncThunk(
         "Content-Type": "application/json",
       };
       const body = JSON.stringify({ email, password });
-      const { data } = await axios.post(URL, body, { headers });
+      const { data } = await api.post(URL, body, { headers });
       return data;
     }  
       

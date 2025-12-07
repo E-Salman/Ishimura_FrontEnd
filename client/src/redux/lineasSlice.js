@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "./axiosClient";
 
 const BASE = "http://localhost:4002";
 
@@ -9,7 +9,7 @@ export const fetchLineasByMarca = createAsyncThunk(
     if (!marcaId) return rejectWithValue("Id de marca invalido");
 
     try {
-      const res = await axios.get(
+      const res = await api.get(
         `${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`,
         { signal, validateStatus: () => true }
       );

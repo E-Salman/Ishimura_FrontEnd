@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "./axiosClient";
 
 const BASE = "http://localhost:4002";
 
 export const fetchMarcas = createAsyncThunk(
   "marcas/fetchMarcas",
   async (_, { rejectWithValue }) => {
-    const res = await axios.get(`${BASE}/marcas`, {
+    const res = await api.get(`${BASE}/marcas`, {
       validateStatus: () => true,
     });
 

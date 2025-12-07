@@ -1,12 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import ColeccionablesGrid from "../components/ColeccionablesGrid";
 import { useDispatch, useSelector } from "react-redux";
-import { addToWishlist, fetchWishlist, removeFromWishlist } from '../redux/wishlistSlice';
-
-const BASE = "http://localhost:4002";
-const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
+import ColeccionablesGrid from "../components/ColeccionablesGrid";
+import { fetchWishlist, removeFromWishlist } from "../redux/wishlistSlice";
+import { fetchDetalle, fetchFirstImage } from "../redux/coleccionablesSlice";
 
 const Wishlist = () => {
   const navigate = useNavigate();
@@ -14,7 +11,10 @@ const Wishlist = () => {
 
   const { token } = useSelector((state) => state.login);
   const { items, loading, error } = useSelector((state) => state.wishlist);
-  const [detailsById, setDetailsById] = useState({});
+  const detallesById = useSelector(
+    (state) => state.coleccionables.detallesById || {}
+  );
+  const requestedRef = useRef(new Set());
 
   useEffect(() => {
     if (token) {
@@ -22,16 +22,14 @@ const Wishlist = () => {
     }
   }, [token, dispatch]);
 
-  const eliminarDeWishlist = async (id) => {
+  const eliminarDeWishlist = (id) => {
     if (!token) return;
-    try {
-      await dispatch(removeFromWishlist(id)).unwrap();
-    } catch (e) {
-      console.error("Error al eliminar producto:", e);
-    }
+    dispatch(removeFromWishlist(id))
+      .unwrap()
+      .catch((e) => console.error("Error al eliminar producto:", e));
   };
 
-  // Cargar detalles mínimos para mostrar nombre/imagen/precio
+  // Cargar detalles mínimos para mostrar nombre/imagen/precio usando thunks (sin axios en la vista)
   useEffect(() => {
     if (!token) return;
     const pending = items
@@ -40,45 +38,23 @@ const Wishlist = () => {
         const coleccionableId = it.id ?? raw.coleccionableId;
         return coleccionableId;
       })
-      .filter((id) => id != null && !detailsById[id]);
+      .filter(
+        (id) =>
+          id != null &&
+          !detallesById[id] &&
+          !requestedRef.current.has(id)
+      );
 
     if (!pending.length) return;
 
-    (async () => {
-      const updates = {};
-      for (const cid of pending) {
-        try {
-          const detRes = await axios.get(`${BASE}/coleccionable/${cid}`, {
-            headers: authHeaders(token),
-            validateStatus: () => true,
-          });
-          const det = detRes.status === 200 ? detRes.data : {};
-          let imagenUrl = null;
-          try {
-            const imgRes = await axios.get(`${BASE}/coleccionable/${cid}/imagenes/0`, {
-              responseType: "blob",
-              headers: authHeaders(token),
-              validateStatus: (s) => s === 200 || s === 404,
-            });
-            if (imgRes.status === 200) {
-              imagenUrl = URL.createObjectURL(imgRes.data);
-            }
-          } catch (_) {}
-          updates[cid] = {
-            nombre: det?.nombre,
-            descripcion: det?.descripcion,
-            precio: det?.precio,
-            imagen: imagenUrl,
-          };
-        } catch (_) {}
-      }
-      if (Object.keys(updates).length) {
-        setDetailsById((prev) => ({ ...prev, ...updates }));
-      }
-    })();
-  }, [items, token, detailsById]);
+    pending.forEach((cid) => {
+      requestedRef.current.add(cid);
+      dispatch(fetchDetalle({ id: cid, token }));
+      dispatch(fetchFirstImage({ id: cid, token }));
+    });
+  }, [items, token, detallesById, dispatch]);
 
-  // 🔥 ACOMODAMOS la wishlist para el grid (usando siempre id de coleccionable)
+  // Normalizar la data para el grid
   const itemsForGrid = useMemo(() => {
     return items
       .map((raw) => {
@@ -86,25 +62,32 @@ const Wishlist = () => {
         const it = raw.coleccionable ?? {};
         const coleccionableId = it.id ?? raw.coleccionableId;
         if (coleccionableId == null) return null;
-        const det = detailsById[coleccionableId] || {};
+        const det = detallesById[coleccionableId] || {};
         return {
           id: coleccionableId, // id del coleccionable (para carrito y navegación)
           nombre: det.nombre ?? it.nombre ?? "Coleccionable",
           descripcion: det.descripcion ?? it.descripcion ?? "",
           precio: det.precio ?? it.precio ?? null,
-          imagen: det.imagen ?? it.imagen ?? it.imageUrl ?? null,
+          imagen:
+            det.imagenUrl ??
+            det.imagen ??
+            it.imagen ??
+            it.imageUrl ??
+            null,
           _rowId: rowId, // id de la fila en wishlist (solo para eliminar)
         };
       })
       .filter(Boolean);
-  }, [items, detailsById]);
+  }, [items, detallesById]);
 
-  // 🔥 Usuario no logueado
+  // Usuario no logueado
   if (!token) {
     return (
       <main className="flex-1">
         <div className="mx-auto w-full max-w-7xl px-4 py-16">
-          <h1 className="mb-6 text-3xl font-black text-primary">Mi Wishlist</h1>
+          <h1 className="mb-6 text-3xl font-black text-primary">
+            Mi Wishlist
+          </h1>
           <p className="text-center text-sm text-white/70">
             Tenés que iniciar sesión para ver tu wishlist.
           </p>
@@ -113,17 +96,21 @@ const Wishlist = () => {
     );
   }
 
-  // 🔥 Loading
+  // Loading
   if (loading) {
-    return <p className="px-4 py-8 text-sm text-white/70">Cargando wishlist...</p>;
+    return (
+      <p className="px-4 py-8 text-sm text-white/70">Cargando wishlist...</p>
+    );
   }
 
-  // 🔥 Lista vacía
+  // Lista vacía
   if (!error && itemsForGrid.length === 0) {
     return (
       <main className="flex-1">
         <div className="mx-auto w-full max-w-7xl px-4 py-16">
-          <h1 className="mb-6 text-3xl font-black text-primary">Mi Wishlist</h1>
+          <h1 className="mb-6 text-3xl font-black text-primary">
+            Mi Wishlist
+          </h1>
           <p className="text-center text-sm text-white/70">
             Tu lista de deseos está vacía
           </p>
@@ -140,7 +127,7 @@ const Wishlist = () => {
 
       {error && (
         <p className="mb-4 text-sm text-red-400">
-          Error al cargar wishlist: {error}
+          Error al cargar wishlist: {typeof error === "string" ? error : error?.message || "Error"}
         </p>
       )}
 

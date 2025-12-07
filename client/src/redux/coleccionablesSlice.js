@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "./axiosClient";
 
 const BASE = 'http://localhost:4002';
 const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : undefined);
@@ -7,7 +7,7 @@ const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : u
 export const fetchMarcas = createAsyncThunk(
   'coleccionables/fetchMarcas',
   async (_arg, { signal }) => {
-    const res = await axios.get(`${BASE}/marcas`, { signal });
+    const res = await api.get(`${BASE}/marcas`, { signal });
     return Array.isArray(res.data) ? res.data : [];
   }
 );
@@ -15,7 +15,7 @@ export const fetchMarcas = createAsyncThunk(
 export const fetchLineasByMarca = createAsyncThunk(
   'coleccionables/fetchLineasByMarca',
   async ({ marcaId, signal }) => {
-    const res = await axios.get(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`, { signal });
+    const res = await api.get(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`, { signal });
     return { marcaId, lineas: Array.isArray(res.data) ? res.data : [] };
   }
 );
@@ -38,7 +38,7 @@ export const fetchColeccionables = createAsyncThunk(
     try {
       const url = `${BASE}/catalogo`;
 
-      const res = await axios.get(url, {
+      const res = await api.get(url, {
         signal,
         headers: authHeaders(token),
         validateStatus: () => true,
@@ -89,11 +89,11 @@ export const fetchColeccionables = createAsyncThunk(
 export const fetchDetalle = createAsyncThunk(
   'coleccionables/fetchDetalle',
   async ({ id, token }, { signal }) => {
-    const res = await axios.get(`${BASE}/coleccionable/${id}`, { signal, headers: authHeaders(token) });
+    const res = await api.get(`${BASE}/coleccionable/${id}`, { signal, headers: authHeaders(token) });
     const detalle = res.data;
     let imagenUrl = null;
     try {
-      const imgRes = await axios.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
+      const imgRes = await api.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
         signal,
         headers: authHeaders(token),
         responseType: 'blob',
@@ -107,7 +107,7 @@ export const fetchDetalle = createAsyncThunk(
 export const fetchPricePreview = createAsyncThunk(
   'coleccionables/fetchPricePreview',
   async ({ id, qty = 1 }, { signal }) => {
-    const res = await axios.get(
+    const res = await api.get(
       `${BASE}/precio/preview?coleccionableId=${encodeURIComponent(id)}&qty=${encodeURIComponent(qty)}`,
       { signal }
     );
@@ -118,7 +118,7 @@ export const fetchPricePreview = createAsyncThunk(
 export const fetchFirstImage = createAsyncThunk(
   'coleccionables/fetchFirstImage',
   async ({ id, token }, { signal }) => {
-    const res = await axios.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
+    const res = await api.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
       signal,
       headers: authHeaders(token),
       responseType: 'blob',
