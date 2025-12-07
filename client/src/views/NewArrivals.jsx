@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
 import {
   clearNewArrivals,
   fetchNewArrivals,
 } from "../redux/newArrivalsSlice";
+import { addToWishlist, fetchWishlist } from '../redux/wishlistSlice';
 
 const BASE = "http://localhost:4002";
 const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
@@ -16,6 +16,7 @@ export default function NewArrivals() {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.login.token)
   const { items, status, error } = useSelector((state) => state.newArrivals);
+  const wishlistItems = useSelector((state) => state.wishlist?.items || []);
 
   useEffect(() => {
     if (status === "idle") {
@@ -24,37 +25,20 @@ export default function NewArrivals() {
   }, [status, dispatch]);
 
 
-  const moveFromWishlistToCart = async (coleccionableId) => {
-    try {
-      await axios.post(
-        `${BASE}/carrito/${encodeURIComponent(coleccionableId)}?cantidad=1`,
-        null,
-        { headers: authHeaders(token) }
-      );
-    } catch (e) {
-      console.warn("Cart error", e);
-      const msg = String(e?.message || "");
-      // Si no hay token, no seguimos para no desincronizar
-      if (msg.includes("No auth token")) {
-        return;
-      }
-    }
-    try {
-      const res = await axios.get(`${BASE}/wishlist`, { headers: authHeaders(token) });
-      const list = Array.isArray(res.data) ? res.data : [];
-      const row = list.find(
-        (w) => String(w.coleccionableId) === String(coleccionableId)
-      );
-      if (row) {
-        await axios.delete(`${BASE}/wishlist/${encodeURIComponent(row.id)}`, {
-          headers: authHeaders(token),
-        });
-      }
-    } catch (_) { }
-  };
 
   const isLoading = status === "loading";
+  const wishlistIdSet = new Set(wishlistItems.map((w) => String(w.coleccionableId)));
+  
+  const handleAddToWishlist = async ({ id }) => {
 
+    dispatch(addToWishlist(id)).unwrap()
+      .then(() => {
+        dispatch(fetchWishlist());
+      })
+      .catch((e) => {
+        alert(e.message)
+      });
+  }
   return (
     <div className="relative mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="text-center">
@@ -76,13 +60,17 @@ export default function NewArrivals() {
       )}
 
       {!isLoading && (
-        <div className="mt-12">
-          <ColeccionablesGrid
-            items={items}
-            onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
-          />
-        </div>
-      )}
+              <div className="mt-12">
+                <ColeccionablesGrid
+                  items={items.map((it) => ({
+                    ...it,
+                    inWishlist: wishlistIdSet.has(String(it.id)),
+                  }))}
+                  onAddToWishlist={handleAddToWishlist}
+                  onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
+                />
+              </div>
+            )}
     </div>
   );
 }

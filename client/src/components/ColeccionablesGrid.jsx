@@ -27,7 +27,7 @@ export default function ColeccionablesGrid({
     }>
       {items.map((it) => (
         <ColeccionableCard
-          key={it.key}
+          key={it._rowId || it.id}
           id={it.id}
           nombre={it.nombre}
           descripcion={it.descripcion}

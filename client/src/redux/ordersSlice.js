@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from "./axiosClient";
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 const BASE = 'http://localhost:4002';
@@ -7,7 +7,7 @@ export const createOrderThunk = createAsyncThunk(
   'orders/create',
   async ({ token, data }, { rejectWithValue, signal }) => {
     if (!token) return rejectWithValue('No auth token');
-    const res = await axios.post(`${BASE}/ordenes`, data, {
+    const res = await api.post(`${BASE}/ordenes`, data, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,

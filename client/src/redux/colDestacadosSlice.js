@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios"
+import api from "./axiosClient";
 
 export const fetchDestacados = createAsyncThunk("colDestacados/fetchDestacados", async (colId, { rejectWithValue }) => {
     if (!colId) return rejectWithValue("Id del coleccionable invalido");
@@ -19,14 +19,14 @@ export const fetchDestacados = createAsyncThunk("colDestacados/fetchDestacados",
     };
 
     try {
-        const res = await axios.get(URLColeccionable, { headers, validateStatus: () => true });
+        const res = await api.get(URLColeccionable, { headers, validateStatus: () => true });
         if (res.status !== 200) {
             return rejectWithValue(asText(res?.data) || `HTTP ${res.status}`);
         }
 
         let imgURL = null;
         try {
-            const imgRes = await axios.get(URLImagen, { headers, responseType: "blob", validateStatus: (s) => s === 200 || s === 404 });
+            const imgRes = await api.get(URLImagen, { headers, responseType: "blob", validateStatus: (s) => s === 200 || s === 404 });
             if (imgRes.status === 200) {
                 imgURL = URL.createObjectURL(imgRes.data);
             }

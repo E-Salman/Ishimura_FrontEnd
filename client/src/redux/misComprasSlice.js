@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "./axiosClient";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 const BASE = "http://localhost:4002";
@@ -11,7 +11,7 @@ export const fetchMisCompras = createAsyncThunk(
     if (!token) return rejectWithValue("No auth token");
 
     try {
-      const res = await axios.get(`${BASE}/mis-compras`, {
+      const res = await api.get(`${BASE}/mis-compras`, {
         signal,
         headers: { Authorization: `Bearer ${token}` },
         validateStatus: () => true,

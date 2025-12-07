@@ -16,9 +16,12 @@ export const addToWishlist = createAsyncThunk(
             Authorization: `Bearer ${token}`,
         };
 
-        const { data } =
-            await api.post(`${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`, null, { headers }) //RTK descarta el error de la BD, axios devuelve su propio error sin detalles
-        return data;
+        return api
+            .post(`${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`, null, { headers })
+            .then(({ data }) => data)
+            .catch((err) =>
+                rejectWithValue(err?.message || "No se pudo agregar a wishlist")
+            );
     }
 );
 
@@ -33,13 +36,12 @@ export const fetchWishlist = createAsyncThunk(
             Authorization: `Bearer ${token}`,
         };
 
-        try {
-            const { data } = await api.get(`${BASE}/wishlist`, { headers });
-
-            return data;
-        } catch (err) {
-            return rejectWithValue(err.message);
-        }
+        return api
+            .get(`${BASE}/wishlist`, { headers })
+            .then(({ data }) => data)
+            .catch((err) =>
+                rejectWithValue(err?.message || "Error al cargar wishlist")
+            );
     }
 );
 
@@ -52,14 +54,14 @@ export const removeFromWishlist = createAsyncThunk(
             Authorization: `Bearer ${token}`,
         };
 
-        try {
-            await api.delete(`${BASE}/wishlist/${encodeURIComponent(wishlistItemId)}`, {
+        return api
+            .delete(`${BASE}/wishlist/${encodeURIComponent(wishlistItemId)}`, {
                 headers,
-            });
-            return wishlistItemId;
-        } catch (err) {
-            return rejectWithValue(err.message);
-        }
+            })
+            .then(() => wishlistItemId)
+            .catch((err) =>
+                rejectWithValue(err?.message || "Error al eliminar de wishlist")
+            );
     }
 );
 
@@ -86,7 +88,7 @@ const wishlistSlice = createSlice({
             })
             .addCase(addToWishlist.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.error
+                state.error = action.payload || action.error?.message || "Error al agregar a wishlist";
             })
 
             // FETCH ALL
@@ -100,7 +102,7 @@ const wishlistSlice = createSlice({
             })
             .addCase(fetchWishlist.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.error
+                state.error = action.payload || action.error?.message || "Error al cargar wishlist";
             })
 
             // REMOVE
@@ -115,7 +117,7 @@ const wishlistSlice = createSlice({
             })
             .addCase(removeFromWishlist.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.error
+                state.error = action.payload || action.error?.message || "Error al eliminar de wishlist";
             });
     },
 });

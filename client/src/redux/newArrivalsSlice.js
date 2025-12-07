@@ -1,27 +1,18 @@
-import axios from "axios";
+import api from "./axiosClient";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 const BASE = "http://localhost:4002";
 
 async function fetchCatalog(signal) {
-  const res = await axios.get(`${BASE}/catalogo`, { signal, validateStatus: () => true });
-  let arr = [];
-  if (Array.isArray(res.data)) {
-    arr = res.data;
-  } else if (res.data && typeof res.data === "object") {
-    const candidates = [res.data.content, res.data.items, res.data.data, res.data.catalogo];
-    for (const c of candidates) {
-      if (Array.isArray(c)) {
-        arr = c;
-        break;
-      }
-    }
+  const res = await api.get(`${BASE}/catalogo`, { signal });
+  if (!Array.isArray(res.data)) {
+    throw new Error("Respuesta de catálogo no es una lista");
   }
-  return Array.isArray(arr) ? arr : [];
+  return res.data;
 }
 
 async function fetchPricePreview(id, signal) {
-  const res = await axios.get(`${BASE}/precio/preview`, {
+  const res = await api.get(`${BASE}/precio/preview`, {
     params: { coleccionableId: id, qty: 1 },
     signal,
     validateStatus: () => true,
@@ -37,13 +28,13 @@ async function fetchPricePreview(id, signal) {
 
 
 async function fetchDetalle(id, signal) {
-  const res = await axios.get(`${BASE}/coleccionable/${id}`, { signal, validateStatus: () => true });
+  const res = await api.get(`${BASE}/coleccionable/${id}`, { signal, validateStatus: () => true });
   return res.data;
 }
 
 async function fetchFirstImageUrl(id, signal) {
   try {
-    const res = await axios.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
+    const res = await api.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
       signal,
       responseType: "blob",
       validateStatus: (s) => s === 200 || s === 404,
@@ -62,37 +53,16 @@ export const fetchNewArrivals = createAsyncThunk(
     try {
       const catalog = await fetchCatalog(signal);
       const baseItems = catalog
-        .map((raw) => {
-          const it = raw?.coleccionable ?? raw;
-          return {
-            id:
-              raw?.coleccionableId ??
-              raw?.coleccionableID ??
-              it?.id ??
-              it?._id ??
-              it?.coleccionableId ??
-              it?.coleccionableID ??
-              String(Math.random()),
-            nombre: it?.nombre ?? it?.name ?? "Coleccionable",
-            descripcion: it?.descripcion ?? it?.description ?? "",
-            precio: it?.precio ?? it?.price ?? null,
-            precioAnterior: it?.precioAnterior ?? it?.listPrice ?? null,
-            imagen: it?.imagen ?? it?.imageUrl ?? it?.image ?? raw?.imagen ?? null,
-            lineaId:
-              it?.linea_id ??
-              it?.lineaId ??
-              it?.lineaID ??
-              (typeof it?.linea === "object" ? it?.linea?.id : it?.linea) ??
-              null,
-            marcaId:
-              it?.marca_id ??
-              it?.marcaId ??
-              it?.marcaID ??
-              (typeof it?.marca === "object" ? it?.marca?.id : it?.marca) ??
-              null,
-            stock: raw?.stock ?? it?.stock ?? null,
-          };
-        })
+        .map((raw) => ({
+          id: raw?.coleccionableId ?? raw?.coleccionableID ?? raw?.id,
+          nombre: raw?.nombre ?? "Coleccionable",
+          descripcion: "",
+          precio: raw?.precio ?? null,
+          precioAnterior: null,
+          imagen: null,
+          stock: raw?.stock ?? null,
+        }))
+        .filter((it) => it.id != null)
         .slice(0, 12);
 
       const enriched = await Promise.all(

@@ -1,6 +1,6 @@
 // src/redux/registerSlice.js
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "./axiosClient";
 
 const REGISTER_URL = "http://localhost:4002/api/v1/auth/register";
 
@@ -15,7 +15,7 @@ export const registerUser = createAsyncThunk(
       const body = { nombre, apellido, direccion, email, password, rol: "USER" };
       const headers = { "Content-Type": "application/json" };
 
-      const { data } = await axios.post(REGISTER_URL, body, { headers });
+      const { data } = await api.post(REGISTER_URL, body, { headers });
 
       // devuelve token y rol para que lo consuma loginSlice
       return {

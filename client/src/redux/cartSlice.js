@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "./axiosClient";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 const BASE = "http://localhost:4002";
@@ -6,7 +6,7 @@ const authHeaders = (token) => ({ Authorization: `Bearer ${token}` }); //Devuelv
 
 export const fetchCart = createAsyncThunk("cart/fetch", async (_arg, { getState, signal }) => {
     const token = getState().login.token;
-    const res = await axios.get(`${BASE}/carrito`, { signal, headers: authHeaders(token) });
+    const res = await api.get(`${BASE}/carrito`, { signal, headers: authHeaders(token) });
     return Array.isArray(res.data) ? res.data : [];
   }
 );
@@ -14,7 +14,7 @@ export const fetchCart = createAsyncThunk("cart/fetch", async (_arg, { getState,
 export const addCartItem = createAsyncThunk("cart/add", async ({ coleccionableId, cantidad = 1 }, { getState, signal }) => {
     const token = getState().login.token;
     const url = `${BASE}/carrito/${encodeURIComponent(coleccionableId)}?cantidad=${encodeURIComponent(cantidad)}`;
-    const res = await axios.post(url, null, { signal, headers: authHeaders(token) });
+    const res = await api.post(url, null, { signal, headers: authHeaders(token) });
     return res.data;
   }
 );
@@ -22,21 +22,21 @@ export const addCartItem = createAsyncThunk("cart/add", async ({ coleccionableId
 export const updateCartQuantity = createAsyncThunk("cart/updateQty", async ({ itemId, cantidad }, { getState, signal }) => {
     const token = getState().login.token;
     const url = `${BASE}/carrito/${encodeURIComponent(itemId)}?cantidad=${encodeURIComponent(cantidad)}`;
-    const res = await axios.patch(url, null, { signal, headers: authHeaders(token) });
+    const res = await api.patch(url, null, { signal, headers: authHeaders(token) });
     return res.data ?? { id: itemId, cantidad };
   }
 );
 
 export const removeCartItemThunk = createAsyncThunk("cart/remove", async ({ itemId }, { getState, signal }) => {
     const token = getState().login.token;
-    await axios.delete(`${BASE}/carrito/${encodeURIComponent(itemId)}`, { signal, headers: authHeaders(token) });
+    await api.delete(`${BASE}/carrito/${encodeURIComponent(itemId)}`, { signal, headers: authHeaders(token) });
     return itemId;
   }
 );
 
 export const clearCartThunk = createAsyncThunk("cart/clear", async (_arg, { getState, signal }) => {
     const token = getState().login.token;
-    await axios.delete(`${BASE}/carrito/vaciar`, { signal, headers: authHeaders(token) });
+    await api.delete(`${BASE}/carrito/vaciar`, { signal, headers: authHeaders(token) });
     return true;
   }
 );
