@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "./axiosClient";
 
 const BASE = "http://localhost:4002";
 
@@ -17,12 +17,7 @@ export const addToWishlist = createAsyncThunk(
         };
 
         const { data } =
-            await axios.post(
-                `${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`,
-                null,
-                { headers }
-            );
-
+            await api.post(`${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`, null, { headers }) //RTK descarta el error de la BD, axios devuelve su propio error sin detalles
         return data;
     }
 );
@@ -39,7 +34,7 @@ export const fetchWishlist = createAsyncThunk(
         };
 
         try {
-            const { data } = await axios.get(`${BASE}/wishlist`, { headers });
+            const { data } = await api.get(`${BASE}/wishlist`, { headers });
 
             return data;
         } catch (err) {
@@ -52,15 +47,13 @@ export const removeFromWishlist = createAsyncThunk(
     "wishlist/remove",
     async (wishlistItemId, { getState, rejectWithValue }) => {
         const token = getState().login.token;
-
         if (!token) return rejectWithValue("No se encuentra logueado");
-
         const headers = {
             Authorization: `Bearer ${token}`,
         };
 
         try {
-            await axios.delete(`${BASE}/wishlist/${encodeURIComponent(wishlistItemId)}`, {
+            await api.delete(`${BASE}/wishlist/${encodeURIComponent(wishlistItemId)}`, {
                 headers,
             });
             return wishlistItemId;
@@ -76,7 +69,6 @@ const wishlistSlice = createSlice({
         items: [],
         loading: false,
         error: null,
-
     },
     reducers: {},
     extraReducers: (builder) => {
@@ -94,8 +86,7 @@ const wishlistSlice = createSlice({
             })
             .addCase(addToWishlist.rejected, (state, action) => {
                 state.loading = false;
-                state.error =
-                    action.payload || action.error.message;
+                state.error = action.error
             })
 
             // FETCH ALL
@@ -109,9 +100,7 @@ const wishlistSlice = createSlice({
             })
             .addCase(fetchWishlist.rejected, (state, action) => {
                 state.loading = false;
-                state.error =
-                    action.payload ||
-                    action.error.message
+                state.error = action.error
             })
 
             // REMOVE
@@ -126,9 +115,7 @@ const wishlistSlice = createSlice({
             })
             .addCase(removeFromWishlist.rejected, (state, action) => {
                 state.loading = false;
-                state.error =
-                    action.payload ||
-                    action.error.message
+                state.error = action.error
             });
     },
 });

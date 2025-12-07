@@ -1,3 +1,7 @@
+import { useDispatch, useSelector } from 'react-redux';
+import { addCartItem } from '../redux/cartSlice';
+import { removeFromWishlist } from '../redux/wishlistSlice';
+
 function formatPrice(value, moneda = "USD") {
   if (value == null || value === "") return "";
   const num = typeof value === "string" ? Number(value) : value;
@@ -25,7 +29,8 @@ export default function ColeccionableCard({
   src,
   stock,
   onAddToCart,
-  addToCartText = "Add to Cart",
+  addToCartText="Agregar al carrito",
+  showAddToCartButton = true,
   onAddToWishlist,
   onClick,
   className = "",
@@ -37,6 +42,7 @@ export default function ColeccionableCard({
   secondaryText,
   secondaryClassName,
   onSecondaryClick,
+  showDeleteButton = false
 }) {
   const displayNombre = nombre ?? "Coleccionable";
   const displayDesc = descripcion ?? "";
@@ -53,6 +59,9 @@ export default function ColeccionableCard({
     "bg-primary text-black hover:bg-primary/90 focus:ring-2 focus:ring-primary/50";
   const disabledAddClass = "bg-white/10 text-white/60 cursor-not-allowed";
   const heartIcon = inWishlist ? "favorite" : "favorite_border";
+  const isAdmin = useSelector((state) => state.login.role === "ADMIN")
+  const dispatch = useDispatch();
+  const { items: wishlistItems = [] } = useSelector((state) => state.wishlist);
 
   return (
     <article
@@ -151,6 +160,7 @@ export default function ColeccionableCard({
           ) : (
             showWishlistButton && (
               <button
+                disabled={isAdmin}
                 type="button"
                 onClick={() =>
                   onAddToWishlist?.({
@@ -159,10 +169,17 @@ export default function ColeccionableCard({
                     precio: currentPrice,
                   })
                 }
-                className="flex-1 rounded-md border border-primary/40 bg-transparent px-4 py-2 text-center text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className={`${!isAdmin
+                  ? "flex-1 rounded-md border border-primary/40 bg-transparent px-4 py-2 text-center text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  : "bg-grey-500 hover:bg-grey-600"
+                  }
+              `}
                 title="Agregar a la wishlist"
               >
-                <span className="inline-flex items-center justify-center gap-2">
+                <span className={`${!isAdmin
+                  ? "inline-flex items-center justify-center gap-2"
+                  : "inline-flex items-center justify-center gap-2 bg-grey-500 text-black"
+                  }`}>
                   <span className="material-symbols-outlined text-sm">
                     {heartIcon}
                   </span>
@@ -174,10 +191,31 @@ export default function ColeccionableCard({
           <button
             type="button"
             disabled={outOfStock}
-            onClick={() =>
-              !outOfStock &&
-              onAddToCart?.({ id, nombre: displayNombre, precio: currentPrice })
-            }
+            onClick={() => {
+              if (!outOfStock && onAddToCart) {
+                onAddToCart({ id, nombre: displayNombre, precio: currentPrice }); //en algunos lados se le asigna otra funcion a onAddToCart, asi permite sobreescribirlo
+              }
+              else if (!outOfStock && !onAddToCart) {
+                const row = wishlistItems.find(
+                  (w) => String(w.coleccionableId) === String(id)
+                );
+                dispatch(addCartItem({ coleccionableId: id, cantidad: 1 }))
+                  .unwrap()
+                  .catch((e) => {
+                    alert(e.message);
+                    return;
+                  });
+
+                if (row) {
+                  dispatch(removeFromWishlist(row.id))
+                    .unwrap()
+                    .catch((e) => {
+                      alert(e.message);
+                      return;
+                    });
+                }
+              }
+            }}
             className={
               baseAddClass +
               (outOfStock ? disabledAddClass : enabledAddClass) +
@@ -188,6 +226,6 @@ export default function ColeccionableCard({
           </button>
         </div>
       </div>
-    </article>
+    </article >
   );
 }

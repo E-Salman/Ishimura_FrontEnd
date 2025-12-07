@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { useDispatch, useSelector } from 'react-redux';
 import { addCartItem } from '../redux/cartSlice';
-import { addToWishlist, fetchWishlist, removeFromWishlist } from '../redux/wishlistSlice';
+import { addToWishlist, fetchWishlist } from '../redux/wishlistSlice';
 import {
   fetchMarcas as fetchMarcasCat,
   fetchLineasByMarca as fetchLineasCat,
@@ -55,6 +55,8 @@ export default function ColeccionablesView() {
   const previewsById = useSelector((state) => state.coleccionables.previewsById || {});
   const token = useSelector((state) => state.login.token)
   const requestedRef = useRef({ detail: new Set(), preview: new Set(), image: new Set() });
+  const isAdmin = useSelector((state) => state.login.role === "ADMIN")
+  const wishlistError = useSelector((state) => state.wishlist.error)
   useEffect(() => { setQ(searchParams.get('q') || ''); }, [searchParams]);
 
   // Load marcas at start
@@ -64,7 +66,7 @@ export default function ColeccionablesView() {
 
   // Load wishlist once
   useEffect(() => {
-    async function loadWishlist() {
+    function loadWishlist() {
       if (!token) return;
       dispatch(fetchWishlist());
     }
@@ -95,7 +97,7 @@ export default function ColeccionablesView() {
     setSearchParams(next, { replace: true });
   }, [marcaId, lineaId, sort, q, setSearchParams]);
 
-  // Close sort dropdown on outside click / Escape
+  // Close sort dropdown on outside click / Escape  
   useEffect(() => {
     if (!sortOpen) return;
     function onPointerDown(e) {
@@ -177,10 +179,10 @@ export default function ColeccionablesView() {
     return (itemsStore || []).map((it) => {
       const det = detallesById[it.id] || {};
       const preview = previewsById[it.id] || null;
-      const lista = Number(preview?.precioLista ?? preview?.lista ?? det?.precioAnterior ?? it?.precioAnterior ?? NaN);
-      const efectivo = Number(preview?.precioEfectivo ?? preview?.efectivo ?? det?.precio ?? it?.precio ?? NaN);
-      let precio = it.precio ?? det.precio ?? null;
-      let precioAnterior = it.precioAnterior ?? det.precioAnterior ?? null;
+      const lista = Number(preview?.precioLista);
+      const efectivo = Number(preview?.precioEfectivo);
+      let precio = it.precio;
+      let precioAnterior = null;
       if (!Number.isNaN(efectivo) && efectivo != null) {
         precio = efectivo;
       }
@@ -189,10 +191,10 @@ export default function ColeccionablesView() {
       }
       return {
         ...it,
-        descripcion: it.descripcion ?? det.descripcion ?? '',
+        descripcion: it.descripcion ?? '',
         precio,
         precioAnterior,
-        imagen: det.imagenUrl ?? it.imagen ?? null,
+        imagen: det.imagenUrl ?? null,
       };
     });
   }, [itemsStore, detallesById, previewsById]);
@@ -201,26 +203,8 @@ export default function ColeccionablesView() {
     const term = q;
     return enrichedItems.filter((it) => {
       const det = detallesById[it.id];
-      const marcaVal =
-        det?.marcaId ??
-        det?.marca_id ??
-        det?.marcaID ??
-        det?.marca?.id ??
-        it?.marcaId ??
-        it?.marca_id ??
-        it?.marcaID ??
-        it?.marca?.id ??
-        null;
-      const lineaVal =
-        det?.lineaId ??
-        det?.linea_id ??
-        det?.lineaID ??
-        det?.linea?.id ??
-        it?.lineaId ??
-        it?.linea_id ??
-        it?.lineaID ??
-        it?.linea?.id ??
-        null;
+      const marcaVal = det?.marcaId
+      const lineaVal = det?.lineaId
 
       if (marcaId && marcaVal != null && String(marcaVal ?? '') !== String(marcaId)) return false;
       if (lineaId && lineaVal != null && String(lineaVal ?? '') !== String(lineaId)) return false;
@@ -291,13 +275,15 @@ export default function ColeccionablesView() {
   );
 
   const handleAddToWishlist = async ({ id }) => {
-    try {
-      await dispatch(addToWishlist(id)).unwrap();
-      await dispatch(fetchWishlist());
-    } catch (e) {
-      console.warn('Wishlist error', e);
-    }
-  };
+
+    dispatch(addToWishlist(id)).unwrap()
+      .then(() => {
+        dispatch(fetchWishlist());
+      })
+      .catch((e) => {
+        alert(e.message)
+      });
+  }
 
   return (
     <div className="relative mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -446,22 +432,6 @@ export default function ColeccionablesView() {
             inWishlist: wishlistIdSet.has(String(it.id)),
           }))}
           onAddToWishlist={handleAddToWishlist}
-          onAddToCart={async ({ id }) => {
-            const row = wishlistItems.find(
-              (w) => String(w.coleccionableId) === String(id)
-            );
-            try {
-              await dispatch(addCartItem({ coleccionableId: id, cantidad: 1 })).unwrap();
-            } catch (e) {
-              console.warn('Cart error', e);
-              return;
-            }
-            if (row) {
-              try {
-                await dispatch(removeFromWishlist({ itemId: row.id })).unwrap();
-              } catch (_) { }
-            }
-          }}
           addToCartText="Agregar al carrito"
           onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
         />
