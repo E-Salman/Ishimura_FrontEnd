@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ColeccionablesGrid from "../components/ColeccionablesGrid";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchWishlist, removeFromWishlist } from "../redux/wishlistSlice";
+import { addToWishlist, fetchWishlist, removeFromWishlist } from '../redux/wishlistSlice';
 
 const BASE = "http://localhost:4002";
 const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
@@ -146,18 +146,6 @@ const Wishlist = () => {
 
       <ColeccionablesGrid
         items={itemsForGrid}
-        onAddToCart={async ({ id }) => {
-          try {
-            await axios.post(
-              `${BASE}/carrito/${encodeURIComponent(id)}?cantidad=1`,
-              null,
-              { headers: authHeaders(token) }
-            );
-          } catch (e) {
-            console.warn("Error al agregar al carrito desde wishlist", e);
-          }
-        }}
-        addToCartText="Agregar al carrito"
         secondaryText="Eliminar"
         secondaryClassName="bg-red-600 text-white hover:bg-red-500 focus:ring-2 focus:ring-red-500/50"
         onSecondaryClick={(it) => eliminarDeWishlist(it._rowId)}

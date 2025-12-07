@@ -11,7 +11,7 @@ const BotonWishlist = ({ coleccionableId }) => {
       .unwrap()
       .then(() => alert("Agregado a tu wishlist"))
       .catch((error) => {
-        alert(error)
+        alert(error.message)
       })
   };
 

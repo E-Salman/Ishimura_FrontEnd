@@ -11,6 +11,8 @@ export default function ColeccionablesGrid({
   addToCartClassName,
   onQuantityChange,
   showWishlistButton = true,
+  showAddToCartButton = true,
+  showDeleteButton = false,
   secondaryText,
   secondaryClassName,
   onSecondaryClick,
@@ -38,6 +40,7 @@ export default function ColeccionablesGrid({
           onQuantityChange={onQuantityChange ? (qty) => onQuantityChange(it, qty) : undefined}//probar sacar ? despues de q este todo funcionando de nuevo
           onAddToCart={onAddToCart}
           onAddToWishlist={onAddToWishlist}
+          showAddToCartButton={showAddToCartButton}
           onClick={() => onItemClick?.(it)}
           addToCartText={addToCartText}
           addToCartClassName={addToCartClassName}
@@ -46,6 +49,7 @@ export default function ColeccionablesGrid({
           secondaryText={secondaryText}
           secondaryClassName={secondaryClassName}
           onSecondaryClick={onSecondaryClick ? () => onSecondaryClick(it) : undefined}
+          showDeleteButton={showDeleteButton}
         />
       ))}
     </div>

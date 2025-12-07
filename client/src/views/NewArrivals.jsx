@@ -79,17 +79,6 @@ export default function NewArrivals() {
         <div className="mt-12">
           <ColeccionablesGrid
             items={items}
-            onAddToWishlist={async ({ id }) => {
-              try {
-                await axios.post(
-                  `${BASE}/wishlist`,
-                  { coleccionableId: id },
-                  { headers: { "Content-Type": "application/json", ...authHeaders(token) } }
-                );
-              } catch (_) { }
-            }}
-            onAddToCart={({ id }) => moveFromWishlistToCart(id)}
-            addToCartText="Agregar al carrito"
             onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
           />
         </div>
