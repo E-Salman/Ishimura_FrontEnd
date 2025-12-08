@@ -24,7 +24,7 @@ export const fetchColeccionables = createAsyncThunk(
   'coleccionables/fetchColeccionables',
   async ({ marcaId = null, lineaId = null, token } = {}, { signal, rejectWithValue }) => {
     const getMarcaId = (r) =>
-      r?.marcaId ?? r?.marca_id ?? r?.marcaID ?? r?.marca?.id ?? (r?.coleccionable ? (r.coleccionable.marcaId ?? r.coleccionable.marca_id ?? r.coleccionable.marca?.id) : null);
+      r?r?.marca_id ?? r?.marcaID ?? r?.marca?.id ?? (r?.coleccionable ? (r.coleccionable.marcaId ?? r.coleccionable.marca_id ?? r.coleccionable.marca?.id) : null);
     const getLineaId = (r) =>
       r?.lineaId ?? r?.linea_id ?? r?.lineaID ?? r?.linea?.id ?? (r?.coleccionable ? (r.coleccionable.lineaId ?? r.coleccionable.linea_id ?? r.coleccionable.linea?.id) : null);
 

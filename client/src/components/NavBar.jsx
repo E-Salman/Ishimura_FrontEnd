@@ -36,10 +36,10 @@ const NavBar = () => {
   const dispatch = useDispatch();
 
   // ---- LOGIN STATE ----
-  const { email, role, token } = useSelector((state) => state.login);
-  const userEmail = email || localStorage.getItem("ishimura_email") || "";
-  const isLogged = Boolean(token && userEmail);
-  const isAdmin = role === "ADMIN";
+const { email, role, token } = useSelector((state) => state.login);
+const userEmail = email || "";
+const isLogged = Boolean(token); // o Boolean(token && userEmail), pero ya no hace falta el LS
+const isAdmin = role === "ADMIN";
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
@@ -59,20 +59,19 @@ const NavBar = () => {
     };
   }, []);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    localStorage.removeItem("ishimura_token");
-    localStorage.removeItem("ishimura_email");
-    setOpen(false);
-    navigate("/login", { replace: true });
-  };
+const handleLogout = () => {
+  dispatch(logout());             // esto limpia token/email/role en Redux
+  setOpen(false);
+  navigate("/login", { replace: true });
+};
+
 
   const goToPurchases = () => {
     setOpen(false);
     navigate("/mis-compras");
   };
 
-  // ---------- DATA PARA SEARCH ----------
+ 
   const { items: marcas, status: marcasStatus } = useSelector(
     (state) => state.marcas
   );
@@ -90,7 +89,6 @@ const NavBar = () => {
     }
   }, [marcasStatus, dispatch]);
 
-  // ---------- SEARCH STATE ----------
   const [q, setQ] = useState("");
   const [suggestions, setSuggestions] = useState({
     brands: [],
@@ -412,14 +410,14 @@ const NavBar = () => {
                 </div>
                 {!isAdmin && (
                   <button
-                    className="block w-full px-4 py-2 text-left hover:bg-white/10 dark:hover:bg-black/10 bg-transparent border-0 focus:outline-none"
+                    className="block w-full px-4 py-2 text-left hover:bg-white/10 dark:hover:bg-black/10"
                     onClick={goToPurchases}
                   >
                     Mis compras
                   </button>
                 )}
                 <button
-                  className="block w-full px-4 py-2 text-left text-red-300 hover:bg-white/10 dark:text-red-600 dark:hover:bg-black/10 bg-transparent border-0 focus:outline-none"
+                  className="block w-full px-4 py-2 text-left text-red-300 hover:bg-white/10 dark:text-red-600 dark:hover:bg-black/10"
                   onClick={handleLogout}
                 >
                   Cerrar sesión

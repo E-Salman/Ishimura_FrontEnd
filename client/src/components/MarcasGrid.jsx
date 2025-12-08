@@ -130,14 +130,11 @@ export default function MarcasGrid({ marcas = [], onSelect }) {
                       {state.items.map((l) => (
                         <button
                           type="button"
-                          key={l.id ?? l.lineaId}
+                          key={l.id}
                           className="w-full px-3 py-2 text-left bg-transparent text-primary hover:bg-transparent focus:outline-none"
                           onClick={() => handleSelectLinea(m, l)}
                         >
-                          {l.nombre ??
-                            l.name ??
-                            l.titulo ??
-                            `Línea ${l.id}`}
+                          {l.nombre}
                         </button>
                       ))}
                     </div>
