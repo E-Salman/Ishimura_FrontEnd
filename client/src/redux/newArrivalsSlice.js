@@ -18,7 +18,7 @@ async function fetchPricePreview(id, signal) {
     validateStatus: () => true,
   });
 
-  // ⚠ asegura siempre un objeto, nunca string
+
   if (!res.data || typeof res.data !== "object") {
     return {};
   }

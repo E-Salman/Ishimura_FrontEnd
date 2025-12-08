@@ -1,4 +1,4 @@
-import api from "./axiosClient";
+﻿import api from "./axiosClient";
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 const BASE = 'http://localhost:4002';
@@ -7,8 +7,8 @@ const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : u
 // Catálogo (id, stock, nombre, precio, firstImageId)
 export const fetchCatalogo = createAsyncThunk(
   'admin/fetchCatalogo',
-  async ({ token } = {}, { signal }) => {
-    const res = await api.get(`${BASE}/catalogo`, { signal, headers: authHeaders(token) });
+  async (_arg, { signal }) => {
+    const res = await api.get(`${BASE}/catalogo`, { signal, headers: undefined });
     const data = Array.isArray(res.data) ? res.data : [];
     return data.map((c) => ({
       id: c?.coleccionableId ?? c?.coleccionableID ?? c?.id ?? c?.idColeccionable ?? null,
@@ -110,19 +110,22 @@ export const deleteLinea = createAsyncThunk(
 
 // Ajuste de stock
 export const updateStock = createAsyncThunk(
-  'admin/updateStock',
-  async ({ id, mode, value, token }, { rejectWithValue }) => {
-    let url = null;
-    let method = 'post';
-    if (mode === 'inc') url = `${BASE}/catalogo/${id}/incrementarstock?cantidad=${encodeURIComponent(value)}`;
-    else if (mode === 'dec') url = `${BASE}/catalogo/${id}/decrementarstock?cantidad=${encodeURIComponent(value)}`;
-    else if (mode === 'set') { url = `${BASE}/catalogo/${id}/cambiarstock?nuevoStock=${encodeURIComponent(value)}`; method = 'put'; }
-    else return rejectWithValue('Modo inválido');
+  "admin/updateStock",
+  async ({ id, mode, value, token }, { rejectWithValue, getState }) => {
+    const authToken = token || getState()?.login?.token;
+    if (!authToken) return rejectWithValue("Falta token de autenticación");
 
-    await api({ url, method, headers: authHeaders(token) });
+    let url = null;
+    let method = "post";
+    if (mode === "inc") url = `${BASE}/catalogo/${id}/incrementarstock?cantidad=${encodeURIComponent(value)}`;
+    else if (mode === "dec") url = `${BASE}/catalogo/${id}/decrementarstock?cantidad=${encodeURIComponent(value)}`;
+    else if (mode === "set") { url = `${BASE}/catalogo/${id}/cambiarstock?nuevoStock=${encodeURIComponent(value)}`; method = "put"; }
+    else return rejectWithValue("Modo inválido");
+
+    await api({ url, method, headers: authHeaders(authToken) });
 
     try {
-      const one = await api.get(`${BASE}/catalogo/${id}`, { headers: authHeaders(token) });
+      const one = await api.get(`${BASE}/catalogo/${id}`, { headers: authHeaders(authToken) });
       const dto = one.data;
       return { id, stock: dto?.stock ?? dto?.cantidad ?? value };
     } catch (_) {
@@ -421,3 +424,10 @@ export const selectBusy = (state, id) => !!state.admin.busyById[id];
 export const selectPromoById = (state, id) => state.admin.promosById[id];
 
 export default adminSlice.reducer;
+
+
+
+
+
+
+

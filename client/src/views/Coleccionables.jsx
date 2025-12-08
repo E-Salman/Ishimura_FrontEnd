@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { useDispatch, useSelector } from 'react-redux';
@@ -147,7 +147,7 @@ export default function ColeccionablesView() {
 
   // Load items according to filters (servidor filtra por marca/línea)
   useEffect(() => {
-    dispatch(fetchColeccionablesCat({ marcaId: marcaId || null, lineaId: lineaId || null, token }));
+    dispatch(fetchColeccionablesCat({ marcaId: marcaId || null, lineaId: lineaId || null }));
   }, [dispatch, marcaId, lineaId, token]);
 
   function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, ''); }

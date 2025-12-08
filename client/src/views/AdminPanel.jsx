@@ -1,7 +1,7 @@
 ﻿﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { isAdminFromToken } from "../lib/api";
+import { isAdminFromToken } from "../lib/token";
 import {
   fetchCatalogo,
   fetchDetalle,
@@ -99,7 +99,7 @@ export default function AdminPanel() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    dispatch(fetchCatalogo({ token }));
+    dispatch(fetchCatalogo());
     dispatch(fetchMarcas());
   }, [dispatch, token, isAdmin]);
 
@@ -341,10 +341,10 @@ export default function AdminPanel() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-black text-primary">Stock Management</h1>
         <div className="flex items-center gap-3">
-          <button onClick={() => { setMarcaId(''); setLineaId(''); setQ(''); setPage(1); dispatch(fetchCatalogo({ token })); showToast('Cambios descartados', 'info'); }} className="rounded-md bg-gray-600 px-4 py-2 text-sm font-bold text-white hover:bg-gray-500">
+          <button onClick={() => { setMarcaId(''); setLineaId(''); setQ(''); setPage(1); dispatch(fetchCatalogo()); showToast('Cambios descartados', 'info'); }} className="rounded-md bg-gray-600 px-4 py-2 text-sm font-bold text-white hover:bg-gray-500">
             Cancelar
           </button>
-          <button onClick={() => { dispatch(fetchCatalogo({ token })); showToast('Cambios guardados'); }} className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-black hover:bg-primary/90">
+          <button onClick={() => { dispatch(fetchCatalogo()); showToast('Cambios guardados'); }} className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-black hover:bg-primary/90">
             Guardar cambios
           </button>
           <NavLink to="/admin/crear-coleccionable" className="rounded-md bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30">
@@ -635,7 +635,7 @@ export default function AdminPanel() {
         token={token}
         onToast={showToast}
         onUpdated={(updated) => {
-          dispatch(fetchCatalogo({ token }));
+          dispatch(fetchCatalogo());
         }}
       />
     )}
@@ -981,4 +981,6 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
     </>
   );
 }
+
+
 
