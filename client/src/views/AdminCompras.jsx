@@ -64,7 +64,7 @@ function formatMoney(amount) {
 export default function AdminCompras() {
   const loginToken = useSelector((state) => state.login?.token);
   const loginRole = useSelector((state) => state.login?.role);
-  const token = loginToken || localStorage.getItem("ishimura_token") || null;
+  const token = loginToken;
   const isAdmin = Boolean(loginRole === "ADMIN");
   const dispatch = useDispatch();
 

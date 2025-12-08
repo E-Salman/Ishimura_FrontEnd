@@ -21,34 +21,13 @@ export default function MarcasPage() {
   const marcas = useMemo(() => {
     const mapMarca = (m) => {
       const id =
-        m?.id ??
-        m?._id ??
-        m?.marcaId ??
-        m?.marcaID ??
-        crypto.randomUUID?.() ??
-        String(Math.random());
+        m?.id 
 
-      // El backend no está devolviendo la URL de imagen en /marcas.
-      // Usamos el endpoint de primera imagen como fallback directo.
-      const image =
-        m?.imageUrl ??
-        m?.imagenUrl ??
-        m?.imagen ??
-        m?.image ??
-        (id ? `${import.meta.env.VITE_API_URL ?? '/api'}/marcasImages/${id}/imagenes/primera` : null);
-
+const image = (id ? `http://localhost:4002/marcasImages/${id}/imagenes/primera` : null);
       return {
         id,
-        title: m?.name ?? m?.nombre ?? m?.title ?? "Marca",
-        description: m?.description ?? m?.descripcion ?? "",
+        title:m?.nombre,
         image,
-        slug:
-          m?.slug ??
-          (m?.name ?? m?.nombre ?? "marca")
-            ?.toString()
-            ?.toLowerCase()
-            ?.replace(/\s+/g, "-") ??
-          "marca",
       };
     };
 
@@ -57,9 +36,8 @@ export default function MarcasPage() {
 
   const handleSelect = ({ marca, linea }) => {
     const params = new URLSearchParams();
-    const mId =
-      marca?.id ?? marca?._id ?? marca?.marcaId ?? marca?.marcaID ?? null;
-    const lId = linea?.id ?? linea?.lineaId ?? linea?.lineaID ?? null;
+    const mId = marca?.id;
+    const lId = linea?.id ;
 
     if (mId) params.set("marcaId", String(mId));
     if (lId) params.set("lineaId", String(lId));

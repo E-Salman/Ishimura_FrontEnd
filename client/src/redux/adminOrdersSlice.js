@@ -6,10 +6,12 @@ const ORDERS_URL = `${BASE}/admin/compras`;
 
 export const fetchAdminOrders = createAsyncThunk(
   "adminOrders/fetchAll",
-  async (token, { rejectWithValue }) => {
-    const authToken = token || localStorage.getItem("ishimura_token");
+  async (_, { rejectWithValue, getState }) => {
+    const state = getState();
+    const authToken = state.login?.token;
+
     if (!authToken) {
-      return rejectWithValue("No hay token de autenticacion");
+      return rejectWithValue("No hay token de autenticación");
     }
 
     const res = await api.get(ORDERS_URL, {
@@ -21,7 +23,7 @@ export const fetchAdminOrders = createAsyncThunk(
 
     if (res.status === 401 || res.status === 403) {
       return rejectWithValue(
-        "No autorizado. Inicia sesion con una cuenta admin."
+        "No autorizado. Inicia sesión con una cuenta admin."
       );
     }
 
@@ -29,15 +31,15 @@ export const fetchAdminOrders = createAsyncThunk(
       return rejectWithValue(`Error HTTP ${res.status}`);
     }
 
-    return res.data; 
+    return res.data;
   }
 );
 
 const adminOrdersSlice = createSlice({
   name: "adminOrders",
   initialState: {
-    items: [],      
-    status: "idle", 
+    items: [],
+    status: "idle",
     error: null,
   },
   reducers: {},
@@ -62,4 +64,3 @@ const adminOrdersSlice = createSlice({
 });
 
 export default adminOrdersSlice.reducer;
-
