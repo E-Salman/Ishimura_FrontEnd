@@ -7,6 +7,7 @@ import { fetchMarcas } from "../redux/marcasSlice";
 import { fetchLineasByMarca } from "../redux/lineasSlice";
 import { fetchColeccionables } from "../redux/coleccionablesSlice";
 import { logout } from "../redux/loginSlice";
+import { isTokenExpired } from "../lib/token";
 function AvatarInitial({ email }) {
   const initial = (email?.[0] || "?").toUpperCase();
   return (
@@ -43,6 +44,15 @@ const isAdmin = role === "ADMIN";
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+
+  // Logout automático si el token está vencido
+  useEffect(() => {
+    if (token && isTokenExpired(token)) {
+      dispatch(logout());
+      setOpen(false);
+      navigate("/login", { replace: true });
+    }
+  }, [token, dispatch, navigate]);
 
   useEffect(() => {
     const onClick = (e) => {
@@ -410,14 +420,14 @@ const handleLogout = () => {
                 </div>
                 {!isAdmin && (
                   <button
-                    className="block w-full px-4 py-2 text-left hover:bg-white/10 dark:hover:bg-black/10"
+                    className="block w-full px-4 py-2 text-left hover:bg-white/10 dark:hover:bg-black/10 bg-transparent border-0 focus:outline-none"
                     onClick={goToPurchases}
                   >
                     Mis compras
                   </button>
                 )}
                 <button
-                  className="block w-full px-4 py-2 text-left text-red-300 hover:bg-white/10 dark:text-red-600 dark:hover:bg-black/10"
+                  className="block w-full px-4 py-2 text-left text-red-300 hover:bg-white/10 dark:text-red-600 dark:hover:bg-black/10 bg-transparent border-0 focus:outline-none"
                   onClick={handleLogout}
                 >
                   Cerrar sesión
