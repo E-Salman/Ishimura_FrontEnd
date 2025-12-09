@@ -1,20 +1,20 @@
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { addCartItem } from '../redux/cartSlice';
 import { removeFromWishlist } from '../redux/wishlistSlice';
 
 function formatPrice(value, moneda = "USD") {
-  if (value == null || value === "") return "";
+  if (value == null || value === "") return Promise.resolve("");
   const num = typeof value === "string" ? Number(value) : value;
-  if (Number.isNaN(num)) return String(value);
-  try {
-    return new Intl.NumberFormat("en-US", {
+  if (Number.isNaN(num)) return Promise.resolve(String(value));
+
+  return Promise.resolve(
+    new Intl.NumberFormat("en-US", {
       style: "currency",
-      moneda,
-    }).format(num);
-  } catch (_) {
-    return `$${num.toFixed?.(2) ?? num}`;
-  }
+      currency: moneda,
+    }).format(num)
+  ).catch(() => `${num.toFixed?.(2) ?? num}`);
 }
 
 export default function ColeccionableCard({
@@ -49,9 +49,9 @@ export default function ColeccionableCard({
   const displayDesc = descripcion ?? "";
   const currentPrice = precio;
   const oldPrice = listPrice ?? precioAnterior;
+  const [priceStr, setPriceStr] = useState("");
+  const [oldPriceStr, setOldPriceStr] = useState("");
   const imgSrc = imagen ?? imagenUrl ?? src;
-  const priceStr =
-    currentPrice != null ? formatPrice(currentPrice, moneda ?? moneda) : null;
   const outOfStock = Number(stock) <= 0;
   const baseAddClass =
     "flex-1 rounded-md px-4 py-2 text-center text-xs font-bold transition-colors focus:outline-none ";
@@ -63,6 +63,38 @@ export default function ColeccionableCard({
   const isAdmin = useSelector((state) => state.login.role === "ADMIN")
   const dispatch = useDispatch();
   const { items: wishlistItems = [] } = useSelector((state) => state.wishlist);
+
+  useEffect(() => {
+    let active = true;
+
+    if (currentPrice == null) {
+      setPriceStr("");
+    } else {
+      formatPrice(currentPrice, moneda).then((formatted) => {
+        if (active) setPriceStr(formatted);
+      });
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [currentPrice, moneda]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (oldPrice == null) {
+      setOldPriceStr("");
+    } else {
+      formatPrice(oldPrice, moneda).then((formatted) => {
+        if (active) setOldPriceStr(formatted);
+      });
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [oldPrice, moneda]);
 
   return (
     <article
@@ -118,7 +150,7 @@ export default function ColeccionableCard({
           )}
           {oldPrice != null && (
             <span className="text-sm text-white/50 line-through">
-              {formatPrice(oldPrice, moneda ?? moneda)}
+              {oldPriceStr}
             </span>
           )}
         </div>

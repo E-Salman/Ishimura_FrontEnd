@@ -22,7 +22,7 @@ export const fetchLineasByMarca = createAsyncThunk(
 
 export const fetchColeccionables = createAsyncThunk(
   'coleccionables/fetchColeccionables',
-  async ({ marcaId = null, lineaId = null } = {}, { signal, rejectWithValue }) => {
+  async ({ marcaId = null, lineaId = null, token = null } = {}, { signal, rejectWithValue }) => {
     const getMarcaId = (r) =>
       r?.marcaId ?? r?.marca_id ?? r?.marcaID ?? r?.marca?.id ?? (r?.coleccionable ? (r.coleccionable.marcaId ?? r.coleccionable.marca_id ?? r.coleccionable.marca?.id) : null);
     const getLineaId = (r) =>
@@ -40,7 +40,7 @@ export const fetchColeccionables = createAsyncThunk(
 
       const res = await api.get(url, {
         signal,
-        headers: undefined,
+        headers: authHeaders(token),
         validateStatus: () => true,
       });
       if (res.status !== 200) {
@@ -48,6 +48,11 @@ export const fetchColeccionables = createAsyncThunk(
         return rejectWithValue(msg);
       }
       let rows = Array.isArray(res.data) ? res.data : [];
+      // respaldo: filtrar ocultos si vinieran
+      rows = rows.filter((r) => {
+        const vis = r?.visibilidad;
+        return vis === false || vis === 0 ? false : true;
+      });
 
       let filtered = rows;
       if (marcaId) {

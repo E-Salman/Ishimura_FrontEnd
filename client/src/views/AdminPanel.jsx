@@ -21,8 +21,10 @@ import {
   setBusy as setBusyAction,
   updateColeccionable as updateColeccionableThunk,
   uploadMarcaImagesThunk,
+  uploadColeccionableImagesThunk,
   fetchActivePromo,
   savePromo,
+  updatePromo,
   clearAdminError,
 } from "../redux/adminSlice";
 
@@ -200,15 +202,42 @@ export default function AdminPanel() {
     }
   }
 
-  async function deleteColeccionable(id) {
-    const sure = confirm(`¿Borrar coleccionable ${id}? Esta acción es permanente.`);
-    if (!sure) return;
-    try {
-      setBusyFlag(id, true);
-      await dispatch(deleteColeccionableThunk({ id, token })).unwrap();
-    } catch (e) {
-      alert(`No se pudo borrar: ${e?.message || e}`);
-    } finally { setBusyFlag(id, false); }
+  function toggleVisibility(row) {
+    const detail = row.det || detallesStore[String(row.id)] || {};
+    const visRaw = detail.visibilidad ?? row.visibilidad;
+    const currentVisible =
+      visRaw === false || visRaw === 0 ? false : visRaw === true ? true : true;
+
+    setBusyFlag(row.id, true);
+
+    if (currentVisible) {
+      dispatch(deleteColeccionableThunk({ id: row.id, token }))
+        .unwrap()
+        .then(() => {
+          dispatch(fetchCatalogo());
+          showToast('Coleccionable ocultado', 'info');
+        })
+        .catch((e) => {
+          const msg = e?.message || String(e);
+          setError(msg);
+          showToast(msg, 'error');
+        })
+        .finally(() => setBusyFlag(row.id, false));
+      return;
+    }
+
+    dispatch(updateColeccionableThunk({ id: row.id, data: { visibilidad: true }, token }))
+      .unwrap()
+      .then(() => {
+        dispatch(fetchCatalogo());
+        showToast('Coleccionable visible', 'info');
+      })
+      .catch((e) => {
+        const msg = e?.message || String(e);
+        setError(msg);
+        showToast(msg, 'error');
+      })
+      .finally(() => setBusyFlag(row.id, false));
   }
 
   async function deleteLinea(id) {
@@ -324,6 +353,7 @@ export default function AdminPanel() {
       lineaId: d?.lineaId || "",
       descuento: d?.descuento ?? d?.discount ?? "",
       imagenes: Array.isArray(d?.imagenes) ? d.imagenes : [],
+      visibilidad: typeof d?.visibilidad === "boolean" ? d.visibilidad : true,
       saving: false,
       error: null,
     });
@@ -422,19 +452,21 @@ export default function AdminPanel() {
                 <td colSpan={9} className="px-3 py-10 text-center text-white/60">Sin resultados</td>
               </tr>
             )}
-            {pageItems.map((r) => {
-              const d = r.det || detallesStore[String(r.id)];
-              const st = Number(r.stock || 0);
-              const status = st <= 0 ? { label: "Sin stock", class: "bg-red-500/20 text-red-300" }
-                : st <= lowThreshold ? { label: "Bajo stock", class: "bg-yellow-500/20 text-yellow-300" }
+                    {pageItems.map((r) => {
+                      const d = r.det || detallesStore[String(r.id)];
+                      const st = Number(r.stock || 0);
+                      const status = st <= 0 ? { label: "Sin stock", class: "bg-red-500/20 text-red-300" }
+                        : st <= lowThreshold ? { label: "Bajo stock", class: "bg-yellow-500/20 text-yellow-300" }
                   : { label: "En stock", class: "bg-emerald-500/20 text-emerald-300" };
               const discount = d?.descuento ?? d?.discount ?? null;
               const busy = !!busyById[String(r.id)];
-              return (
-                <tr key={r.id} className="hover:bg-white/5">
-                  <td className="px-3 py-2">
-                    {d?.imagenUrl ? (
-                      <img src={d.imagenUrl} alt="" className="h-12 w-12 rounded object-cover" />
+              const visRaw = (d?.visibilidad ?? r.visibilidad);
+              const visible = visRaw === false || visRaw === 0 ? false : visRaw === true ? true : true;
+                      return (
+                        <tr key={r.id} className="hover:bg-white/5">
+                          <td className="px-3 py-2">
+                            {d?.imagenUrl ? (
+                              <img src={d.imagenUrl} alt="" className="h-12 w-12 rounded object-cover" />
                     ) : (
                       <div className="h-12 w-12 rounded bg-white/10" />
                     )}
@@ -473,8 +505,18 @@ export default function AdminPanel() {
                           requestEdit(r.id);
                         }}
                         className="rounded bg-white/10 px-2 py-1 text-white hover:bg-white/20">✎</button>
-                      <button title="Borrar" disabled={busy} onClick={() => deleteColeccionable(r.id)}
-                        className="rounded bg-red-600 px-3 py-1 text-white hover:bg-red-500 disabled:opacity-50">Borrar</button>
+                      <button
+                        title={visible ? "Ocultar" : "Mostrar"}
+                        disabled={busy}
+                        onClick={() => toggleVisibility(r)}
+                        className={`rounded px-3 py-1 text-sm text-white disabled:opacity-50 ${
+                          visible
+                            ? "bg-red-600 hover:bg-red-500"
+                            : "bg-emerald-600 hover:bg-emerald-500"
+                        }`}
+                      >
+                        {visible ? "Ocultar" : "Mostrar"}
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -670,9 +712,31 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
     stackable: false,
     scopeId: edit?.id ?? null,
   });
+  const [promoBase, setPromoBase] = useState(null);
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoSaving, setPromoSaving] = useState(false);
   const [promoError, setPromoError] = useState(null);
+
+  const normalizePromoView = (p) => ({
+    id: p?.id ?? null,
+    tipo: p?.tipo ?? "PERCENT",
+    valor: p?.valor ?? "",
+    inicio: p?.inicio ? String(p.inicio).replace(" ", "T").slice(0, 16) : "",
+    fin: p?.fin ? String(p.fin).replace(" ", "T").slice(0, 16) : "",
+    activa: p?.activa ?? true,
+    prioridad: p?.prioridad ?? 0,
+    stackable: p?.stackable ?? false,
+  });
+
+  const promoComparable = (p) => ({
+    tipo: String(p?.tipo || "").toUpperCase(),
+    valor: p?.valor === '' || p?.valor == null ? '' : Number(p.valor),
+    inicio: p?.inicio || "",
+    fin: p?.fin || "",
+    activa: !!p?.activa,
+    stackable: !!p?.stackable,
+    prioridad: Number(p?.prioridad || 0),
+  });
 
   useEffect(() => {
     setLocal(edit);
@@ -684,7 +748,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
   useEffect(() => {
     // revoke previews on unmount or when files change
     return () => {
-      try { previews.forEach((u) => URL.revokeObjectURL(u)); } catch { }
+      previews.forEach((u) => URL.revokeObjectURL(u));
     };
   }, [previews]);
 
@@ -705,17 +769,16 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
       .then((res) => {
         const found = res?.promo || null;
         setPromo(found);
+        const normalized = found ? normalizePromoView(found) : null;
+        setPromoBase(normalized);
         if (found?.valor != null && String(found?.tipo || "").toUpperCase() === "PERCENT") {
           setLocal((s) => ({ ...s, descuento: found.valor }));
+        }
+        if (normalized) {
           setPromoLocal((prev) => ({
             ...prev,
-            tipo: found?.tipo ?? "PERCENT",
-            valor: found?.valor ?? "",
-            activa: found?.activa ?? true,
-            prioridad: found?.prioridad ?? 0,
-            stackable: found?.stackable ?? false,
-            inicio: found?.inicio ? String(found.inicio).replace(" ", "T").slice(0, 16) : "",
-            fin: found?.fin ? String(found.fin).replace(" ", "T").slice(0, 16) : "",
+            ...normalized,
+            scopeId: local.id,
           }));
         }
       })
@@ -734,74 +797,96 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
 
   async function onSubmit(e) {
     e.preventDefault();
-    try {
-      setLocal((s) => ({ ...s, saving: true, error: null }));
-      console.log('Submitting edit for coleccionable:', promo?.id ?? local?.id ?? '(sin id)');
-      const discountValue = local.descuento === '' ? null : Number(local.descuento);
-      const scopeId = promoLocal.scopeId ?? local.id;
-      const valorNum = promoLocal.valor === '' ? null : Number(promoLocal.valor);
-      if (!scopeId) throw new Error('Falta scopeId para la promo');
-      if (valorNum !== null && Number.isNaN(valorNum)) throw new Error('Valor de promo inválido');
-      const payloadPOST = {
-        tipo: promoLocal.tipo,
-        valor: valorNum,
-        scopeType: "ITEM",
-        scopeId,
-        inicio: promoLocal.inicio ? (new Date(promoLocal.inicio)).toISOString() : null,
-        fin: promoLocal.fin ? (new Date(promoLocal.fin)).toISOString() : null,
-        prioridad: promoLocal.prioridad,
-        activa: promoLocal.activa,
-        stackable: promoLocal.stackable,
-      };
-      /* Promocion nPromocion = new Promocion();
-          nPromocion.setTipo(p.getTipo());
-          nPromocion.setValor(p.getValor());
-          nPromocion.setScopeType(p.getScopeType());
-          nPromocion.setScopeId(p.getScopeId());
-          nPromocion.setInicio(p.getInicio());
-          nPromocion.setFin(p.getFin());
-          nPromocion.setPrioridad(p.getPrioridad());
-          nPromocion.setActiva(p.isActiva());
-          nPromocion.setStackable(p.isStackable());
-          repo.save(nPromocion); */
-      await dispatch(savePromo({ data: payloadPOST, token })).unwrap();
-      const payload = {
-        nombre: local.nombre?.trim(),
-        descripcion: local.descripcion?.trim() || '',
-        precio: local.precio === '' ? null : Number(local.precio),
-        linea: local.lineaId ? Number(local.lineaId) : null,
-        // no enviamos imagenes en el PUT; se manejan aparte
-        imagenes: [],
-      };
-
-      await dispatch(updateColeccionableThunk({ id: local.id, data: payload, token })).unwrap();
-      let newImgUrl = null;
-
-
-      const updated = {
-        id: local.id,
-        nombre: payload.nombre,
-        precio: payload.precio,
-        descuento: discountValue,
-        discount: discountValue,
-        lineaId: payload.linea,
-        marcaId: local.marcaId,
-        lineaNombre: lines.find((l) => String(l.id ?? l.lineaId) === String(local.lineaId))?.nombre ?? undefined,
-        marcaNombre: marcas.find((m) => String(m.id ?? m.marcaId) === String(local.marcaId))?.nombre ?? undefined,
-        descripcion: payload.descripcion,
-        ...(newImgUrl ? { imagenUrl: newImgUrl } : {}),
-      };
-      console.log('Updated data:', updated);
-      onUpdated?.(updated);
-
-      onToast?.('Cambios guardados');
-      setEdit({ open: false });
-    } catch (e) {
-      setLocal((s) => ({ ...s, error: e?.message || String(e) }));
-      onToast?.(e?.message || 'Error guardando cambios', 'error');
-    } finally {
-      setLocal((s) => ({ ...s, saving: false }));
+    setLocal((s) => ({ ...s, saving: true, error: null }));
+    let newImgUrl = null;
+    const discountValue = local.descuento === '' ? null : Number(local.descuento);
+    const scopeId = promoLocal.scopeId ?? local.id;
+    const valorNum = promoLocal.valor === '' ? null : Number(promoLocal.valor);
+    const normalizedPromoLocal = {
+      ...promoLocal,
+      valor: valorNum,
+      prioridad: Number(promoLocal.prioridad || 0),
+    };
+    const hasPromo = normalizedPromoLocal.valor !== '' && normalizedPromoLocal.valor !== null && !Number.isNaN(normalizedPromoLocal.valor);
+    if (hasPromo && !scopeId) {
+      const msg = 'Falta scopeId para la promo';
+      setLocal((s) => ({ ...s, error: msg, saving: false }));
+      onToast?.(msg, 'error');
+      return;
     }
+    if (valorNum !== null && Number.isNaN(valorNum)) {
+      const msg = 'Valor de promo inválido';
+      setLocal((s) => ({ ...s, error: msg, saving: false }));
+      onToast?.(msg, 'error');
+      return;
+    }
+    const promoChanged =
+      hasPromo &&
+      JSON.stringify(promoComparable(normalizedPromoLocal)) !==
+        JSON.stringify(promoComparable(promoBase || {}));
+    const payloadPOST = hasPromo
+      ? {
+          tipo: normalizedPromoLocal.tipo,
+          valor: normalizedPromoLocal.valor,
+          scopeType: "ITEM",
+          scopeId,
+          inicio: normalizedPromoLocal.inicio ? (new Date(normalizedPromoLocal.inicio)).toISOString() : null,
+          fin: normalizedPromoLocal.fin ? (new Date(normalizedPromoLocal.fin)).toISOString() : null,
+          prioridad: normalizedPromoLocal.prioridad,
+          activa: normalizedPromoLocal.activa,
+          stackable: normalizedPromoLocal.stackable,
+        }
+      : null;
+    const payload = {
+      nombre: local.nombre?.trim(),
+      descripcion: local.descripcion?.trim() || '',
+      precio: local.precio === '' ? null : Number(local.precio),
+      linea: local.lineaId ? Number(local.lineaId) : null,
+      imagenes: [],
+      visibilidad: typeof local.visibilidad === 'boolean' ? local.visibilidad : true,
+    };
+
+    const promoPromise =
+      payloadPOST && promoChanged
+        ? (promoBase?.id
+            ? dispatch(updatePromo({ id: promoBase.id, data: payloadPOST, token })).unwrap()
+            : dispatch(savePromo({ data: payloadPOST, token })).unwrap())
+        : Promise.resolve();
+
+    promoPromise
+      .then(() => dispatch(updateColeccionableThunk({ id: local.id, data: payload, token })).unwrap())
+      .then(() => (files.length
+        ? dispatch(uploadColeccionableImagesThunk({ coleccionableId: local.id, files, token }))
+            .unwrap()
+            .then(() => { newImgUrl = previews[0] || null; })
+        : null))
+      .then(() => {
+        const updated = {
+          id: local.id,
+          nombre: payload.nombre,
+          precio: payload.precio,
+          descuento: discountValue,
+          discount: discountValue,
+          lineaId: payload.linea,
+          marcaId: local.marcaId,
+          lineaNombre: lines.find((l) => String(l.id ?? l.lineaId) === String(local.lineaId))?.nombre ?? undefined,
+          marcaNombre: marcas.find((m) => String(m.id ?? m.marcaId) === String(local.marcaId))?.nombre ?? undefined,
+          descripcion: payload.descripcion,
+          visibilidad: payload.visibilidad,
+          ...(newImgUrl ? { imagenUrl: newImgUrl } : {}),
+        };
+        onUpdated?.(updated);
+        onToast?.('Cambios guardados');
+        setEdit({ open: false });
+      })
+      .catch((e) => {
+        const msg = e?.message || String(e);
+        setLocal((s) => ({ ...s, error: msg }));
+        onToast?.(msg, 'error');
+      })
+      .finally(() => {
+        setLocal((s) => ({ ...s, saving: false }));
+      });
   }
 
   return (
@@ -827,6 +912,18 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
             <div>
               <label className="block text-xs text-white/70">Precio</label>
               <input type="number" step="0.01" value={local.precio} onChange={(e) => setLocal({ ...local, precio: e.target.value })} className="mt-1 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none" />
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <input
+                id="toggle-visibilidad"
+                type="checkbox"
+                checked={local.visibilidad ?? true}
+                onChange={(e) => setLocal({ ...local, visibilidad: e.target.checked })}
+                className="h-4 w-4"
+              />
+              <label htmlFor="toggle-visibilidad" className="text-xs text-white/70">
+                Visible para usuarios
+              </label>
             </div>
             <div>
               <label className="block text-xs text-white/70">Oferta</label>
