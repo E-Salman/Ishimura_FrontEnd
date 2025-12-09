@@ -8,20 +8,13 @@ export const addToWishlist = createAsyncThunk(
     "wishlist/add",
     async (coleccionableId, { getState, rejectWithValue }) => {
         const token = getState().login.token;
-
         if (!token) return rejectWithValue("No se encuentra logueado");
-
         const headers = {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
         };
-
-        return api
-            .post(`${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`, null, { headers })
-            .then(({ data }) => data)
-            .catch((err) =>
-                rejectWithValue(err?.message || "No se pudo agregar a wishlist")
-            );
+        const { data } = await api.post(`${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`, null, { headers })
+        return data
     }
 );
 
@@ -29,19 +22,12 @@ export const fetchWishlist = createAsyncThunk(
     "wishlist/fetchAll",
     async (_, { getState, rejectWithValue }) => {
         const token = getState().login.token;
-
         if (!token) return rejectWithValue("No se encuentra logueado");
-
         const headers = {
             Authorization: `Bearer ${token}`,
         };
-
-        return api
-            .get(`${BASE}/wishlist`, { headers })
-            .then(({ data }) => data)
-            .catch((err) =>
-                rejectWithValue(err?.message || "Error al cargar wishlist")
-            );
+        const { data } = await api.get(`${BASE}/wishlist`, { headers })
+        return data
     }
 );
 
@@ -54,14 +40,8 @@ export const removeFromWishlist = createAsyncThunk(
             Authorization: `Bearer ${token}`,
         };
 
-        return api
-            .delete(`${BASE}/wishlist/${encodeURIComponent(wishlistItemId)}`, {
-                headers,
-            })
-            .then(() => wishlistItemId)
-            .catch((err) =>
-                rejectWithValue(err?.message || "Error al eliminar de wishlist")
-            );
+        await api.delete(`${BASE}/wishlist/${encodeURIComponent(wishlistItemId)}`, {headers,})
+        return wishlistItemId
     }
 );
 
@@ -88,7 +68,7 @@ const wishlistSlice = createSlice({
             })
             .addCase(addToWishlist.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload || action.error?.message || "Error al agregar a wishlist";
+                state.error = action.payload || action.error.message
             })
 
             // FETCH ALL
@@ -102,12 +82,11 @@ const wishlistSlice = createSlice({
             })
             .addCase(fetchWishlist.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload || action.error?.message || "Error al cargar wishlist";
+                state.error = action.payload || action.error.message
             })
 
             // REMOVE
             .addCase(removeFromWishlist.pending, (state) => {
-                state.loading = true;
                 state.error = null;
             })
             .addCase(removeFromWishlist.fulfilled, (state, action) => {
@@ -117,7 +96,7 @@ const wishlistSlice = createSlice({
             })
             .addCase(removeFromWishlist.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload || action.error?.message || "Error al eliminar de wishlist";
+                state.error = action.payload || action.error?.message
             });
     },
 });

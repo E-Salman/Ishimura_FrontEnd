@@ -61,7 +61,7 @@ const cartSlice = createSlice({
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.error.message;
+        state.error = action.error;
       })
       
       .addCase(addCartItem.fulfilled, (state, action) => {
@@ -82,7 +82,7 @@ const cartSlice = createSlice({
         state.items = state.items.filter((it) => String(it.id) !== String(id));
       })
       .addCase(removeCartItemThunk.rejected, (state, action) => {
-        state.error = action.error.message;
+        state.error = action.error;
       })
       .addCase(clearCartThunk.fulfilled, (state) => {
         state.items = [];

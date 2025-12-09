@@ -416,8 +416,7 @@ export const { setBusy, revokeImagen, clearAdminError } = adminSlice.actions;
 export const selectCatalogo = (state) => state.admin.catalogo;
 export const selectDetalleById = (state, id) => state.admin.detallesById[id];
 export const selectMarcas = (state) => state.admin.marcas;
-export const selectLineasByMarca = (state, marcaId) =>
-  state.admin.lineasByMarca[marcaId] || [];
+export const selectLineasByMarca = (state, marcaId) => state.admin.lineasByMarca[marcaId] || [];
 export const selectAdminStatus = (state) => state.admin.status;
 export const selectAdminError = (state) => state.admin.error;
 export const selectBusy = (state, id) => !!state.admin.busyById[id];

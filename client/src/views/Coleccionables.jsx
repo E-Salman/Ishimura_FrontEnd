@@ -19,7 +19,7 @@ import {
 } from '../redux/coleccionablesSlice';
 
 const SORTS = [
-  { id: 'alpha-desc', label: 'Alfabetico Z-A' }, // default
+  { id: 'alpha-desc', label: 'Alfabetico Z-A' },
   { id: 'alpha-asc', label: 'Alfabetico A-Z' },
   { id: 'price-desc', label: 'Precio: mayor a menor' },
   { id: 'price-asc', label: 'Precio: menor a mayor' },
@@ -59,12 +59,10 @@ export default function ColeccionablesView() {
   const wishlistError = useSelector((state) => state.wishlist.error)
   useEffect(() => { setQ(searchParams.get('q') || ''); }, [searchParams]);
 
-  // Load marcas at start
   useEffect(() => {
     dispatch(fetchMarcasCat());
   }, [dispatch]);
 
-  // Load wishlist once
   useEffect(() => {
     function loadWishlist() {
       if (!token) return;
@@ -73,21 +71,18 @@ export default function ColeccionablesView() {
     loadWishlist();
   }, [token, dispatch]);
 
-  // Load lineas when marca changes
   useEffect(() => {
     if (!initialLinea) setLineaId('');
     if (!marcaId) return;
     dispatch(fetchLineasCat({ marcaId }));
   }, [dispatch, marcaId, initialLinea]);
 
-  // Si se vuelve a "todas las marcas", limpiar la línea seleccionada
   useEffect(() => {
     if (!marcaId && lineaId) {
       setLineaId('');
     }
   }, [marcaId, lineaId]);
 
-  // Update URL params when filters change
   useEffect(() => {
     const next = {};
     if (marcaId) next.marcaId = marcaId;
@@ -97,7 +92,6 @@ export default function ColeccionablesView() {
     setSearchParams(next, { replace: true });
   }, [marcaId, lineaId, sort, q, setSearchParams]);
 
-  // Close sort dropdown on outside click / Escape  
   useEffect(() => {
     if (!sortOpen) return;
     function onPointerDown(e) {
@@ -113,7 +107,6 @@ export default function ColeccionablesView() {
     };
   }, [sortOpen]);
 
-  // Close marca dropdown on outside click / Escape
   useEffect(() => {
     if (!marcaOpen) return;
     function onPointerDown(e) {
@@ -129,7 +122,6 @@ export default function ColeccionablesView() {
     };
   }, [marcaOpen]);
 
-  // Close linea dropdown on outside click / Escape
   useEffect(() => {
     if (!lineOpen) return;
     function onPointerDown(e) {
@@ -145,7 +137,6 @@ export default function ColeccionablesView() {
     };
   }, [lineOpen]);
 
-  // Load items according to filters (servidor filtra por marca/línea)
   useEffect(() => {
     dispatch(fetchColeccionablesCat({ marcaId: marcaId || null, lineaId: lineaId || null }));
   }, [dispatch, marcaId, lineaId, token]);
@@ -214,7 +205,6 @@ export default function ColeccionablesView() {
     });
   }, [enrichedItems, detallesById, marcaId, lineaId, q]);
 
-  // Enriquecer solo los ítems visibles con precios/detalle/imagen de forma acotada
   useEffect(() => {
     const MAX_BATCH = 6;
     const pendingDetalles = [];
@@ -274,8 +264,7 @@ export default function ColeccionablesView() {
     [wishlistItems]
   );
 
-  const handleAddToWishlist = async ({ id }) => {
-
+  const handleAddToWishlist = ({ id }) => {
     dispatch(addToWishlist(id)).unwrap()
       .then(() => {
         dispatch(fetchWishlist());
@@ -433,7 +422,7 @@ export default function ColeccionablesView() {
           }))}
           onAddToWishlist={handleAddToWishlist}
           addToCartText="Agregar al carrito"
-          onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
+          onItemClick={(it) => navigate(`/coleccionable/${it.id}`)}
         />
       )}
     </div>

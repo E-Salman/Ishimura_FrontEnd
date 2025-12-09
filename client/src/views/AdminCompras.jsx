@@ -106,8 +106,7 @@ export default function AdminCompras() {
     );
   }
 
-  const orders = useMemo(
-    () =>
+  const orders = useMemo(() =>
       Array.isArray(rawOrders) ? rawOrders.map((o) => normalizeOrder(o)) : [],
     [rawOrders]
   );
