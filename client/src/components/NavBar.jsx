@@ -141,7 +141,7 @@ const handleLogout = () => {
     setLoadingSug(true);
 
     if (colStatus === "idle") {
-      dispatch(fetchColeccionables());
+      dispatch(fetchColeccionables({ token }));
     }
 
     const timer = setTimeout(() => {

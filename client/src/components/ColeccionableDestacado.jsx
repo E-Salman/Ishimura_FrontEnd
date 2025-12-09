@@ -3,7 +3,7 @@ import Coleccionable from "./Coleccionable";
 import { fetchDestacados } from "../redux/colDestacadosSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-const ColeccionableDestacado = ({ colId }) => {    
+const ColeccionableDestacado = ({ colId }) => {
     const { coleccionables } = useSelector((state) => state.destacados)
     if (!coleccionables || !coleccionables[colId]) return <p>Cargando...</p>
     const { loading, error } = coleccionables[colId]
@@ -12,7 +12,7 @@ const ColeccionableDestacado = ({ colId }) => {
     if(error) return <p>error: {error}</p>
 
     const {coleccionable, imagen } = coleccionables[colId]
-    
+
     return (
         <div style={{ textAlign: 'left' }}>
             {
