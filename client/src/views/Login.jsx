@@ -31,10 +31,10 @@ export default function Login() {
     kaomojiCount === 0
       ? "◝(ᵔᗜᵔ)◜"
       : kaomojiCount === 1
-      ? "(╥﹏╥)"
-      : kaomojiCount === 2
-      ? "<(ꐦㅍ _ㅍ)>"
-      : "∘ ∘ ∘ ( °ヮ° )";
+        ? "(╥﹏╥)"
+        : kaomojiCount === 2
+          ? "<(ꐦㅍ _ㅍ)>"
+          : "∘ ∘ ∘ ( °ヮ° )";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background-dark text-white dark:bg-background-light dark:text-black">
@@ -72,11 +72,11 @@ export default function Login() {
             required
           />
 
-        {(uiError || error) && (
-  <p className="text-sm text-red-400 dark:text-red-600">
-    {uiError || error}
-  </p>
-)}
+          {(uiError || error) && (
+            <p className="text-sm text-red-400 dark:text-red-600">
+              {uiError || error}
+            </p>
+          )}
           <div className="text-right">
             <Link
               to="/forgot-password"

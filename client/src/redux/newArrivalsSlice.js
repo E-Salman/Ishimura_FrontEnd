@@ -18,11 +18,9 @@ async function fetchPricePreview(id, signal) {
     validateStatus: () => true,
   });
 
-
   if (!res.data || typeof res.data !== "object") {
     return {};
   }
-
   return res.data;
 }
 
@@ -33,79 +31,63 @@ async function fetchDetalle(id, signal) {
 }
 
 async function fetchFirstImageUrl(id, signal) {
-  try {
-    const res = await api.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
-      signal,
-      responseType: "blob",
-      validateStatus: (s) => s === 200 || s === 404,
-    });
-    if (res.status !== 200) return null;
-    return URL.createObjectURL(res.data);
-  } catch (_) {
-    return null;
-  }
+  const res = await api.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
+    signal,
+    responseType: "blob",
+    validateStatus: (s) => s === 200 || s === 404,
+  });
+  if (res.status !== 200) return null;
+  return URL.createObjectURL(res.data);
 }
 
 export const fetchNewArrivals = createAsyncThunk(
   "newArrivals/fetch",
-  async (_arg, { signal, rejectWithValue }) => {
+  async (_arg, { signal }) => {
     const revokedUrls = [];
-    try {
-      const catalog = await fetchCatalog(signal);
-      const baseItems = catalog
-        .map((raw) => ({
-          id: raw?.coleccionableId ?? raw?.coleccionableID ?? raw?.id,
-          nombre: raw?.nombre ?? "Coleccionable",
-          descripcion: "",
-          precio: raw?.precio ?? null,
-          precioAnterior: null,
-          imagen: null,
-          stock: raw?.stock ?? null,
-        }))
-        .filter((it) => it.id != null)
-        .slice(0, 12);
+    const catalog = await fetchCatalog(signal);
+    const baseItems = catalog
+      .map((raw) => ({
+        id: raw?.coleccionableId ?? raw?.coleccionableID ?? raw?.id,
+        nombre: raw?.nombre ?? "Coleccionable",
+        descripcion: "",
+        precio: raw?.precio ?? null,
+        precioAnterior: null,
+        imagen: null,
+        stock: raw?.stock ?? null,
+      }))
+      .filter((it) => it.id != null)
+      .slice(0, 12);
 
-      const enriched = await Promise.all(
-        baseItems.map(async (it) => {
-          const acc = { ...it };
-          try {
-            const preview = await fetchPricePreview(it.id, signal);
-            const lista = Number(preview?.precioLista ?? preview?.lista ?? acc?.precio ?? 0);
-            const efectivo = Number(preview?.precioEfectivo ?? preview?.efectivo ?? acc?.precio ?? 0);
-            const hasPromo =
-              Number(preview?.discount ?? 0) > 0 ||
-              (efectivo > 0 && lista > 0 && efectivo < lista) ||
-              Boolean(preview?.promocionId);
-            if (hasPromo) {
-              acc.precio = efectivo || acc.precio || null;
-              acc.precioAnterior = lista && efectivo && efectivo < lista ? lista : acc.precioAnterior ?? null;
-            }
-          } catch (_) {}
+    const enriched = await Promise.all(
+      baseItems.map(async (it) => {
+        const acc = { ...it };
+        const preview = await fetchPricePreview(it.id, signal);
+        const lista = Number(preview?.precioLista ?? preview?.lista ?? acc?.precio ?? 0);
+        const efectivo = Number(preview?.precioEfectivo ?? preview?.efectivo ?? acc?.precio ?? 0);
+        const hasPromo =
+          Number(preview?.discount ?? 0) > 0 ||
+          (efectivo > 0 && lista > 0 && efectivo < lista) ||
+          Boolean(preview?.promocionId);
+        if (hasPromo) {
+          acc.precio = efectivo || acc.precio || null;
+          acc.precioAnterior = lista && efectivo && efectivo < lista ? lista : acc.precioAnterior ?? null;
+        }
 
-          if (acc?.precio == null) {
-            try {
-              const det = await fetchDetalle(it.id, signal);
-              acc.precio = det?.precio ?? acc?.precio ?? null;
-              if (!acc.descripcion) acc.descripcion = det?.descripcion || "";
-            } catch (_) {}
-          }
+        if (acc?.precio == null) {
+          const det = await fetchDetalle(it.id, signal);
+          acc.precio = det?.precio ?? acc?.precio ?? null;
+          if (!acc.descripcion) acc.descripcion = det?.descripcion || "";
+        }
 
-          if (!acc.imagen) {
-            try {
-              const url = await fetchFirstImageUrl(it.id, signal);
-              if (url?.startsWith?.("blob:")) revokedUrls.push(url);
-              acc.imagen = url;
-            } catch (_) {}
-          }
-
-          return acc;
-        })
-      );
-
-      return { items: enriched, revokedUrls };
-    } catch (error) {
-      return rejectWithValue(error?.message || "No se pudieron cargar las novedades");
-    }
+        if (!acc.imagen) {
+          const url = await fetchFirstImageUrl(it.id, signal);
+          if (url?.startsWith?.("blob:")) revokedUrls.push(url);
+          acc.imagen = url;
+        }
+        return acc;
+      })
+    );
+    return { items: enriched, revokedUrls };
   }
 );
 

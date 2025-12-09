@@ -508,7 +508,7 @@ export default function AdminPanel() {
                         onClick={() => {
                           requestEdit(r.id);
                         }}
-                        className="rounded bg-white/10 px-2 py-1 text-white hover:bg-white/20">?</button>
+                        className="rounded bg-white/10 px-2 py-1 text-white hover:bg-white/20">✎</button>
                       <button
                         title={visible ? "Ocultar" : "Mostrar"}
                         disabled={busy}
