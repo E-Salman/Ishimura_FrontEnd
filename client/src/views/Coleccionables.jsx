@@ -20,7 +20,7 @@ import {
 } from '../redux/coleccionablesSlice';
 
 const SORTS = [
-  { id: 'alpha-desc', label: 'Alfabetico Z-A' },
+  { id: 'alpha-desc', label: 'Alfabetico Z-A' }, // default
   { id: 'alpha-asc', label: 'Alfabetico A-Z' },
   { id: 'price-desc', label: 'Precio: mayor a menor' },
   { id: 'price-asc', label: 'Precio: menor a mayor' },
@@ -60,10 +60,12 @@ export default function ColeccionablesView() {
   const wishlistError = useSelector((state) => state.wishlist.error)
   useEffect(() => { setQ(searchParams.get('q') || ''); }, [searchParams]);
 
+  // Load marcas at start
   useEffect(() => {
     dispatch(fetchMarcasCat());
   }, [dispatch]);
 
+  // Load wishlist once
   useEffect(() => {
     function loadWishlist() {
       if (!token) return;
@@ -72,18 +74,21 @@ export default function ColeccionablesView() {
     loadWishlist();
   }, [token, dispatch]);
 
+  // Load lineas when marca changes
   useEffect(() => {
     if (!initialLinea) setLineaId('');
     if (!marcaId) return;
     dispatch(fetchLineasCat({ marcaId }));
   }, [dispatch, marcaId, initialLinea]);
 
+  // Si se vuelve a "todas las marcas", limpiar la línea seleccionada
   useEffect(() => {
     if (!marcaId && lineaId) {
       setLineaId('');
     }
   }, [marcaId, lineaId]);
 
+  // Update URL params when filters change
   useEffect(() => {
     const next = {};
     if (marcaId) next.marcaId = marcaId;
@@ -93,6 +98,7 @@ export default function ColeccionablesView() {
     setSearchParams(next, { replace: true });
   }, [marcaId, lineaId, sort, q, setSearchParams]);
 
+  // Close sort dropdown on outside click / Escape  
   useEffect(() => {
     if (!sortOpen) return;
     function onPointerDown(e) {
@@ -108,6 +114,7 @@ export default function ColeccionablesView() {
     };
   }, [sortOpen]);
 
+  // Close marca dropdown on outside click / Escape
   useEffect(() => {
     if (!marcaOpen) return;
     function onPointerDown(e) {
@@ -123,6 +130,7 @@ export default function ColeccionablesView() {
     };
   }, [marcaOpen]);
 
+  // Close linea dropdown on outside click / Escape
   useEffect(() => {
     if (!lineOpen) return;
     function onPointerDown(e) {
@@ -138,6 +146,7 @@ export default function ColeccionablesView() {
     };
   }, [lineOpen]);
 
+  // Load items according to filters (servidor filtra por marca/línea)
   useEffect(() => {
     dispatch(fetchColeccionablesCat({ marcaId: marcaId || null, lineaId: lineaId || null }));
   }, [dispatch, marcaId, lineaId, token]);
@@ -172,7 +181,7 @@ export default function ColeccionablesView() {
       const det = detallesById[it.id] || {};
       const preview = previewsById[it.id] || null;
       const lista = Number(preview?.precioLista);
-      const efectivo = Number(preview?.precioEfectivo);
+      const efectivo = Number(preview?.precioEfectivo); //precio después del descuento
       let precio = it.precio;
       let precioAnterior = null;
       if (!Number.isNaN(efectivo) && efectivo != null) {
@@ -191,7 +200,7 @@ export default function ColeccionablesView() {
     });
   }, [itemsStore, detallesById, previewsById]);
 
-  const filteredItems = useMemo(() => {
+  const filteredItems = useMemo(() => { //filtrado en base a marcas, líneas y búsqueda
     const term = q;
     return enrichedItems.filter((it) => {
       const det = detallesById[it.id];
@@ -206,6 +215,7 @@ export default function ColeccionablesView() {
     });
   }, [enrichedItems, detallesById, marcaId, lineaId, q]);
 
+  // Enriquecer solo los ítems visibles con precios/detalle/imagen de forma acotada
   useEffect(() => {
     const MAX_BATCH = 6;
     const pendingDetalles = [];
@@ -260,24 +270,28 @@ export default function ColeccionablesView() {
     }
   }, [filteredItems, sort]);
 
-  const wishlistIdSet = useMemo(() => new Set((wishlistItems || []).map((w) => String(w.coleccionableId))),
+  const wishlistIdSet = useMemo(
+    () => new Set((wishlistItems || []).map((w) => String(w.coleccionableId))),
     [wishlistItems]
   );
 
-  const handleAddToWishlist = ({ id }) => {
+  const handleAddToWishlist = async ({ id }) => {
+
     dispatch(addToWishlist(id)).unwrap()
       .then(() => {
         dispatch(fetchWishlist());
         toast.success("Agregado a tu wishlist");
       })
       .catch((e) => {
-        toast.error(e.message || "No se pudo agregar a la wishlist");
+        const msg = typeof e === "string" ? e : e?.message;
+        toast.error(msg || "No se pudo agregar a la wishlist");
       });
   }
 
   return (
     <div className="relative mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="mb-6 text-3xl font-black text-primary">Coleccionables</h1>
+
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
         <div className="md:col-span-2" ref={marcaRef}>
           <label className="mb-2 block text-sm font-medium text-white/80">Marca</label>
@@ -286,7 +300,8 @@ export default function ColeccionablesView() {
             onClick={() => setMarcaOpen((v) => !v)}
             className="flex w-full items-center justify-between rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
             aria-haspopup="listbox"
-            aria-expanded={marcaOpen}>
+            aria-expanded={marcaOpen}
+          >
             <span>
               {marcaId ? (marcas.find((m) => String(m.id) === String(marcaId))?.nombre ?? 'Marca') : 'Todas las marcas'}
             </span>
@@ -301,7 +316,8 @@ export default function ColeccionablesView() {
                     className="w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent"
                     onClick={() => { setMarcaId(''); setLineaId(''); setMarcaOpen(false); }}
                     role="option"
-                    aria-selected={!marcaId}>
+                    aria-selected={!marcaId}
+                  >
                     Todas las marcas
                   </button>
                   {marcas.map((m) => (
@@ -311,7 +327,8 @@ export default function ColeccionablesView() {
                       className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${String(m.id) === String(marcaId) ? 'font-bold' : ''}`}
                       onClick={() => { setMarcaId(String(m.id)); setLineaId(''); setMarcaOpen(false); }}
                       role="option"
-                      aria-selected={String(m.id) === String(marcaId)}>
+                      aria-selected={String(m.id) === String(marcaId)}
+                    >
                       {m.nombre}
                     </button>
                   ))}
@@ -329,7 +346,8 @@ export default function ColeccionablesView() {
             disabled={!marcaId}
             className="flex w-full items-center justify-between rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white disabled:opacity-50 focus:border-primary/50 focus:outline-none"
             aria-haspopup="listbox"
-            aria-expanded={lineOpen}>
+            aria-expanded={lineOpen}
+          >
             <span>
               {lineaId
                 ? (lineas.find((l) => String(l.id) === String(lineaId))?.nombre ?? 'Línea')
@@ -346,7 +364,8 @@ export default function ColeccionablesView() {
                     className="w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent"
                     onClick={() => { setLineaId(''); setLineOpen(false); }}
                     role="option"
-                    aria-selected={!lineaId}>
+                    aria-selected={!lineaId}
+                  >
                     Todas
                   </button>
                   {lineas.map((l) => (
@@ -356,7 +375,8 @@ export default function ColeccionablesView() {
                       className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${String(l.id) === String(lineaId) ? 'font-bold' : ''}`}
                       onClick={() => { setLineaId(String(l.id)); setLineOpen(false); }}
                       role="option"
-                      aria-selected={String(l.id) === String(lineaId)}>
+                      aria-selected={String(l.id) === String(lineaId)}
+                    >
                       {l.nombre}
                     </button>
                   ))}
@@ -373,7 +393,8 @@ export default function ColeccionablesView() {
             onClick={() => setSortOpen((v) => !v)}
             className="flex w-full items-center justify-between rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
             aria-haspopup="listbox"
-            aria-expanded={sortOpen}>
+            aria-expanded={sortOpen}
+          >
             <span>{SORTS.find((s) => s.id === sort)?.label ?? 'Alfabético Z→A'}</span>
             <span className={`material-symbols-outlined transition-transform ${sortOpen ? 'rotate-180' : ''}`}>expand_more</span>
           </button>
@@ -388,7 +409,8 @@ export default function ColeccionablesView() {
                       className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${s.id === sort ? 'font-bold' : ''}`}
                       onClick={() => { setSort(s.id); setSortOpen(false); }}
                       role="option"
-                      aria-selected={s.id === sort}>
+                      aria-selected={s.id === sort}
+                    >
                       {s.label}
                     </button>
                   ))}
@@ -414,7 +436,7 @@ export default function ColeccionablesView() {
           }))}
           onAddToWishlist={handleAddToWishlist}
           addToCartText="Agregar al carrito"
-          onItemClick={(it) => navigate(`/coleccionable/${it.id}`)}
+          onItemClick={(it) => navigate(`/coleccionable/${it.id ?? it._id}`)}
         />
       )}
     </div>

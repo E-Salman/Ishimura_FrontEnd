@@ -231,20 +231,28 @@ export const uploadColeccionableImagesThunk = createAsyncThunk( //subir la image
     if (!coleccionableId) return rejectWithValue('coleccionableId requerido');
     if (!Array.isArray(files) || files.length === 0) return { coleccionableId, ok: true };
 
-    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-    const form = new FormData();
-    form.append('idColeccionable', String(coleccionableId));
-    files.forEach((f) => form.append('file', f, f.name));
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined; 
+    const endpoints = [
+      { url: `${BASE}/imagenes`, field: 'idColeccionable' },
+    ];
 
-    try {
-      const res = await api.post(`${BASE}/imagenes`, form, {
-        headers: { ...headers, 'Content-Type': 'multipart/form-data' },
-      });
-      if (!res || res.status < 200 || res.status >= 300) {
-        return rejectWithValue('Fallo la subida de imagenes del coleccionable');
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      let uploaded = false;
+      for (const entry of endpoints) {
+        const form = new FormData();
+        form.append('file', f, f.name);
+        if (entry.field) form.append(entry.field, String(coleccionableId));
+        const res = await api.post(entry.url, form, { //postea la url al backend
+            headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+          })
+          .catch(() => null);
+        if (res && res.status >= 200 && res.status < 300) {
+          uploaded = true;
+          break;
+        }
       }
-    } catch (e) {
-      return rejectWithValue('Fallo la subida de imagenes del coleccionable');
+      if (!uploaded) return rejectWithValue('Fallo la subida de imagenes del coleccionable');
     }
     return { coleccionableId, ok: true };
   }

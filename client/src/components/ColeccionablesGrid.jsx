@@ -26,7 +26,7 @@ export default function ColeccionablesGrid({
       'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ' + className
     }>
       {items.map((it) => (
-        <ColeccionableCard
+        <ColeccionableCard //crea un coleccionable card por cada item en items :3
           key={it._rowId || it.id}
           id={it.id}
           nombre={it.nombre}
