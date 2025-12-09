@@ -260,8 +260,7 @@ export default function ColeccionablesView() {
     }
   }, [filteredItems, sort]);
 
-  const wishlistIdSet = useMemo(
-    () => new Set((wishlistItems || []).map((w) => String(w.coleccionableId))),
+  const wishlistIdSet = useMemo(() => new Set((wishlistItems || []).map((w) => String(w.coleccionableId))),
     [wishlistItems]
   );
 
@@ -272,15 +271,13 @@ export default function ColeccionablesView() {
         toast.success("Agregado a tu wishlist");
       })
       .catch((e) => {
-        const msg = typeof e === "string" ? e : e?.message;
-        toast.error(msg || "No se pudo agregar a la wishlist");
+        toast.error(e.message || "No se pudo agregar a la wishlist");
       });
   }
 
   return (
     <div className="relative mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="mb-6 text-3xl font-black text-primary">Coleccionables</h1>
-
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
         <div className="md:col-span-2" ref={marcaRef}>
           <label className="mb-2 block text-sm font-medium text-white/80">Marca</label>
@@ -289,8 +286,7 @@ export default function ColeccionablesView() {
             onClick={() => setMarcaOpen((v) => !v)}
             className="flex w-full items-center justify-between rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
             aria-haspopup="listbox"
-            aria-expanded={marcaOpen}
-          >
+            aria-expanded={marcaOpen}>
             <span>
               {marcaId ? (marcas.find((m) => String(m.id) === String(marcaId))?.nombre ?? 'Marca') : 'Todas las marcas'}
             </span>
@@ -305,8 +301,7 @@ export default function ColeccionablesView() {
                     className="w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent"
                     onClick={() => { setMarcaId(''); setLineaId(''); setMarcaOpen(false); }}
                     role="option"
-                    aria-selected={!marcaId}
-                  >
+                    aria-selected={!marcaId}>
                     Todas las marcas
                   </button>
                   {marcas.map((m) => (
@@ -316,8 +311,7 @@ export default function ColeccionablesView() {
                       className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${String(m.id) === String(marcaId) ? 'font-bold' : ''}`}
                       onClick={() => { setMarcaId(String(m.id)); setLineaId(''); setMarcaOpen(false); }}
                       role="option"
-                      aria-selected={String(m.id) === String(marcaId)}
-                    >
+                      aria-selected={String(m.id) === String(marcaId)}>
                       {m.nombre}
                     </button>
                   ))}
@@ -335,8 +329,7 @@ export default function ColeccionablesView() {
             disabled={!marcaId}
             className="flex w-full items-center justify-between rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white disabled:opacity-50 focus:border-primary/50 focus:outline-none"
             aria-haspopup="listbox"
-            aria-expanded={lineOpen}
-          >
+            aria-expanded={lineOpen}>
             <span>
               {lineaId
                 ? (lineas.find((l) => String(l.id) === String(lineaId))?.nombre ?? 'Línea')
@@ -353,8 +346,7 @@ export default function ColeccionablesView() {
                     className="w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent"
                     onClick={() => { setLineaId(''); setLineOpen(false); }}
                     role="option"
-                    aria-selected={!lineaId}
-                  >
+                    aria-selected={!lineaId}>
                     Todas
                   </button>
                   {lineas.map((l) => (
@@ -364,8 +356,7 @@ export default function ColeccionablesView() {
                       className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${String(l.id) === String(lineaId) ? 'font-bold' : ''}`}
                       onClick={() => { setLineaId(String(l.id)); setLineOpen(false); }}
                       role="option"
-                      aria-selected={String(l.id) === String(lineaId)}
-                    >
+                      aria-selected={String(l.id) === String(lineaId)}>
                       {l.nombre}
                     </button>
                   ))}
@@ -382,8 +373,7 @@ export default function ColeccionablesView() {
             onClick={() => setSortOpen((v) => !v)}
             className="flex w-full items-center justify-between rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
             aria-haspopup="listbox"
-            aria-expanded={sortOpen}
-          >
+            aria-expanded={sortOpen}>
             <span>{SORTS.find((s) => s.id === sort)?.label ?? 'Alfabético Z→A'}</span>
             <span className={`material-symbols-outlined transition-transform ${sortOpen ? 'rotate-180' : ''}`}>expand_more</span>
           </button>
@@ -398,8 +388,7 @@ export default function ColeccionablesView() {
                       className={`w-full bg-transparent px-3 py-2 text-left text-primary hover:bg-transparent ${s.id === sort ? 'font-bold' : ''}`}
                       onClick={() => { setSort(s.id); setSortOpen(false); }}
                       role="option"
-                      aria-selected={s.id === sort}
-                    >
+                      aria-selected={s.id === sort}>
                       {s.label}
                     </button>
                   ))}

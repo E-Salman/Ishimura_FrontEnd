@@ -31,7 +31,7 @@ const loginSlice = createSlice({
     setLogin: (state, action) => {
       const { token, role, email } = action.payload || {};
 
-      state.token = token || null;
+      state.token = token || null;      
       state.role = role || null;
       state.email = email || null;
       state.error = null;

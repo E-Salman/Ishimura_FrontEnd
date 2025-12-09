@@ -8,10 +8,11 @@ import { fetchDetalle, fetchFirstImage, selectDetalleCat } from "../redux/colecc
 
 const DetalleColeccionable = () => {
   const { id } = useParams();
-  const dispatch = useDispatch();
   const { items: wishlistItems = [] } = useSelector((state) => state.wishlist);
   const { token } = useSelector((state) => state.login);
+  const isAdmin = useSelector((state) => state.login.role === "ADMIN")
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const detalle = useSelector((state) => selectDetalleCat(state, id));
   const coleccionable = detalle;
   const imagen = detalle?.imagenUrl;
@@ -25,43 +26,39 @@ const DetalleColeccionable = () => {
     }
   }, [dispatch, id, token, detalle]);
 
-  const agregarAlCarrito = async () => {
-    let skipWishlist = false;
-    try {
-      await dispatch(addCartItem({ coleccionableId: id, cantidad: 1 })).unwrap();
-      toast.success("Producto agregado al carrito");
-    } catch (error) {
-      const msg = String(error?.message || "");
-      if (msg.includes("No auth token")) {
-        toast.error("Debes iniciar sesión para agregar al carrito.");
-        skipWishlist = true;
-      } else {
-        toast.error("No se pudo agregar al carrito");
-      }
-    }
+  const agregarAlCarrito = () => {
+    dispatch(addCartItem({ coleccionableId: id, cantidad: 1 })).unwrap()
+      .then(() => {
+        toast.success("Producto agregado al carrito");
+      })
+      .catch(error => {
+        toast.error(error.message);
+      })
 
-    if (skipWishlist) return;
+    dispatch(fetchWishlist()).unwrap()
+      .then(() => {
+        const row = wishlistItems.find((w) => String(w.coleccionableId) === String(id));
+        if (row) {
+          dispatch(removeFromWishlist(row.id))
+            .unwrap()
+            .catch((e) => {
+              toast.error(e?.message || "No se pudo actualizar la wishlist");
+              return;
+            });
+        }
+      })
+  }
 
-    try {
-      await dispatch(fetchWishlist()).unwrap();
-      const row = wishlistItems.find((w) => String(w.coleccionableId) === String(id));
-      if (row) {
-        await dispatch(removeFromWishlist({ itemId: row.id })).unwrap();
-      }
-    } catch (_) {}
+  const agregarAWishlist = () => {
+    dispatch(addToWishlist(id)).unwrap()
+      .then(() => {
+        toast.success("Agregado a tu wishlist");
+      })
+      .catch(error => toast.error(error?.message || "No se pudo agregar a la wishlist"));
   };
 
-  const agregarAWishlist = async () => {
-    try {
-      await dispatch(addToWishlist(id)).unwrap();
-      toast.success("Agregado a tu wishlist");
-    } catch (error) {
-      toast.error(error?.message || "No se pudo agregar a la wishlist");
-    }
-  };
 
   if (!coleccionable) return <p>No data available</p>;
-
   const { nombre, precio, descripcion } = coleccionable;
 
   return (
@@ -76,7 +73,6 @@ const DetalleColeccionable = () => {
           </button>
 
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12 text-[rgb(79_255_207_/var(--tw-text-opacity,1))]">
-            {/* Imagen */}
             <div>
               <div className="w-full overflow-hidden rounded-xl bg-gray-900 shadow-lg shadow-accent/10">
                 {imagen ? (
@@ -110,6 +106,7 @@ const DetalleColeccionable = () => {
                 </button>
 
                 <button
+                  disabled={isAdmin}
                   onClick={agregarAWishlist}
                   className="px-4 py-3 border border-gray-700 rounded-lg hover:bg-gray-800 hover:border-accent hover:text-accent transition-colors"
                 >
