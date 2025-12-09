@@ -16,12 +16,21 @@ export const addToWishlist = createAsyncThunk(
             Authorization: `Bearer ${token}`,
         };
 
-        return api
-            .post(`${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`, null, { headers })
-            .then(({ data }) => data)
-            .catch((err) =>
-                rejectWithValue(err?.message || "No se pudo agregar a wishlist")
+        try {
+            const { data } = await api.post(
+                `${BASE}/wishlist/${encodeURIComponent(coleccionableId)}`,
+                null,
+                { headers }
             );
+            return data;
+        } catch (err) {
+            const status = err?.response?.status;
+            const serverMsg = err?.response?.data?.message || err?.message;
+            if (status === 409) {
+                return rejectWithValue("Ya está en tu wishlist");
+            }
+            return rejectWithValue(serverMsg || "No se pudo agregar a wishlist");
+        }
     }
 );
 

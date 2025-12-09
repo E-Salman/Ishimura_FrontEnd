@@ -8,6 +8,7 @@ import { fetchLineasByMarca } from "../redux/lineasSlice";
 import { fetchColeccionables } from "../redux/coleccionablesSlice";
 import { logout } from "../redux/loginSlice";
 import { isTokenExpired } from "../lib/token";
+import { fetchCart } from "../redux/cartSlice";
 function AvatarInitial({ email }) {
   const initial = (email?.[0] || "?").toUpperCase();
   return (
@@ -41,6 +42,12 @@ const { email, role, token } = useSelector((state) => state.login);
 const userEmail = email || "";
 const isLogged = Boolean(token); // o Boolean(token && userEmail), pero ya no hace falta el LS
 const isAdmin = role === "ADMIN";
+const cartCount = useSelector((state) =>
+  (state.cart?.items || []).reduce(
+    (acc, it) => acc + (Number(it.cantidad) || 1),
+    0
+  )
+);
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
@@ -53,6 +60,12 @@ const isAdmin = role === "ADMIN";
       navigate("/login", { replace: true });
     }
   }, [token, dispatch, navigate]);
+
+  // Cargar carrito para que el contador tenga datos
+  useEffect(() => {
+    if (!token) return;
+    dispatch(fetchCart());
+  }, [dispatch, token]);
 
   useEffect(() => {
     const onClick = (e) => {
@@ -377,10 +390,15 @@ const handleLogout = () => {
               </button>
             </NavLink>
             <NavLink to="/carrito">
-              <button className="flex items-center justify-center rounded-full bg-primary/20 size-10 text-white hover:bg-primary/30 dark:text-black dark:hover:bg-primary/25">
+              <button className="relative flex items-center justify-center rounded-full bg-primary/20 size-10 text-white hover:bg-primary/30 dark:text-black dark:hover:bg-primary/25">
                 <span className="material-symbols-outlined text-[22px]">
                   shopping_cart
                 </span>
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] rounded-full bg-red-500 px-1 text-[11px] font-bold leading-4 text-white shadow-lg">
+                    {cartCount}
+                  </span>
+                )}
               </button>
             </NavLink>
           </>
