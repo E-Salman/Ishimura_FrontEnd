@@ -132,7 +132,7 @@ const handleLogout = () => {
 
   useEffect(() => {
     const term = norm(q);
-    if (!term || term.length < 2) {
+    if (!term) {
       setSuggestions({ brands: [], lines: [], items: [] });
       return;
     }
@@ -148,8 +148,8 @@ const handleLogout = () => {
       try {
         // ---- BRANDS ----
         const brandsNorm = (Array.isArray(marcas) ? marcas : []).map((m) => {
-          const id = m?.id ?? m?.marcaId ?? m?._id ?? String(m.id || "");
-          const nombre = m?.nombre ?? m?.name ?? m?.title ?? "Marca";
+          const id = m?.id;
+          const nombre = m?.nombre;
           return { id, nombre, raw: m };
         });
 
@@ -172,10 +172,10 @@ const handleLogout = () => {
             const marcaMatch = brandsNorm.find(
               (b) => String(b.id) === String(marcaId)
             );
-            const marcaNombre = marcaMatch?.nombre ?? "Marca";
+            const marcaNombre = marcaMatch?.nombre;
             return entry.items.map((l) => ({
-              id: l?.id ?? l?.lineaId ?? l?.lineaID ?? String(l.id || ""),
-              nombre: l?.nombre ?? l?.name ?? l?.titulo ?? "Línea",
+              id: l?.id,
+              nombre: l?.nombre,
               marcaId,
               marcaNombre,
             }));
@@ -191,7 +191,7 @@ const handleLogout = () => {
           ? coleccionables
           : [];
         const filtItems = itemsSource
-          .filter((x) => norm(x?.nombre ?? x?.name ?? "").includes(term))
+          .filter((x) => norm(x?.nombre).includes(term))
           .slice(0, 6);
 
         if (!cancelled) {
@@ -301,176 +301,282 @@ const handleLogout = () => {
   }
 
   return (
-    <header
-      className="
-        grid grid-cols-[auto_1fr_auto] items-center
-        gap-4 md:gap-8
-        whitespace-nowrap border-b border-white/10 dark:border-black/10
-        pl-2 pr-6 py-4 w-full
-        text-white dark:text-black
-        bg-[rgba(15,23,21,0.6)] dark:bg-[rgba(255,255,255,0.6)]
-        backdrop-blur-md
-        shadow-[0_0_10px_rgba(79,255,207,0.2)]
-        transition-all duration-300
-        relative z-[1000]
-      "
-    >
-      {/* LEFT: logo + nav links */}
-      <div className="flex items-center gap-10">
-        <div className="flex items-center gap-3 text-primary">
-          <img
-            src={logo}
-            alt="Ishimura Logo"
-            className="w-10 h-10 object-contain"
-          />
-          <h2 className="text-xl font-bold tracking-wide">
-            ISHIMURA COLLECTIBLES
-          </h2>
-        </div>
-
-        <nav className="hidden md:flex items-center gap-8">
-          <NavLink
-            to="/home"
-            className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : linkInactive}`
-            }
-          >
-            Home
-          </NavLink>
-          <NavLink
-            to="/marcas"
-            className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : linkInactive}`
-            }
-          >
-            Marcas
-          </NavLink>
-          <NavLink
-            to="/coleccionables"
-            className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : linkInactive}`
-            }
-          >
-            Coleccionables
-          </NavLink>
-          <NavLink
-            to="/new-arrivals"
-            className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : linkInactive}`
-            }
-          >
-            Nuevo
-          </NavLink>
-          <NavLink
-            to="/sales"
-            className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : linkInactive}`
-            }
-          >
-            Promociones
-          </NavLink>
-        </nav>
-      </div>
-
-      {/* CENTER: search bar */}
-      <div className="hidden lg:flex justify-center" ref={searchRef}>
-        {/* (lo dejo igual que lo tenías) */}
-        {/* ... */}
-      </div>
-
-      {/* RIGHT: wishlist, cart, user + theme toggle */}
-      <div className="flex items-center justify-end gap-3">
-        {!isAdmin && (
-          <>
-            <NavLink to="/wishlist">
-              <button className="flex items-center justify-center rounded-full bg-primary/20 size-10 text-white hover:bg-primary/30 dark:text-black dark:hover:bg-primary/25">
-                <span className="material-symbols-outlined text-[22px]">
-                  favorite_border
-                </span>
-              </button>
-            </NavLink>
-            <NavLink to="/carrito">
-              <button className="relative flex items-center justify-center rounded-full bg-primary/20 size-10 text-white hover:bg-primary/30 dark:text-black dark:hover:bg-primary/25">
-                <span className="material-symbols-outlined text-[22px]">
-                  shopping_cart
-                </span>
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] rounded-full bg-red-500 px-1 text-[11px] font-bold leading-4 text-white shadow-lg">
-                    {cartCount}
-                  </span>
-                )}
-              </button>
-            </NavLink>
-          </>
-        )}
-
-        {isAdmin && (
-          <NavLink
-            to="/admin"
-            className="rounded-lg bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30 transition-colors dark:text-black dark:hover:bg-primary/25"
-          >
-            Panel de Control
-          </NavLink>
-        )}
-
-        {!isLogged ? (
-          <NavLink
-            to="/login"
-            className="rounded-lg bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30 transition-colors dark:text-black dark:hover:bg-primary/25"
-          >
-            Login
-          </NavLink>
-        ) : (
-          <div className="relative" ref={menuRef}>
-            <button
-              type="button"
-              onClick={() => setOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-3 py-2 text-white hover:bg-black/30 dark:border-black/20 dark:bg-white/40 dark:text-black dark:hover:bg-white/50"
-            >
-              <AvatarInitial email={userEmail} />
-            </button>
-
-            {open && (
-              <div className="absolute right-0 mt-2 w-56 rounded-lg bg-black/90 text-sm text-white shadow-lg ring-1 ring-white/10 backdrop-blur-md dark:bg-white dark:text-black dark:ring-black/10">
-                <div className="px-4 py-3 border-b border-white/10 dark:border-black/10">
-                  <p className="text-[11px] uppercase tracking-wide text-white/60 dark:text-black/60">Sesión</p>
-                  <p className="mt-1 text-xs font-semibold break-all text-white dark:text-black">{userEmail}</p>
-                </div>
-                {!isAdmin && (
-                  <button
-                    className="block w-full px-4 py-2 text-left hover:bg-white/10 dark:hover:bg-black/10 bg-transparent border-0 focus:outline-none"
-                    onClick={goToPurchases}
-                  >
-                    Mis compras
-                  </button>
-                )}
-                <button
-                  className="block w-full px-4 py-2 text-left text-red-300 hover:bg-white/10 dark:text-red-600 dark:hover:bg-black/10 bg-transparent border-0 focus:outline-none"
-                  onClick={handleLogout}
-                >
-                  Cerrar sesión
-                </button>
-              </div>
-            )}
+    <>
+      <header
+        className="
+          grid grid-cols-[auto_1fr_auto] items-center
+          gap-4 md:gap-8
+          whitespace-nowrap border-b border-white/10 dark:border-black/10
+          pl-2 pr-6 py-4 w-full
+          text-white dark:text-black
+          bg-[rgba(15,23,21,0.6)] dark:bg-[rgba(255,255,255,0.6)]
+          backdrop-blur-md
+          shadow-[0_0_10px_rgba(79,255,207,0.2)]
+          transition-all duration-300
+          relative z-[1000]
+        "
+      >
+        {/* LEFT: logo + nav links */}
+        <div className="flex items-center gap-10">
+          <div className="flex items-center gap-3 text-primary">
+            <img
+              src={logo}
+              alt="Ishimura Logo"
+              className="w-10 h-10 object-contain"
+            />
+            <h2 className="text-xl font-bold tracking-wide">
+              ISHIMURA COLLECTIBLES
+            </h2>
           </div>
-        )}
 
-        <div
-          className="
-            grid place-items-center size-10 rounded-full
-            bg-primary/20 hover:bg-primary/30
-            dark:bg-primary/10 dark:hover:bg-primary/25
-            ring-1 ring-white/40 dark:ring-black/30
-            shadow-[0_0_6px_rgba(79,255,207,0.4)]
-            backdrop-blur-sm transition-all duration-300
-            [&>*]:m-0 [&>*]:p-0 [&>*]:size-10 [&>*]:grid [&>*]:place-items-center
-            [&_*]:text-[22px]
-          "
-        >
-          <ThemeToggle />
+          <nav className="hidden md:flex items-center gap-8">
+            <NavLink
+              to="/home"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              Home
+            </NavLink>
+            <NavLink
+              to="/marcas"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              Marcas
+            </NavLink>
+            <NavLink
+              to="/coleccionables"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              Coleccionables
+            </NavLink>
+            <NavLink
+              to="/new-arrivals"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              Nuevo
+            </NavLink>
+            <NavLink
+              to="/sales"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              Promociones
+            </NavLink>
+          </nav>
+        </div>
+
+        {/* CENTER: vacío (el buscador ahora va debajo) */}
+        <div />
+
+        {/* RIGHT: wishlist, cart, user + theme toggle */}
+        <div className="flex items-center justify-end gap-3">
+          {!isAdmin && (
+            <>
+              <NavLink to="/wishlist">
+                <button className="flex items-center justify-center rounded-full bg-primary/20 size-10 text-white hover:bg-primary/30 dark:text-black dark:hover:bg-primary/25">
+                  <span className="material-symbols-outlined text-[22px]">
+                    favorite_border
+                  </span>
+                </button>
+              </NavLink>
+              <NavLink to="/carrito">
+                <button className="relative flex items-center justify-center rounded-full bg-primary/20 size-10 text-white hover:bg-primary/30 dark:text-black dark:hover:bg-primary/25">
+                  <span className="material-symbols-outlined text-[22px]">
+                    shopping_cart
+                  </span>
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] rounded-full bg-red-500 px-1 text-[11px] font-bold leading-4 text-white shadow-lg">
+                      {cartCount}
+                    </span>
+                  )}
+                </button>
+              </NavLink>
+            </>
+          )}
+
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              className="rounded-lg bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30 transition-colors dark:text-black dark:hover:bg-primary/25"
+            >
+              Panel de Control
+            </NavLink>
+          )}
+
+          {!isLogged ? (
+            <NavLink
+              to="/login"
+              className="rounded-lg bg-primary/20 px-4 py-2 text-sm font-bold text-white hover:bg-primary/30 transition-colors dark:text-black dark:hover:bg-primary/25"
+            >
+              Login
+            </NavLink>
+          ) : (
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                className="flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-3 py-2 text-white hover:bg-black/30 dark:border-black/20 dark:bg-white/40 dark:text-black dark:hover:bg-white/50"
+              >
+                <AvatarInitial email={userEmail} />
+              </button>
+
+              {open && (
+                <div className="absolute right-0 mt-2 w-56 rounded-lg bg-black/90 text-sm text-white shadow-lg ring-1 ring-white/10 backdrop-blur-md dark:bg-white dark:text-black dark:ring-black/10 z-[1400]">
+                  <div className="px-4 py-3 border-b border-white/10 dark:border-black/10">
+                    <p className="text-[11px] uppercase tracking-wide text-white/60 dark:text-black/60">Sesión</p>
+                    <p className="mt-1 text-xs font-semibold break-all text-white dark:text-black">{userEmail}</p>
+                  </div>
+                  {!isAdmin && (
+                    <button
+                      className="block w-full px-4 py-2 text-left hover:bg-white/10 dark:hover:bg-black/10 bg-transparent border-0 focus:outline-none"
+                      onClick={goToPurchases}
+                    >
+                      Mis compras
+                    </button>
+                  )}
+                  <button
+                    className="block w-full px-4 py-2 text-left text-red-300 hover:bg-white/10 dark:text-red-600 dark:hover:bg-black/10 bg-transparent border-0 focus:outline-none"
+                    onClick={handleLogout}
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div
+            className="
+              grid place-items-center size-10 rounded-full
+              bg-primary/20 hover:bg-primary/30
+              dark:bg-primary/10 dark:hover:bg-primary/25
+              ring-1 ring-white/40 dark:ring-black/30
+              shadow-[0_0_6px_rgba(79,255,207,0.4)]
+              backdrop-blur-sm transition-all duration-300
+              [&>*]:m-0 [&>*]:p-0 [&>*]:size-10 [&>*]:grid [&>*]:place-items-center
+              [&_*]:text-[22px]
+            "
+          >
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
+
+      {/* SEARCH BAR BELOW NAV */}
+      <div className="hidden lg:block w-full bg-transparent px-4 pt-3 pb-6">
+        <div className="relative z-[900] flex w-full justify-end pr-4" ref={searchRef}>
+          <form onSubmit={onSubmitSearch} className="relative w-[340px]">
+            <input
+              type="search"
+              value={q}
+              onFocus={() => setShowSug(true)}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setShowSug(true);
+              }}
+              placeholder="Buscar marcas, líneas o coleccionables"
+              className="w-full rounded-full border border-white/20 bg-black/30 px-9 py-2 text-sm text-white placeholder:text-white/50 shadow-lg backdrop-blur-sm ring-1 ring-primary/30 outline-none dark:border-black/20 dark:bg-white/70 dark:text-black dark:placeholder:text-black/50"
+            />
+            <span className="pointer-events-none material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/70 dark:text-black/60">
+              search
+            </span>
+            {showSug && (suggestions.brands.length || suggestions.lines.length || suggestions.items.length) ? (
+              <div className="absolute left-0 right-0 top-full z-[1300] mt-2 rounded-2xl border border-white/10 bg-black/90 p-3 text-sm text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-md dark:border-black/10 dark:bg-white dark:text-black dark:ring-black/10">
+                <div className="space-y-2 max-h-64 overflow-auto">
+                  {suggestions.brands.length > 0 && (
+                    <div>
+                      <p className="mb-1 text-[11px] uppercase tracking-wide text-white/60 dark:text-black/60">
+                        Marcas
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {suggestions.brands.map((b) => (
+                          <button
+                            key={`brand-${b.id}`}
+                            type="button"
+                            onClick={() => {
+                              navigate(`/coleccionables?marcaId=${encodeURIComponent(b.id)}`);
+                              setShowSug(false);
+                            }}
+                            className="rounded-full border border-white/15 px-3 py-1 text-xs hover:border-primary hover:text-primary dark:border-black/20 dark:hover:border-primary"
+                          >
+                            {b.nombre}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {suggestions.lines.length > 0 && (
+                    <div>
+                      <p className="mb-1 text-[11px] uppercase tracking-wide text-white/60 dark:text-black/60">
+                        Líneas
+                      </p>
+                      <div className="flex flex-col gap-1">
+                        {suggestions.lines.map((ln) => (
+                          <button
+                            key={`line-${ln.id}`}
+                            type="button"
+                            onClick={() => {
+                              navigate(
+                                `/coleccionables?marcaId=${encodeURIComponent(
+                                  ln.marcaId
+                                )}&lineaId=${encodeURIComponent(ln.id)}`
+                              );
+                              setShowSug(false);
+                            }}
+                            className="flex w-full items-center justify-between rounded-lg border border-white/10 px-3 py-2 text-left hover:border-primary hover:text-primary dark:border-black/15 dark:hover:border-primary"
+                          >
+                            <span className="text-sm">{ln.nombre}</span>
+                            <span className="text-[11px] text-white/60 dark:text-black/60">
+                              {ln.marcaNombre}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {suggestions.items.length > 0 && (
+                    <div>
+                      <p className="mb-1 text-[11px] uppercase tracking-wide text-white/60 dark:text-black/60">
+                        Coleccionables
+                      </p>
+                      <div className="flex flex-col gap-1">
+                        {suggestions.items.map((it) => (
+                          <button
+                            key={`item-${it.id}`}
+                            type="button"
+                            onClick={() => {
+                              navigate(`/coleccionable/${it.id ?? it._id}`);
+                              setShowSug(false);
+                            }}
+                            className="w-full rounded-lg border border-white/10 px-3 py-2 text-left hover:border-primary hover:text-primary dark:border-black/15 dark:hover:border-primary"
+                          >
+                            {it.nombre ?? it.name ?? "Coleccionable"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {loadingSug && (
+                    <p className="text-[11px] text-white/60 dark:text-black/60">Buscando...</p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </form>
         </div>
       </div>
-    </header>
+    </>
   );
 };
 
