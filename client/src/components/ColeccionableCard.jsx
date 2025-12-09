@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import { addCartItem } from '../redux/cartSlice';
 import { removeFromWishlist } from '../redux/wishlistSlice';
 
@@ -233,8 +234,11 @@ export default function ColeccionableCard({
                 );
                 dispatch(addCartItem({ coleccionableId: id, cantidad: 1 }))
                   .unwrap()
+                  .then(() => {
+                    toast.success("Producto agregado al carrito");
+                  })
                   .catch((e) => {
-                    alert(e.message);
+                    toast.error(e?.message || "No se pudo agregar al carrito");
                     return;
                   });
 
@@ -242,7 +246,7 @@ export default function ColeccionableCard({
                   dispatch(removeFromWishlist(row.id))
                     .unwrap()
                     .catch((e) => {
-                      alert(e.message);
+                      toast.error(e?.message || "No se pudo actualizar la wishlist");
                       return;
                     });
                 }

@@ -61,13 +61,31 @@ const cartSlice = createSlice({
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.error.message;
+        state.error = action.error;
       })
       
       .addCase(addCartItem.fulfilled, (state, action) => {
-        state.items = action.payload && Array.isArray(action.payload)
-          ? action.payload
-          : [...state.items];
+        const payload = action.payload;
+        if (Array.isArray(payload)) {
+          state.items = payload;
+          return;
+        }
+        if (payload && typeof payload === "object") {
+          const incomingId = payload.id ?? payload.itemId ?? payload.coleccionableId;
+          const existingIndex = state.items.findIndex(
+            (it) => String(it.id) === String(incomingId)
+          );
+          if (existingIndex !== -1) {
+            state.items[existingIndex] = {
+              ...state.items[existingIndex],
+              ...payload,
+              cantidad: payload.cantidad ?? state.items[existingIndex].cantidad,
+            };
+          } else {
+            state.items.push(payload);
+          }
+          return;
+        }
       })
       .addCase(updateCartQuantity.fulfilled, (state, action) => {
         const updated = action.payload;
@@ -82,7 +100,7 @@ const cartSlice = createSlice({
         state.items = state.items.filter((it) => String(it.id) !== String(id));
       })
       .addCase(removeCartItemThunk.rejected, (state, action) => {
-        state.error = action.error.message;
+        state.error = action.error;
       })
       .addCase(clearCartThunk.fulfilled, (state) => {
         state.items = [];

@@ -17,19 +17,16 @@ const Wishlist = () => {
   const requestedRef = useRef(new Set());
 
   useEffect(() => {
-    if (token) {
-      dispatch(fetchWishlist());
-    }
+    if (token) dispatch(fetchWishlist());
   }, [token, dispatch]);
 
   const eliminarDeWishlist = (id) => {
     if (!token) return;
     dispatch(removeFromWishlist(id))
       .unwrap()
-      .catch((e) => console.error("Error al eliminar producto:", e));
+      .catch((e) => alert(e.message));
   };
 
-  // Cargar detalles mínimos para mostrar nombre/imagen/precio usando thunks (sin axios en la vista)
   useEffect(() => {
     if (!token) return;
     const pending = items
@@ -54,7 +51,6 @@ const Wishlist = () => {
     });
   }, [items, token, detallesById, dispatch]);
 
-  // Normalizar la data para el grid
   const itemsForGrid = useMemo(() => {
     return items
       .map((raw) => {
@@ -65,22 +61,16 @@ const Wishlist = () => {
         const det = detallesById[coleccionableId] || {};
         return {
           id: coleccionableId, // id del coleccionable (para carrito y navegación)
-          nombre: det.nombre ?? it.nombre ?? "Coleccionable",
-          descripcion: det.descripcion ?? it.descripcion ?? "",
-          precio: det.precio ?? it.precio ?? null,
-          imagen:
-            det.imagenUrl ??
-            det.imagen ??
-            it.imagen ??
-            it.imageUrl ??
-            null,
+          nombre: det.nombre,
+          descripcion: det.descripcion ?? "",
+          precio: det.precio ?? null,
+          imagen:det.imagenUrl ?? null,
           _rowId: rowId, // id de la fila en wishlist (solo para eliminar)
         };
       })
       .filter(Boolean);
   }, [items, detallesById]);
 
-  // Usuario no logueado
   if (!token) {
     return (
       <main className="flex-1">
@@ -96,14 +86,12 @@ const Wishlist = () => {
     );
   }
 
-  // Loading
   if (loading) {
     return (
       <p className="px-4 py-8 text-sm text-white/70">Cargando wishlist...</p>
     );
   }
 
-  // Lista vacía
   if (!error && itemsForGrid.length === 0) {
     return (
       <main className="flex-1">

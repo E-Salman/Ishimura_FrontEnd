@@ -7,6 +7,7 @@ import {
   fetchNewArrivals,
 } from "../redux/newArrivalsSlice";
 import { addToWishlist, fetchWishlist } from '../redux/wishlistSlice';
+import { toast } from "react-toastify";
 
 const BASE = "http://localhost:4002";
 const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
@@ -34,9 +35,11 @@ export default function NewArrivals() {
     dispatch(addToWishlist(id)).unwrap()
       .then(() => {
         dispatch(fetchWishlist());
+        toast.success("Agregado a tu wishlist");
       })
       .catch((e) => {
-        alert(e.message)
+        const msg = typeof e === "string" ? e : e?.message;
+        toast.error(msg || "No se pudo agregar a la wishlist");
       });
   }
   return (

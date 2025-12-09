@@ -26,7 +26,7 @@ const Carrito = () => {
       }
       dispatch(fetchCart()).unwrap()
         .catch(() => {
-          alert(error)
+          alert(error.message)
         })
     };
     fetchCarrito();
@@ -43,7 +43,7 @@ const Carrito = () => {
   const eliminarDelCarrito = (idProducto) => {
     dispatch(removeCartItemThunk({ itemId: idProducto })).unwrap()
       .catch(() => {
-        alert(error)
+        alert(error.message)
       })
   };
 
@@ -54,7 +54,7 @@ const Carrito = () => {
     }
     dispatch(updateCartQuantity({ itemId: rowId, cantidad: nuevaCantidad })).unwrap()
       .catch(() => {
-        alert(error)
+        alert(error.message)
       })
   };
 
@@ -116,8 +116,7 @@ const Carrito = () => {
       <div className="mt-4 flex justify-end">
         <button
           onClick={confirmarCompra}
-          className="rounded-md bg-primary px-6 py-3 text-sm font-bold text-black hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50"
-        >
+          className="rounded-md bg-primary px-6 py-3 text-sm font-bold text-black hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50">
           Confirmar compra
         </button>
       </div>

@@ -54,7 +54,6 @@ export const fetchColeccionables = createAsyncThunk(
         return vis === false || vis === 0 ? false : true;
       });
 
-      // Filtro de respaldo por si el backend no lo aplica
       let filtered = rows;
       if (marcaId) {
         filtered = filtered.filter((r) => {

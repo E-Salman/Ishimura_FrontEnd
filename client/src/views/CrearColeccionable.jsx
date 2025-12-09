@@ -13,7 +13,7 @@ import {
 export default function CrearColeccionable() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { token, role} = useSelector((state) => state.login)
+  const { token, role } = useSelector((state) => state.login)
   const [marcas, setMarcas] = useState([]);
   const [lineas, setLineas] = useState([]);
   const [marcaId, setMarcaId] = useState("");
@@ -168,7 +168,7 @@ export default function CrearColeccionable() {
             multiple
             onChange={(e) => {
               const list = Array.from(e.target.files || []);
-              const allowed = ["image/jpeg","image/png","image/jpg"];
+              const allowed = ["image/jpeg", "image/png", "image/jpg"];
               const accepted = list.filter((f) => allowed.includes(f.type) || /\.(jpe?g|png)$/i.test(f.name));
               const rejected = list.length - accepted.length;
               const nextPrevs = accepted.map((f) => URL.createObjectURL(f));
