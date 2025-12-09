@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import { addCartItem } from "../redux/cartSlice";
 import { addToWishlist, fetchWishlist, removeFromWishlist } from "../redux/wishlistSlice";
 import { fetchDetalle, fetchFirstImage, selectDetalleCat } from "../redux/coleccionablesSlice";
@@ -8,9 +9,8 @@ import { fetchDetalle, fetchFirstImage, selectDetalleCat } from "../redux/colecc
 const DetalleColeccionable = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
-  const { items: wishlistItems = [] } = useSelector((state)=>state.wishlist);
-  const [mensaje, setMensaje] = useState("");
-  const { token } = useSelector((state) => state.login)
+  const { items: wishlistItems = [] } = useSelector((state) => state.wishlist);
+  const { token } = useSelector((state) => state.login);
   const navigate = useNavigate();
   const detalle = useSelector((state) => selectDetalleCat(state, id));
   const coleccionable = detalle;
@@ -28,18 +28,16 @@ const DetalleColeccionable = () => {
 
   const agregarAlCarrito = async () => {
     let skipWishlist = false;
-    try {      
+    try {
       await dispatch(addCartItem({ coleccionableId: id, cantidad: 1 })).unwrap();
-      setMensaje("Producto agregado al carrito");
-      setTimeout(() => setMensaje(""), 2000);
+      toast.success("Producto agregado al carrito");
     } catch (error) {
-      console.error("Error al agregar al carrito:", error);
       const msg = String(error?.message || "");
       if (msg.includes("No auth token")) {
-        alert("Debes iniciar sesión para agregar al carrito.");
+        toast.error("Debes iniciar sesión para agregar al carrito.");
         skipWishlist = true;
       } else {
-        setMensaje("No se pudo agregar al carrito");
+        toast.error("No se pudo agregar al carrito");
       }
     }
 
@@ -56,11 +54,10 @@ const DetalleColeccionable = () => {
 
   const agregarAWishlist = async () => {
     try {
-      await dispatch(addToWishlist({ coleccionableId: id })).unwrap();
-      setMensaje("Agregado a tu wishlist");
-      setTimeout(() => setMensaje(""), 2000);
+      await dispatch(addToWishlist(id)).unwrap();
+      toast.success("Agregado a tu wishlist");
     } catch (error) {
-      setMensaje(error);      
+      toast.error(error?.message || "No se pudo agregar a la wishlist");
     }
   };
 
@@ -76,7 +73,7 @@ const DetalleColeccionable = () => {
             onClick={() => navigate(-1)}
             className="absolute top-4 left-4 px-4 py-2 bg-[rgb(79_255_207_/var(--tw-bg-opacity,1))] bg-accent text-background-dark font-semibold rounded-lg hover:bg-accent/90 transition-colors z-20"
           >
-            ⬅ Back
+            ƒª. Back
           </button>
 
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12 text-[rgb(79_255_207_/var(--tw-text-opacity,1))]">
@@ -122,10 +119,6 @@ const DetalleColeccionable = () => {
                   </span>
                 </button>
               </div>
-
-              {mensaje && (
-                <p className="mt-4 text-accent font-semibold">{mensaje}</p>
-              )}
             </div>
           </div>
         </div>
@@ -135,4 +128,3 @@ const DetalleColeccionable = () => {
 };
 
 export default DetalleColeccionable;
-

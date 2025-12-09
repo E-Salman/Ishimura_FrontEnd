@@ -65,9 +65,28 @@ const cartSlice = createSlice({
       })
       
       .addCase(addCartItem.fulfilled, (state, action) => {
-        state.items = action.payload && Array.isArray(action.payload)
-          ? action.payload
-          : [...state.items];
+        const payload = action.payload;
+        if (Array.isArray(payload)) {
+          state.items = payload;
+          return;
+        }
+        if (payload && typeof payload === "object") {
+          const incomingId = payload.id ?? payload.itemId ?? payload.coleccionableId;
+          const existingIndex = state.items.findIndex(
+            (it) => String(it.id) === String(incomingId)
+          );
+          if (existingIndex !== -1) {
+            state.items[existingIndex] = {
+              ...state.items[existingIndex],
+              ...payload,
+              cantidad: payload.cantidad ?? state.items[existingIndex].cantidad,
+            };
+          } else {
+            state.items.push(payload);
+          }
+          return;
+        }
+        // fallback: no payload usable, keep items as-is
       })
       .addCase(updateCartQuantity.fulfilled, (state, action) => {
         const updated = action.payload;

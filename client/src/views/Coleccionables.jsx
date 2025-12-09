@@ -4,6 +4,7 @@ import ColeccionablesGrid from '../components/ColeccionablesGrid';
 import { useDispatch, useSelector } from 'react-redux';
 import { addCartItem } from '../redux/cartSlice';
 import { addToWishlist, fetchWishlist } from '../redux/wishlistSlice';
+import { toast } from 'react-toastify';
 import {
   fetchMarcas as fetchMarcasCat,
   fetchLineasByMarca as fetchLineasCat,
@@ -279,9 +280,11 @@ export default function ColeccionablesView() {
     dispatch(addToWishlist(id)).unwrap()
       .then(() => {
         dispatch(fetchWishlist());
+        toast.success("Agregado a tu wishlist");
       })
       .catch((e) => {
-        alert(e.message)
+        const msg = typeof e === "string" ? e : e?.message;
+        toast.error(msg || "No se pudo agregar a la wishlist");
       });
   }
 
