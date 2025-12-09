@@ -8,31 +8,17 @@ export const fetchLineasByMarca = createAsyncThunk(
   async (marcaId, { rejectWithValue, signal }) => {
     if (!marcaId) return rejectWithValue("Id de marca invalido");
 
-    try {
-      const res = await api.get(
-        `${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`,
-        { signal, validateStatus: () => true }
-      );
+    const res = await api.get(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`, { signal, validateStatus: () => true });
 
-      if (res.status !== 200) {
-        const data = res.data;
-        const msg =
-          (typeof data === "string" && data) ||
-          data?.message ||
-          `HTTP ${res.status}`;
-        return rejectWithValue(msg);
-      }
-
-      return { marcaId, items: Array.isArray(res.data) ? res.data : [] };
-    } catch (err) {
-      const data = err?.response?.data;
-      const msg =
-        (typeof data === "string" && data) ||
+    if (res.status !== 200) {
+      const data = res.data;
+      const msg = (typeof data === "string" && data) ||
         data?.message ||
-        err?.message ||
-        "No se pudieron cargar las lineas";
+        `HTTP ${res.status}`;
       return rejectWithValue(msg);
     }
+
+    return { marcaId, items: Array.isArray(res.data) ? res.data : [] };
   }
 );
 
