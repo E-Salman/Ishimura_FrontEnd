@@ -10,8 +10,8 @@ const CardList = () => {
         dispatch(fetchPosts())
     }, [dispatch])
 
-   if (loading) return <p>Cargando Publicaciones...</p>;
-   if (error) return <p>Error al cargar publicaciones: {error} </p>;
+    if (loading) return <p>Cargando Publicaciones...</p>;
+    if (error) return <p>Error al cargar publicaciones: {error} </p>;
 
     return (
         <>

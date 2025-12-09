@@ -24,6 +24,7 @@ export default function CrearColeccionable() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [okMsg, setOkMsg] = useState(null);
+  const [visibilidad, setVisibilidad] = useState(true);
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -56,39 +57,47 @@ export default function CrearColeccionable() {
     setError(null);
     setOkMsg(null);
     setSubmitting(true);
-    try {
-      const payload = {
-        nombre: nombre?.trim(),
-        descripcion: descripcion?.trim(),
-        precio: precio === "" ? null : Number(precio),
-        linea: lineaId ? Number(lineaId) : null,
-        imagenes: [],
-      };
-      const created = await dispatch(createColeccionable({ data: payload, token })).unwrap();
-      const newId = created?.id ?? created?.coleccionableId ?? created?.coleccionableID ?? null;
-
-      if (newId && files.length > 0) {
-        setUploading(true);
-        try {
-          await dispatch(uploadColeccionableImagesThunk({ coleccionableId: newId, files, token })).unwrap();
-        } finally {
-          setUploading(false);
+    const payload = {
+      nombre: nombre?.trim(),
+      descripcion: descripcion?.trim(),
+      precio: precio === "" ? null : Number(precio),
+      linea: lineaId ? Number(lineaId) : null,
+      imagenes: [],
+      visibilidad,
+    };
+    let createdId = null;
+    dispatch(createColeccionable({ data: payload, token }))
+      .unwrap()
+      .then((created) => {
+        createdId = created?.id ?? created?.coleccionableId ?? created?.coleccionableID ?? null;
+        if (createdId && files.length > 0) {
+          setUploading(true);
+          return dispatch(uploadColeccionableImagesThunk({ coleccionableId: createdId, files, token }))
+            .unwrap()
+            .finally(() => setUploading(false));
         }
-      }
-
-      setOkMsg(`Creado con exito${newId ? ` (ID: ${newId})` : ""}${files.length ? " con imagenes" : ""}`);
-      setNombre("");
-      setDescripcion("");
-      setPrecio("");
-      setMarcaId("");
-      setLineaId("");
-      setFiles([]);
-      setPreviews((old) => { try { old.forEach((u) => URL.revokeObjectURL(u)); } catch {} return []; });
-    } catch (err) {
-      setError(err?.message || String(err));
-    } finally {
-      setSubmitting(false);
-    }
+        return null;
+      })
+      .then(() => {
+        setOkMsg(`Creado con exito${createdId ? ` (ID: ${createdId})` : ""}${files.length ? " con imagenes" : ""}`);
+        setNombre("");
+        setDescripcion("");
+        setPrecio("");
+        setMarcaId("");
+        setLineaId("");
+        setVisibilidad(true);
+        setFiles([]);
+        setPreviews((old) => {
+          old.forEach((u) => { URL.revokeObjectURL(u); });
+          return [];
+        });
+      })
+      .catch((err) => {
+        setError(err?.message || String(err));
+      })
+      .finally(() => {
+        setSubmitting(false);
+      });
   }
 
   if (!(role === 'ADMIN')) {
@@ -120,6 +129,15 @@ export default function CrearColeccionable() {
           <label className="block text-sm font-medium text-white/80">Precio</label>
           <input type="number" step="0.01" value={precio} onChange={(e) => setPrecio(e.target.value)} required className="mt-1 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white focus:border-primary/50 focus:outline-none" />
         </div>
+        <label className="flex items-center gap-2 text-sm font-medium text-white/80">
+          <input
+            type="checkbox"
+            checked={visibilidad}
+            onChange={(e) => setVisibilidad(e.target.checked)}
+            className="h-4 w-4"
+          />
+          Visible para usuarios
+        </label>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
@@ -154,7 +172,7 @@ export default function CrearColeccionable() {
               const accepted = list.filter((f) => allowed.includes(f.type) || /\.(jpe?g|png)$/i.test(f.name));
               const rejected = list.length - accepted.length;
               const nextPrevs = accepted.map((f) => URL.createObjectURL(f));
-              setPreviews((prev) => { try { prev.forEach((u) => URL.revokeObjectURL(u)); } catch {} return nextPrevs; });
+              setPreviews((prev) => { prev.forEach((u) => URL.revokeObjectURL(u)); return nextPrevs; });
               setFiles(accepted);
               setFileNotice(rejected > 0 ? `Se ignoraron ${rejected} archivo(s) por formato no soportado (solo JPG/PNG).` : "");
             }}
@@ -172,7 +190,7 @@ export default function CrearColeccionable() {
                       setPreviews((prev) => {
                         const copy = [...prev];
                         const [u] = copy.splice(i, 1);
-                        try { if (u) URL.revokeObjectURL(u); } catch {}
+                        if (u) URL.revokeObjectURL(u);
                         return copy;
                       });
                       setFiles((prev) => prev.filter((_, idx) => idx !== i));

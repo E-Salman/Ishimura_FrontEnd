@@ -202,15 +202,42 @@ export default function AdminPanel() {
     }
   }
 
-  async function deleteColeccionable(id) {
-    const sure = confirm(`¿Borrar coleccionable ${id}? Esta acción es permanente.`);
-    if (!sure) return;
-    try {
-      setBusyFlag(id, true);
-      await dispatch(deleteColeccionableThunk({ id, token })).unwrap();
-    } catch (e) {
-      alert(`No se pudo borrar: ${e?.message || e}`);
-    } finally { setBusyFlag(id, false); }
+  function toggleVisibility(row) {
+    const detail = row.det || detallesStore[String(row.id)] || {};
+    const visRaw = detail.visibilidad ?? row.visibilidad;
+    const currentVisible =
+      visRaw === false || visRaw === 0 ? false : visRaw === true ? true : true;
+
+    setBusyFlag(row.id, true);
+
+    if (currentVisible) {
+      dispatch(deleteColeccionableThunk({ id: row.id, token }))
+        .unwrap()
+        .then(() => {
+          dispatch(fetchCatalogo());
+          showToast('Coleccionable ocultado', 'info');
+        })
+        .catch((e) => {
+          const msg = e?.message || String(e);
+          setError(msg);
+          showToast(msg, 'error');
+        })
+        .finally(() => setBusyFlag(row.id, false));
+      return;
+    }
+
+    dispatch(updateColeccionableThunk({ id: row.id, data: { visibilidad: true }, token }))
+      .unwrap()
+      .then(() => {
+        dispatch(fetchCatalogo());
+        showToast('Coleccionable visible', 'info');
+      })
+      .catch((e) => {
+        const msg = e?.message || String(e);
+        setError(msg);
+        showToast(msg, 'error');
+      })
+      .finally(() => setBusyFlag(row.id, false));
   }
 
   async function deleteLinea(id) {
@@ -425,19 +452,21 @@ export default function AdminPanel() {
                 <td colSpan={9} className="px-3 py-10 text-center text-white/60">Sin resultados</td>
               </tr>
             )}
-            {pageItems.map((r) => {
-              const d = r.det || detallesStore[String(r.id)];
-              const st = Number(r.stock || 0);
-              const status = st <= 0 ? { label: "Sin stock", class: "bg-red-500/20 text-red-300" }
-                : st <= lowThreshold ? { label: "Bajo stock", class: "bg-yellow-500/20 text-yellow-300" }
+                    {pageItems.map((r) => {
+                      const d = r.det || detallesStore[String(r.id)];
+                      const st = Number(r.stock || 0);
+                      const status = st <= 0 ? { label: "Sin stock", class: "bg-red-500/20 text-red-300" }
+                        : st <= lowThreshold ? { label: "Bajo stock", class: "bg-yellow-500/20 text-yellow-300" }
                   : { label: "En stock", class: "bg-emerald-500/20 text-emerald-300" };
               const discount = d?.descuento ?? d?.discount ?? null;
               const busy = !!busyById[String(r.id)];
-              return (
-                <tr key={r.id} className="hover:bg-white/5">
-                  <td className="px-3 py-2">
-                    {d?.imagenUrl ? (
-                      <img src={d.imagenUrl} alt="" className="h-12 w-12 rounded object-cover" />
+              const visRaw = (d?.visibilidad ?? r.visibilidad);
+              const visible = visRaw === false || visRaw === 0 ? false : visRaw === true ? true : true;
+                      return (
+                        <tr key={r.id} className="hover:bg-white/5">
+                          <td className="px-3 py-2">
+                            {d?.imagenUrl ? (
+                              <img src={d.imagenUrl} alt="" className="h-12 w-12 rounded object-cover" />
                     ) : (
                       <div className="h-12 w-12 rounded bg-white/10" />
                     )}
@@ -476,8 +505,18 @@ export default function AdminPanel() {
                           requestEdit(r.id);
                         }}
                         className="rounded bg-white/10 px-2 py-1 text-white hover:bg-white/20">✎</button>
-                      <button title="Borrar" disabled={busy} onClick={() => deleteColeccionable(r.id)}
-                        className="rounded bg-red-600 px-3 py-1 text-white hover:bg-red-500 disabled:opacity-50">Borrar</button>
+                      <button
+                        title={visible ? "Ocultar" : "Mostrar"}
+                        disabled={busy}
+                        onClick={() => toggleVisibility(r)}
+                        className={`rounded px-3 py-1 text-sm text-white disabled:opacity-50 ${
+                          visible
+                            ? "bg-red-600 hover:bg-red-500"
+                            : "bg-emerald-600 hover:bg-emerald-500"
+                        }`}
+                      >
+                        {visible ? "Ocultar" : "Mostrar"}
+                      </button>
                     </div>
                   </td>
                 </tr>

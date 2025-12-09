@@ -7,14 +7,16 @@ const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : u
 // Catálogo (id, stock, nombre, precio, firstImageId)
 export const fetchCatalogo = createAsyncThunk(
   'admin/fetchCatalogo',
-  async (_arg, { signal }) => {
-    const res = await api.get(`${BASE}/catalogo`, { signal, headers: undefined });
+  async (_arg, { signal, getState }) => {
+    const token = getState()?.login?.token;
+    const res = await api.get(`${BASE}/catalogo`, { signal, headers: authHeaders(token) });
     const data = Array.isArray(res.data) ? res.data : [];
     return data.map((c) => ({
       id: c?.coleccionableId ?? c?.coleccionableID ?? c?.id ?? c?.idColeccionable ?? null,
       stock: c?.stock ?? 0,
       nombre: c?.nombre ?? null,
       precio: c?.precio ?? null,
+      visibilidad: c?.visibilidad === false || c?.visibilidad === 0 ? false : true,
       firstImageId: c?.firstImageId ?? c?.firstImageID ?? null,
     })).filter((x) => x.id != null);
   }
@@ -27,6 +29,8 @@ export const fetchDetalle = createAsyncThunk(
     const headers = authHeaders(token);
     const res = await api.get(`${BASE}/coleccionable/${id}`, { signal, headers });
     const detalle = res.data;
+    const visibilidad =
+      detalle?.visibilidad === false || detalle?.visibilidad === 0 ? false : true;
 
     // Promos activas para obtener descuento
     let descuento = detalle?.descuento ?? detalle?.discount ?? null;
@@ -51,7 +55,7 @@ export const fetchDetalle = createAsyncThunk(
       imagenUrl = URL.createObjectURL(blob);
     }
 
-    return { id, detalle: { ...detalle, descuento, imagenUrl } };
+    return { id, detalle: { ...detalle, descuento, imagenUrl, visibilidad } };
   }
 );
 
@@ -124,13 +128,12 @@ export const updateStock = createAsyncThunk(
 
     await api({ url, method, headers: authHeaders(authToken) });
 
-    try {
-      const one = await api.get(`${BASE}/catalogo/${id}`, { headers: authHeaders(authToken) });
-      const dto = one.data;
-      return { id, stock: dto?.stock ?? dto?.cantidad ?? value };
-    } catch (_) {
-      return { id, stock: value };
-    }
+    const one = await api
+      .get(`${BASE}/catalogo/${id}`, { headers: authHeaders(authToken) })
+      .catch(() => null);
+    if (!one) return { id, stock: value };
+    const dto = one.data;
+    return { id, stock: dto?.stock ?? dto?.cantidad ?? value };
   }
 );
 
@@ -152,6 +155,12 @@ export const createColeccionable = createAsyncThunk(
       precio: data.precio ?? null,
       linea: data.lineaId ?? data.linea ?? null,
       imagenes: Array.isArray(data.imagenes) ? data.imagenes : [],
+      visibilidad:
+        data.visibilidad === false || data.visibilidad === 0
+          ? false
+          : data.visibilidad === true
+          ? true
+          : true,
     };
     const headers = { ...authHeaders(token), 'Content-Type': 'application/json' };
     const res = await api.post(`${BASE}/coleccionable`, payload, { headers });
@@ -163,17 +172,29 @@ export const createColeccionable = createAsyncThunk(
 export const updateColeccionable = createAsyncThunk(
   'admin/updateColeccionable',
   async ({ id, data, token }, { rejectWithValue }) => {
-    const payload = {
-      nombre: data.nombre ?? '',
-      descripcion: data.descripcion ?? '',
-      precio: data.precio ?? null,
-      linea: data.lineaId ?? data.linea ?? null,
-      imagenes: Array.isArray(data.imagenes) ? data.imagenes : [],
-    };
+    const payload = {};
+    if (data.nombre !== undefined) payload.nombre = data.nombre;
+    if (data.descripcion !== undefined) payload.descripcion = data.descripcion;
+    if (data.precio !== undefined) payload.precio = data.precio;
+    if (data.lineaId !== undefined || data.linea !== undefined) {
+      payload.linea = data.lineaId ?? data.linea ?? null;
+    }
+    if (data.imagenes !== undefined) {
+      payload.imagenes = Array.isArray(data.imagenes) ? data.imagenes : [];
+    }
+    if (data.visibilidad !== undefined) {
+      payload.visibilidad =
+        data.visibilidad === false || data.visibilidad === 0
+          ? false
+          : data.visibilidad === true
+          ? true
+          : !!data.visibilidad;
+    }
     const res = await api.put(`${BASE}/coleccionable/${encodeURIComponent(id)}`, payload, {
       headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
     });
-    return { id, updated: res.data ?? payload };
+    const serverData = res && typeof res.data === 'object' ? res.data : {};
+    return { id, updated: { ...serverData, ...payload } };
   }
 );
 
@@ -198,16 +219,14 @@ export const uploadMarcaImagesThunk = createAsyncThunk(
         const form = new FormData();
         form.append('file', file, file.name);
         if (entry.field) form.append(entry.field, String(marcaId));
-        try {
-          const res = await api.post(entry.url, form, {
+        const res = await api
+          .post(entry.url, form, {
             headers: { ...headers, 'Content-Type': 'multipart/form-data' },
-          });
-          if (res.status >= 200 && res.status < 300) {
-            uploaded = true;
-            break;
-          }
-        } catch (_) {
-          // intenta siguiente endpoint
+          })
+          .catch(() => null);
+        if (res && res.status >= 200 && res.status < 300) {
+          uploaded = true;
+          break;
         }
       }
       if (!uploaded) return rejectWithValue('Fallo la subida de imagenes de marca');
@@ -236,16 +255,14 @@ export const uploadColeccionableImagesThunk = createAsyncThunk(
         const form = new FormData();
         form.append('file', f, f.name);
         if (entry.field) form.append(entry.field, String(coleccionableId));
-        try {
-          const res = await api.post(entry.url, form, {
+        const res = await api
+          .post(entry.url, form, {
             headers: { ...headers, 'Content-Type': 'multipart/form-data' },
-          });
-          if (res.status >= 200 && res.status < 300) {
-            uploaded = true;
-            break;
-          }
-        } catch (_) {
-          // intenta siguiente endpoint
+          })
+          .catch(() => null);
+        if (res && res.status >= 200 && res.status < 300) {
+          uploaded = true;
+          break;
         }
       }
       if (!uploaded) return rejectWithValue('Fallo la subida de imagenes del coleccionable');
@@ -282,6 +299,22 @@ export const savePromo = createAsyncThunk(
     const headers = { ...authHeaders(token), 'Content-Type': 'application/json' };
     const res = await api.post(`${BASE}/promociones`, data, { headers, validateStatus: () => true });
     if (res.status !== 200 && res.status !== 201) {
+      return rejectWithValue(res?.data?.message || `HTTP ${res.status}`);
+    }
+    return res.data ?? data;
+  }
+);
+
+export const updatePromo = createAsyncThunk(
+  'admin/updatePromo',
+  async ({ id, data, token }, { rejectWithValue }) => {
+    if (!id) return rejectWithValue('promoId requerido');
+    const headers = { ...authHeaders(token), 'Content-Type': 'application/json' };
+    const res = await api.put(`${BASE}/promociones/${encodeURIComponent(id)}`, data, {
+      headers,
+      validateStatus: () => true,
+    });
+    if (res.status !== 200) {
       return rejectWithValue(res?.data?.message || `HTTP ${res.status}`);
     }
     return res.data ?? data;
@@ -377,8 +410,18 @@ const adminSlice = createSlice({
       })
       .addCase(deleteColeccionable.fulfilled, (state, action) => {
         const id = action.payload;
-        state.catalogo = state.catalogo.filter((r) => String(r.id) !== String(id));
-        delete state.detallesById[id];
+        state.catalogo = state.catalogo.map((r) =>
+          String(r.id) === String(id)
+            ? { ...r, visibilidad: false, stock: 0 }
+            : r
+        );
+        if (state.detallesById[id]) {
+          state.detallesById[id] = {
+            ...state.detallesById[id],
+            visibilidad: false,
+            stock: 0,
+          };
+        }
       })
       .addCase(updateColeccionable.fulfilled, (state, action) => {
         const { id, updated } = action.payload;
@@ -389,6 +432,12 @@ const adminSlice = createSlice({
                 ...r,
                 nombre: updated.nombre ?? r.nombre,
                 precio: updated.precio ?? r.precio,
+                visibilidad:
+                  updated.visibilidad === false || updated.visibilidad === 0
+                    ? false
+                    : updated.visibilidad === true
+                    ? true
+                    : r.visibilidad,
               }
             : r
         );

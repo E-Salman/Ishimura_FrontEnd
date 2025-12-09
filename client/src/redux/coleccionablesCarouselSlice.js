@@ -18,41 +18,61 @@ const asText = (val) => {
 };
 
 export const fetchColeccionablesCarousel = createAsyncThunk("coleccionablesCarousel/fetch", async (_, { rejectWithValue }) => {
-    const URLBase = "http://localhost:4002/coleccionable/";
-    const randomIds = getUniqueRandoms(5, 1, 22);
+  const URLBase = "http://localhost:4002/coleccionable/";
+  const randomIds = getUniqueRandoms(5, 1, 22);
+  const usedIds = new Set();
 
-    try {
-      const results = await Promise.all(
-        randomIds.map(async (id) => {
-          try {
-            const coleccionableRes = await api.get(URLBase + id, {
-              validateStatus: (s) => s === 200,
-            });
-            const imagenRes = await api.get(URLBase + id + "/imagenes/0", {
-              responseType: "blob",
-              validateStatus: (s) => s === 200 || s === 404,
-            });
+  const fetchWithBump = async (startId, bumpsLeft = 20) => {
+    let current = startId;
+    let remaining = bumpsLeft;
 
-            const imagenBlob = imagenRes.status === 200 ? URL.createObjectURL(imagenRes.data) : null;
-            return {
-              coleccionable: coleccionableRes.data,
-              imagen: imagenBlob,
-            };
-          } catch (_) {
-            return null; // omitir ids inexistentes sin romper todo el carrusel
-          }
-        })
-      );
-
-      const filtered = results.filter(Boolean);
-      if (!filtered.length) {
-        return rejectWithValue("No se pudieron cargar coleccionables para el carrusel");
+    while (remaining >= 0) {
+      if (usedIds.has(current)) {
+        current += 1;
+        remaining -= 1;
+        continue;
       }
 
-      return filtered; // array de {coleccionable, imagen}
-    } catch (error) {
-      return rejectWithValue(asText(error?.response?.data) || error.message);
+      const coleccionableRes = await api
+        .get(URLBase + current, { validateStatus: (s) => s === 200 })
+        .catch(() => null);
+
+      if (coleccionableRes?.status === 200) {
+        const imagenRes = await api
+          .get(URLBase + current + "/imagenes/0", {
+            responseType: "blob",
+            validateStatus: (s) => s === 200 || s === 404,
+          })
+          .catch(() => null);
+
+        const imagenBlob =
+          imagenRes?.status === 200 ? URL.createObjectURL(imagenRes.data) : null;
+        usedIds.add(current);
+        return {
+          coleccionable: coleccionableRes.data,
+          imagen: imagenBlob,
+        };
+      }
+
+      current += 1;
+      remaining -= 1;
     }
+
+    return null;
+  };
+
+  const results = [];
+  for (const id of randomIds) {
+    const got = await fetchWithBump(id, 20);
+    if (got) results.push(got);
+  }
+
+  const filtered = results.filter(Boolean);
+  if (!filtered.length) {
+    return rejectWithValue("No se pudieron cargar coleccionables para el carrusel");
+  }
+
+    return filtered; // array de {coleccionable, imagen}
   }
 );
 

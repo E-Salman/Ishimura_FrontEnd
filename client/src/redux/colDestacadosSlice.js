@@ -18,26 +18,29 @@ export const fetchDestacados = createAsyncThunk("colDestacados/fetchDestacados",
         'Content-Type': 'application/json'
     };
 
-    try {
-        const res = await api.get(URLColeccionable, { headers, validateStatus: () => true });
-        if (res.status !== 200) {
-            return rejectWithValue(asText(res?.data) || `HTTP ${res.status}`);
-        }
-
-        let imgURL = null;
-        try {
-            const imgRes = await api.get(URLImagen, { headers, responseType: "blob", validateStatus: (s) => s === 200 || s === 404 });
-            if (imgRes.status === 200) {
-                imgURL = URL.createObjectURL(imgRes.data);
+    return api
+        .get(URLColeccionable, { headers, validateStatus: () => true })
+        .then(async (res) => {
+            if (res.status !== 200) {
+                return rejectWithValue(asText(res?.data) || `HTTP ${res.status}`);
             }
-        } catch (_) {
-            imgURL = null;
-        }
 
-        return { colId, data: res.data, imgURL };
-    } catch (err) {
-        return rejectWithValue(asText(err?.response?.data) || err?.message || "Error cargando destacados");
-    }
+            let imgURL = null;
+
+            await api
+                .get(URLImagen, { headers, responseType: "blob", validateStatus: (s) => s === 200 || s === 404 })
+                .then((imgRes) => {
+                    if (imgRes.status === 200) {
+                        imgURL = URL.createObjectURL(imgRes.data);
+                    }
+                })
+                .catch(() => {
+                    imgURL = null;
+                });
+
+            return { colId, data: res.data, imgURL };
+        })
+        .catch((err) => rejectWithValue(asText(err?.response?.data) || err?.message || "Error cargando destacados"));
 })
 
 const colDestacadosSlice = createSlice({
