@@ -4,14 +4,14 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 const BASE = "http://localhost:4002";
 const authHeaders = (token) => ({ Authorization: `Bearer ${token}` }); //Devuelve un JSON para los headers
 
-export const fetchCart = createAsyncThunk("cart/fetch", async (_arg, { getState, signal }) => {
+export const fetchCart = createAsyncThunk("cart/fetch", async (_arg, { getState, signal }) => { //trae los items del carrito
     const token = getState().login.token;
     const res = await api.get(`${BASE}/carrito`, { signal, headers: authHeaders(token) });
     return Array.isArray(res.data) ? res.data : [];
   }
 );
 
-export const addCartItem = createAsyncThunk("cart/add", async ({ coleccionableId, cantidad = 1 }, { getState, signal }) => {
+export const addCartItem = createAsyncThunk("cart/add", async ({ coleccionableId, cantidad = 1 }, { getState, signal }) => { //agrega un item al carrito o actualiza su cantidad
     const token = getState().login.token;
     const url = `${BASE}/carrito/${encodeURIComponent(coleccionableId)}?cantidad=${encodeURIComponent(cantidad)}`;
     const res = await api.post(url, null, { signal, headers: authHeaders(token) });
@@ -19,7 +19,7 @@ export const addCartItem = createAsyncThunk("cart/add", async ({ coleccionableId
   }
 );
 
-export const updateCartQuantity = createAsyncThunk("cart/updateQty", async ({ itemId, cantidad }, { getState, signal }) => {
+export const updateCartQuantity = createAsyncThunk("cart/updateQty", async ({ itemId, cantidad }, { getState, signal }) => { //actualiza la cantidad de un item del carrito
     const token = getState().login.token;
     const url = `${BASE}/carrito/${encodeURIComponent(itemId)}?cantidad=${encodeURIComponent(cantidad)}`;
     const res = await api.patch(url, null, { signal, headers: authHeaders(token) });
@@ -27,21 +27,21 @@ export const updateCartQuantity = createAsyncThunk("cart/updateQty", async ({ it
   }
 );
 
-export const removeCartItemThunk = createAsyncThunk("cart/remove", async ({ itemId }, { getState, signal }) => {
+export const removeCartItemThunk = createAsyncThunk("cart/remove", async ({ itemId }, { getState, signal }) => { //elimina un item del carrito
     const token = getState().login.token;
     await api.delete(`${BASE}/carrito/${encodeURIComponent(itemId)}`, { signal, headers: authHeaders(token) });
     return itemId;
   }
 );
 
-export const clearCartThunk = createAsyncThunk("cart/clear", async (_arg, { getState, signal }) => {
+export const clearCartThunk = createAsyncThunk("cart/clear", async (_arg, { getState, signal }) => { //vaciar el carrito
     const token = getState().login.token;
     await api.delete(`${BASE}/carrito/vaciar`, { signal, headers: authHeaders(token) });
     return true;
   }
 );
 
-const cartSlice = createSlice({
+const cartSlice = createSlice({ //lo que guarda el store del carrito
   name: "cart",
   initialState: {
     items: [],
@@ -111,4 +111,4 @@ const cartSlice = createSlice({
 export const selectCartItems = (state) => state.cart.items;
 export const selectCartStatus = (state) => state.cart.status;
 export const selectCartError = (state) => state.cart.error;
-export default cartSlice.reducer;
+export default cartSlice.reducer; //exporta todo y en el store lo guarda

@@ -203,7 +203,7 @@ export default function AdminPanel() {
     setBusyFlag(row.id, true);
 
     if (currentVisible) {
-      dispatch(deleteColeccionableThunk({ id: row.id, token }))
+      dispatch(deleteColeccionableThunk({ id: row.id, token })) //oculta el coleccionable
         .unwrap()
         .then(() => {
           dispatch(fetchCatalogo());
@@ -218,7 +218,7 @@ export default function AdminPanel() {
       return;
     }
 
-    dispatch(updateColeccionableThunk({ id: row.id, data: { visibilidad: true }, token }))
+    dispatch(updateColeccionableThunk({ id: row.id, data: { visibilidad: true }, token })) //muestra el coleccionable
       .unwrap()
       .then(() => {
         dispatch(fetchCatalogo());
@@ -232,7 +232,7 @@ export default function AdminPanel() {
       .finally(() => setBusyFlag(row.id, false));
   }
 
-  function deleteLinea(id) {
+  function deleteLinea(id) {//borrar linea
     const sure = confirm(`¿Borrar linea ${id}? Esto elimina sus coleccionables e imágenes.`);
     if (!sure) return;
     dispatch(deleteLineaThunk({ id, token }))
@@ -247,7 +247,7 @@ export default function AdminPanel() {
       });
   }
 
-  function deleteMarca(id) {
+  function deleteMarca(id) { //borrar marca
     const sure = confirm(`¿Borrar marca ${id}? Esto elimina sus lineas y coleccionables.`);
     if (!sure) return;
     dispatch(deleteMarcaThunk({ id, token }))
@@ -261,7 +261,7 @@ export default function AdminPanel() {
       });
   }
 
-    function handleCreateMarca(e) {
+    function handleCreateMarca(e) { //tocar el boton de crear marca
     e?.preventDefault?.();
     const nombre = newMarca.nombre?.trim();
     if (!nombre) {
@@ -276,7 +276,7 @@ export default function AdminPanel() {
     let newId = null;
     let uploadNotice = null;
 
-    dispatch(createMarca({ nombre, token }))
+    dispatch(createMarca({ nombre, token })) //
       .unwrap()
       .then((created) => {
         newId = created?.id ?? created?._id ?? created?.marcaId ?? created?.marcaID ?? null;
@@ -312,7 +312,7 @@ export default function AdminPanel() {
       });
   }
 
-  function handleCreateLinea(e) {
+  function handleCreateLinea(e) { //tocar el boton de crear linea
     e?.preventDefault?.();
     const nombre = newLinea.nombre?.trim();
     const targetMarcaId = newLinea.marcaId || marcaId;
@@ -329,7 +329,7 @@ export default function AdminPanel() {
     setCreatingLinea(true);
     setNewLineaError(null);
 
-    dispatch(createLinea({ nombre, marcaId: targetMarcaId, token }))
+    dispatch(createLinea({ nombre, marcaId: targetMarcaId, token })) //crear linea
       .unwrap()
       .then(() => {
         dispatch(fetchLineasByMarca({ marcaId: targetMarcaId }));
@@ -345,8 +345,7 @@ export default function AdminPanel() {
         setCreatingLinea(false);
       });
   }
-
-  // TODO: Editar y Visibilidad: requerimos el shape exacto del ColeccionableDTO para PUT
+// Abrir modal de edición
   function requestEdit(id) {
     const d = detallesStore[String(id)];
     if (!d) return;
@@ -364,12 +363,10 @@ export default function AdminPanel() {
       saving: false,
       error: null,
     });
-    // El modal se encarga de cargar lineas según la marca seleccionada
+
   }
-  // Visibilidad anulada por solicitud: no se implementa ocultar/mostrar
 
-
-  if (!isAdmin) {
+  if (!isAdmin) { //redireccionar si no es admin
     return <Navigate to="/home" replace />;
   }
 

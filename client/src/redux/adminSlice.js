@@ -56,7 +56,7 @@ export const fetchDetalle = createAsyncThunk(
   }
 );
 
-export const fetchMarcas = createAsyncThunk(
+export const fetchMarcas = createAsyncThunk( //trae las marcas
   'admin/fetchMarcas',
   async (_arg, { signal }) => {
     const res = await api.get(`${BASE}/marcas`, { signal });
@@ -225,37 +225,26 @@ export const uploadMarcaImagesThunk = createAsyncThunk(
   }
 );
 
-export const uploadColeccionableImagesThunk = createAsyncThunk(
+export const uploadColeccionableImagesThunk = createAsyncThunk( //subir la imagen del coleccionable
   'admin/uploadColeccionableImages',
   async ({ coleccionableId, files, token }, { rejectWithValue }) => {
     if (!coleccionableId) return rejectWithValue('coleccionableId requerido');
     if (!Array.isArray(files) || files.length === 0) return { coleccionableId, ok: true };
 
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-    const endpoints = [
-      { url: `${BASE}/coleccionable/${coleccionableId}/imagenes`, field: null },
-      { url: `${BASE}/coleccionable/${coleccionableId}/imagen`, field: null },
-      { url: `${BASE}/imagenes`, field: 'idColeccionable' },
-    ];
+    const form = new FormData();
+    form.append('idColeccionable', String(coleccionableId));
+    files.forEach((f) => form.append('file', f, f.name));
 
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i];
-      let uploaded = false;
-      for (const entry of endpoints) {
-        const form = new FormData();
-        form.append('file', f, f.name);
-        if (entry.field) form.append(entry.field, String(coleccionableId));
-        const res = await api
-          .post(entry.url, form, {
-            headers: { ...headers, 'Content-Type': 'multipart/form-data' },
-          })
-          .catch(() => null);
-        if (res && res.status >= 200 && res.status < 300) {
-          uploaded = true;
-          break;
-        }
+    try {
+      const res = await api.post(`${BASE}/imagenes`, form, {
+        headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+      });
+      if (!res || res.status < 200 || res.status >= 300) {
+        return rejectWithValue('Fallo la subida de imagenes del coleccionable');
       }
-      if (!uploaded) return rejectWithValue('Fallo la subida de imagenes del coleccionable');
+    } catch (e) {
+      return rejectWithValue('Fallo la subida de imagenes del coleccionable');
     }
     return { coleccionableId, ok: true };
   }

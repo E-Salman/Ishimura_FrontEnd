@@ -34,14 +34,14 @@ export default function CrearColeccionable() {
   const lineasStore = useSelector((state) => selectLineasByMarca(state, marcaId || ""));
 
   useEffect(() => {
-    dispatch(fetchMarcas());
+    dispatch(fetchMarcas()); //es un thunk
   }, [dispatch]);
 
-  useEffect(() => {
+  useEffect(() => { //este useEffect actualiza el estado local marcas a ese valor si es un array
     setMarcas(Array.isArray(marcasStore) ? marcasStore : []);
   }, [marcasStore]);
 
-  useEffect(() => {
+  useEffect(() => { //este useEffect actualiza el estado local lineas a ese valor si es un array
     setLineas(Array.isArray(lineasStore) ? lineasStore : []);
   }, [lineasStore]);
 
@@ -52,27 +52,27 @@ export default function CrearColeccionable() {
     dispatch(fetchLineasByMarca({ marcaId }));
   }, [dispatch, marcaId]);
 
-  function onSubmit(e) {
+  function onSubmit(e) { //boton de crear coleccionable, todos los datos del coleccionable se obtuvieronen el formulario
     e.preventDefault();
     setError(null);
     setOkMsg(null);
     setSubmitting(true);
-    const payload = {
+    const payload = { //armar el payload
       nombre: nombre?.trim(),
       descripcion: descripcion?.trim(),
       precio: precio === "" ? null : Number(precio),
       linea: lineaId ? Number(lineaId) : null,
       imagenes: [],
       visibilidad,
-    };
+    }; //pasa la info que tiene el coleccionable para crearlo
     let createdId = null;
-    dispatch(createColeccionable({ data: payload, token }))
+    dispatch(createColeccionable({ data: payload, token })) //llama al slice para crear el coleccionable
       .unwrap()
-      .then((created) => {
-        createdId = created?.id ?? created?.coleccionableId ?? created?.coleccionableID ?? null;
-        if (createdId && files.length > 0) {
-          setUploading(true);
-          return dispatch(uploadColeccionableImagesThunk({ coleccionableId: createdId, files, token }))
+      .then((created) => { //si se creo bien
+        createdId = created?.id ?? created?.coleccionableId ?? created?.coleccionableID ?? null;//obtener el id del coleccionable creado
+        if (createdId && files.length > 0) {//si hay imagenes para subir
+          setUploading(true);//setea el estado de subiendo imagenes 
+          return dispatch(uploadColeccionableImagesThunk({ coleccionableId: createdId, files, token })) //llama al slice para subir las imagenes
             .unwrap()
             .finally(() => setUploading(false));
         }
@@ -84,9 +84,9 @@ export default function CrearColeccionable() {
         setDescripcion("");
         setPrecio("");
         setMarcaId("");
-        setLineaId("");
+        setLineaId(""); 
         setVisibilidad(true);
-        setFiles([]);
+        setFiles([]); //limpia todo el formulario
         setPreviews((old) => {
           old.forEach((u) => { URL.revokeObjectURL(u); });
           return [];
