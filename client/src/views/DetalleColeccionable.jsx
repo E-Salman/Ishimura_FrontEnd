@@ -73,7 +73,7 @@ const DetalleColeccionable = () => {
             onClick={() => navigate(-1)}
             className="absolute top-4 left-4 px-4 py-2 bg-[rgb(79_255_207_/var(--tw-bg-opacity,1))] bg-accent text-background-dark font-semibold rounded-lg hover:bg-accent/90 transition-colors z-20"
           >
-            ƒª. Back
+            ⬅ Back
           </button>
 
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12 text-[rgb(79_255_207_/var(--tw-text-opacity,1))]">

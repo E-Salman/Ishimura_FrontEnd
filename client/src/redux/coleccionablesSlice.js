@@ -49,7 +49,6 @@ export const fetchColeccionables = createAsyncThunk(
       }
       let rows = Array.isArray(res.data) ? res.data : [];
 
-      // Filtro de respaldo por si el backend no lo aplica
       let filtered = rows;
       if (marcaId) {
         filtered = filtered.filter((r) => {

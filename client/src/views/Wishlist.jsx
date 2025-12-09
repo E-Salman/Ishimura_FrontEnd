@@ -65,14 +65,11 @@ const Wishlist = () => {
         const det = detallesById[coleccionableId] || {};
         return {
           id: coleccionableId, // id del coleccionable (para carrito y navegación)
-          nombre: det.nombre ?? it.nombre ?? "Coleccionable",
-          descripcion: det.descripcion ?? it.descripcion ?? "",
-          precio: det.precio ?? it.precio ?? null,
+          nombre: det.nombre,
+          descripcion: det.descripcion ?? "",
+          precio: det.precio ?? null,
           imagen:
             det.imagenUrl ??
-            det.imagen ??
-            it.imagen ??
-            it.imageUrl ??
             null,
           _rowId: rowId, // id de la fila en wishlist (solo para eliminar)
         };
