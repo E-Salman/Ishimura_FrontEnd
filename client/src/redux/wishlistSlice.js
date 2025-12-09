@@ -35,11 +35,13 @@ export const removeFromWishlist = createAsyncThunk(
     async (wishlistItemId, { getState, rejectWithValue }) => {
         const token = getState().login.token;
         if (!token) return rejectWithValue("No se encuentra logueado");
+        console.log("REMOVIENDO2")
         const headers = {
             Authorization: `Bearer ${token}`,
         };
-
-        await api.delete(`${BASE}/wishlist/${encodeURIComponent(wishlistItemId)}`, {headers,})
+        console.log("PREres")
+        const res = await api.delete(`${BASE}/wishlist/${encodeURIComponent(wishlistItemId)}`, {headers,})
+        console.log(res)
         return wishlistItemId
     }
 );
@@ -67,7 +69,7 @@ const wishlistSlice = createSlice({
             })
             .addCase(addToWishlist.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload || action.error.message
+                state.error = action.payload || action.error
             })
 
             // FETCH ALL

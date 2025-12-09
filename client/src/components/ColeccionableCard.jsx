@@ -223,15 +223,13 @@ export default function ColeccionableCard({
           )}
           <button
             type="button"
-            disabled={outOfStock}
+            disabled={outOfStock || isAdmin}
             onClick={() => {
               if (!outOfStock && onAddToCart) {
                 onAddToCart({ id, nombre: displayNombre, precio: currentPrice }); //en algunos lados se le asigna otra funcion a onAddToCart, asi permite sobreescribirlo
               }
               else if (!outOfStock && !onAddToCart) {
-                const row = wishlistItems.find(
-                  (w) => String(w.coleccionableId) === String(id)
-                );
+                const row = wishlistItems.find((w) => String(w.coleccionableId) === String(id));
                 dispatch(addCartItem({ coleccionableId: id, cantidad: 1 }))
                   .unwrap()
                   .then(() => {
