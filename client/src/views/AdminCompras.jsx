@@ -258,7 +258,6 @@ export default function AdminCompras() {
               </table>
             </div>
 
-            {/* Paginación */}
             <div className="mt-4 flex items-center justify-between text-sm text-white/70">
               <span>
                 Mostrando {pageItems.length} de {filtered.length} órdenes
