@@ -13,7 +13,7 @@ import {
 export default function CrearColeccionable() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { token, role} = useSelector((state) => state.login)
+  const { token, role } = useSelector((state) => state.login)
   const [marcas, setMarcas] = useState([]);
   const [lineas, setLineas] = useState([]);
   const [marcaId, setMarcaId] = useState("");
@@ -64,16 +64,13 @@ export default function CrearColeccionable() {
         linea: lineaId ? Number(lineaId) : null,
         imagenes: [],
       };
-      const created = await dispatch(createColeccionable({ data: payload, token })).unwrap();
+      const created = dispatch(createColeccionable({ data: payload, token })).unwrap();
       const newId = created?.id ?? created?.coleccionableId ?? created?.coleccionableID ?? null;
 
       if (newId && files.length > 0) {
         setUploading(true);
-        try {
-          await dispatch(uploadColeccionableImagesThunk({ coleccionableId: newId, files, token })).unwrap();
-        } finally {
-          setUploading(false);
-        }
+        dispatch(uploadColeccionableImagesThunk({ coleccionableId: newId, files, token })).unwrap()
+          .then(() => setUploading(false))
       }
 
       setOkMsg(`Creado con exito${newId ? ` (ID: ${newId})` : ""}${files.length ? " con imagenes" : ""}`);
@@ -83,7 +80,11 @@ export default function CrearColeccionable() {
       setMarcaId("");
       setLineaId("");
       setFiles([]);
-      setPreviews((old) => { try { old.forEach((u) => URL.revokeObjectURL(u)); } catch {} return []; });
+      setPreviews((old) => {
+        try {
+          old.forEach((u) => URL.revokeObjectURL(u));
+        } catch { } return [];
+      });
     } catch (err) {
       setError(err?.message || String(err));
     } finally {
@@ -150,11 +151,13 @@ export default function CrearColeccionable() {
             multiple
             onChange={(e) => {
               const list = Array.from(e.target.files || []);
-              const allowed = ["image/jpeg","image/png","image/jpg"];
+              const allowed = ["image/jpeg", "image/png", "image/jpg"];
               const accepted = list.filter((f) => allowed.includes(f.type) || /\.(jpe?g|png)$/i.test(f.name));
               const rejected = list.length - accepted.length;
               const nextPrevs = accepted.map((f) => URL.createObjectURL(f));
-              setPreviews((prev) => { try { prev.forEach((u) => URL.revokeObjectURL(u)); } catch {} return nextPrevs; });
+              setPreviews((prev) => { 
+                try { prev.forEach((u) => URL.revokeObjectURL(u)); } catch { } return nextPrevs;
+              });
               setFiles(accepted);
               setFileNotice(rejected > 0 ? `Se ignoraron ${rejected} archivo(s) por formato no soportado (solo JPG/PNG).` : "");
             }}
@@ -172,7 +175,7 @@ export default function CrearColeccionable() {
                       setPreviews((prev) => {
                         const copy = [...prev];
                         const [u] = copy.splice(i, 1);
-                        try { if (u) URL.revokeObjectURL(u); } catch {}
+                        try { if (u) URL.revokeObjectURL(u); } catch { }
                         return copy;
                       });
                       setFiles((prev) => prev.filter((_, idx) => idx !== i));

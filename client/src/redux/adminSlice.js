@@ -4,7 +4,6 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 const BASE = 'http://localhost:4002';
 const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : undefined);
 
-// Catálogo (id, stock, nombre, precio, firstImageId)
 export const fetchCatalogo = createAsyncThunk(
   'admin/fetchCatalogo',
   async (_arg, { signal }) => {
@@ -20,7 +19,6 @@ export const fetchCatalogo = createAsyncThunk(
   }
 );
 
-// Detalle de coleccionable (sin imagen blob)
 export const fetchDetalle = createAsyncThunk(
   'admin/fetchDetalle',
   async ({ id, token }, { signal }) => {
@@ -28,17 +26,16 @@ export const fetchDetalle = createAsyncThunk(
     const res = await api.get(`${BASE}/coleccionable/${id}`, { signal, headers });
     const detalle = res.data;
 
-    // Promos activas para obtener descuento
+    
     let descuento = detalle?.descuento ?? detalle?.discount ?? null;
     const promoRes = await api.get(`${BASE}/promociones/activas`, {
       params: { coleccionableId: id },
       signal,
       headers,
-  validateStatus: (s) => s >= 200 && s < 500, // no lanza en 4xx/5xx
+  validateStatus: (s) => s >= 200 && s < 500, 
   });
   const arr = Array.isArray(promoRes.data) ? promoRes.data : [];
-
-    // Imagen principal
+    
     let imagenUrl = null;
     const imgRes = await api.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
       signal,
@@ -55,7 +52,6 @@ export const fetchDetalle = createAsyncThunk(
   }
 );
 
-// Marcas
 export const fetchMarcas = createAsyncThunk(
   'admin/fetchMarcas',
   async (_arg, { signal }) => {
@@ -64,7 +60,6 @@ export const fetchMarcas = createAsyncThunk(
   }
 );
 
-// Líneas por marca
 export const fetchLineasByMarca = createAsyncThunk(
   'admin/fetchLineasByMarca',
   async ({ marcaId, signal }) => {
@@ -73,7 +68,6 @@ export const fetchLineasByMarca = createAsyncThunk(
   }
 );
 
-// Crear / borrar marca
 export const createMarca = createAsyncThunk(
   'admin/createMarca',
   async ({ nombre, token }, { rejectWithValue }) => {
@@ -90,7 +84,6 @@ export const deleteMarca = createAsyncThunk(
   }
 );
 
-// Crear / borrar línea
 export const createLinea = createAsyncThunk(
   'admin/createLinea',
   async ({ nombre, marcaId, token }, { rejectWithValue }) => {
@@ -108,7 +101,6 @@ export const deleteLinea = createAsyncThunk(
   }
 );
 
-// Ajuste de stock
 export const updateStock = createAsyncThunk(
   "admin/updateStock",
   async ({ id, mode, value, token }, { rejectWithValue, getState }) => {
@@ -134,7 +126,6 @@ export const updateStock = createAsyncThunk(
   }
 );
 
-// Borrar coleccionable
 export const deleteColeccionable = createAsyncThunk(
   'admin/deleteColeccionable',
   async ({ id, token }, { rejectWithValue }) => {
@@ -159,7 +150,6 @@ export const createColeccionable = createAsyncThunk(
   }
 );
 
-// Editar coleccionable
 export const updateColeccionable = createAsyncThunk(
   'admin/updateColeccionable',
   async ({ id, data, token }, { rejectWithValue }) => {
@@ -416,8 +406,7 @@ export const { setBusy, revokeImagen, clearAdminError } = adminSlice.actions;
 export const selectCatalogo = (state) => state.admin.catalogo;
 export const selectDetalleById = (state, id) => state.admin.detallesById[id];
 export const selectMarcas = (state) => state.admin.marcas;
-export const selectLineasByMarca = (state, marcaId) =>
-  state.admin.lineasByMarca[marcaId] || [];
+export const selectLineasByMarca = (state, marcaId) => state.admin.lineasByMarca[marcaId] || [];
 export const selectAdminStatus = (state) => state.admin.status;
 export const selectAdminError = (state) => state.admin.error;
 export const selectBusy = (state, id) => !!state.admin.busyById[id];
