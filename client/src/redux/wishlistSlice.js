@@ -3,7 +3,6 @@ import api from "./axiosClient";
 
 const BASE = "http://localhost:4002";
 
-// Agregar a wishlist
 export const addToWishlist = createAsyncThunk(
     "wishlist/add",
     async (coleccionableId, { getState, rejectWithValue }) => {

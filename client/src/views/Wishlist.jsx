@@ -64,9 +64,7 @@ const Wishlist = () => {
           nombre: det.nombre,
           descripcion: det.descripcion ?? "",
           precio: det.precio ?? null,
-          imagen:
-            det.imagenUrl ??
-            null,
+          imagen:det.imagenUrl ?? null,
           _rowId: rowId, // id de la fila en wishlist (solo para eliminar)
         };
       })

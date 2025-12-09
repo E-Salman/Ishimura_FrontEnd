@@ -86,7 +86,6 @@ const cartSlice = createSlice({
           }
           return;
         }
-        // fallback: no payload usable, keep items as-is
       })
       .addCase(updateCartQuantity.fulfilled, (state, action) => {
         const updated = action.payload;
