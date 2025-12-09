@@ -30,7 +30,7 @@ const ConfirmarCompra = () => {
     setDireccion({ ...direccion, [e.target.name]: e.target.value });
   };
 
-  const handleConfirmar = async () => {
+  const handleConfirmar = () => {
     if (!tarjeta || Object.values(direccion).some((v) => v === "")) {
       setMensaje("Por favor completá todos los campos.");
       return;

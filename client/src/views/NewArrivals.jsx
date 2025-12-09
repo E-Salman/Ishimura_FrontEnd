@@ -30,7 +30,7 @@ export default function NewArrivals() {
   const isLoading = status === "loading";
   const wishlistIdSet = new Set(wishlistItems.map((w) => String(w.coleccionableId)));
   
-  const handleAddToWishlist = async ({ id }) => {
+  const handleAddToWishlist = ({ id }) => {
 
     dispatch(addToWishlist(id)).unwrap()
       .then(() => {

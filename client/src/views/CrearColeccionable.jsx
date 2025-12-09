@@ -52,7 +52,7 @@ export default function CrearColeccionable() {
     dispatch(fetchLineasByMarca({ marcaId }));
   }, [dispatch, marcaId]);
 
-  async function onSubmit(e) {
+  function onSubmit(e) {
     e.preventDefault();
     setError(null);
     setOkMsg(null);

@@ -11,22 +11,19 @@ export const registerUser = createAsyncThunk(
       return rejectWithValue("Faltan campos obligatorios");
     }
 
-    try {
-      const body = { nombre, apellido, direccion, email, password, rol: "USER" };
-      const headers = { "Content-Type": "application/json" };
+    const body = { nombre, apellido, direccion, email, password, rol: "USER" };
+    const headers = { "Content-Type": "application/json" };
 
-      const { data } = await api.post(REGISTER_URL, body, { headers });
-
-      // devuelve token y rol para que lo consuma loginSlice
-      return {
+    return api
+      .post(REGISTER_URL, body, { headers })
+      .then(({ data }) => ({
         token: data?.access_token,
-        role: data?.rol || "USER"
-      };
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || "Error en registro"
+        role: data?.rol || "USER",
+      }))
+      .catch((error) =>
+        rejectWithValue(error.response?.data?.message || error.message || "Error en registro")
       );
-    }
+
   }
 );
 
