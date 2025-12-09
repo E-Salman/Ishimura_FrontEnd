@@ -1,20 +1,20 @@
-import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { addCartItem } from '../redux/cartSlice';
 import { removeFromWishlist } from '../redux/wishlistSlice';
 
 function formatPrice(value, moneda = "USD") {
-  if (value == null || value === "") return Promise.resolve("");
+  if (value == null || value === "") return "";
   const num = typeof value === "string" ? Number(value) : value;
-  if (Number.isNaN(num)) return Promise.resolve(String(value));
-
-  return Promise.resolve(
-    new Intl.NumberFormat("en-US", {
+  if (Number.isNaN(num)) return String(value);
+  try {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: moneda,
-    }).format(num)
-  ).catch(() => `${num.toFixed?.(2) ?? num}`);
+      moneda,
+    }).format(num);
+  } catch (_) {
+    return `$${num.toFixed?.(2) ?? num}`;
+  }
 }
 
 export default function ColeccionableCard({
@@ -45,13 +45,13 @@ export default function ColeccionableCard({
   onSecondaryClick,
   showDeleteButton = false
 }) {
-  const displayNombre = nombre ?? "Coleccionable";
-  const displayDesc = descripcion ?? "";
+  const displayNombre = nombre;
+  const displayDesc = descripcion;
   const currentPrice = precio;
   const oldPrice = listPrice ?? precioAnterior;
-  const [priceStr, setPriceStr] = useState("");
-  const [oldPriceStr, setOldPriceStr] = useState("");
   const imgSrc = imagen ?? imagenUrl ?? src;
+  const priceStr =
+    currentPrice != null ? formatPrice(currentPrice, moneda ?? moneda) : null;
   const outOfStock = Number(stock) <= 0;
   const baseAddClass =
     "flex-1 rounded-md px-4 py-2 text-center text-xs font-bold transition-colors focus:outline-none ";
@@ -63,38 +63,6 @@ export default function ColeccionableCard({
   const isAdmin = useSelector((state) => state.login.role === "ADMIN")
   const dispatch = useDispatch();
   const { items: wishlistItems = [] } = useSelector((state) => state.wishlist);
-
-  useEffect(() => {
-    let active = true;
-
-    if (currentPrice == null) {
-      setPriceStr("");
-    } else {
-      formatPrice(currentPrice, moneda).then((formatted) => {
-        if (active) setPriceStr(formatted);
-      });
-    }
-
-    return () => {
-      active = false;
-    };
-  }, [currentPrice, moneda]);
-
-  useEffect(() => {
-    let active = true;
-
-    if (oldPrice == null) {
-      setOldPriceStr("");
-    } else {
-      formatPrice(oldPrice, moneda).then((formatted) => {
-        if (active) setOldPriceStr(formatted);
-      });
-    }
-
-    return () => {
-      active = false;
-    };
-  }, [oldPrice, moneda]);
 
   return (
     <article
@@ -150,7 +118,7 @@ export default function ColeccionableCard({
           )}
           {oldPrice != null && (
             <span className="text-sm text-white/50 line-through">
-              {oldPriceStr}
+              {formatPrice(oldPrice, moneda ?? moneda)}
             </span>
           )}
         </div>
@@ -223,13 +191,15 @@ export default function ColeccionableCard({
           )}
           <button
             type="button"
-            disabled={outOfStock || isAdmin}
+            disabled={outOfStock}
             onClick={() => {
               if (!outOfStock && onAddToCart) {
                 onAddToCart({ id, nombre: displayNombre, precio: currentPrice }); //en algunos lados se le asigna otra funcion a onAddToCart, asi permite sobreescribirlo
               }
               else if (!outOfStock && !onAddToCart) {
-                const row = wishlistItems.find((w) => String(w.coleccionableId) === String(id));
+                const row = wishlistItems.find(
+                  (w) => String(w.coleccionableId) === String(id)
+                );
                 dispatch(addCartItem({ coleccionableId: id, cantidad: 1 }))
                   .unwrap()
                   .then(() => {

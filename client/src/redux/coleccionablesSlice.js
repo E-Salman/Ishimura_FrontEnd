@@ -4,7 +4,7 @@ import api from "./axiosClient";
 const BASE = 'http://localhost:4002';
 const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : undefined);
 
-export const fetchMarcas = createAsyncThunk(
+export const fetchMarcas = createAsyncThunk( //trae todas las marcas del back 
   'coleccionables/fetchMarcas',
   async (_arg, { signal }) => {
     const res = await api.get(`${BASE}/marcas`, { signal });
@@ -12,7 +12,7 @@ export const fetchMarcas = createAsyncThunk(
   }
 );
 
-export const fetchLineasByMarca = createAsyncThunk(
+export const fetchLineasByMarca = createAsyncThunk( //trae las lineas de una marca especifica
   'coleccionables/fetchLineasByMarca',
   async ({ marcaId, signal }) => {
     const res = await api.get(`${BASE}/listarColeLineas/lineas/marca/${encodeURIComponent(marcaId)}`, { signal });
@@ -20,9 +20,9 @@ export const fetchLineasByMarca = createAsyncThunk(
   }
 );
 
-export const fetchColeccionables = createAsyncThunk(
+export const fetchColeccionables = createAsyncThunk( //carga los coleccionables, con filtros opcionales de marca y linea
   'coleccionables/fetchColeccionables',
-  async ({ marcaId = null, lineaId = null, token = null } = {}, { signal, rejectWithValue }) => {
+  async ({ marcaId = null, lineaId = null } = {}, { signal, rejectWithValue }) => {
     const getMarcaId = (r) =>
       r?.marcaId ?? r?.marca_id ?? r?.marcaID ?? r?.marca?.id ?? (r?.coleccionable ? (r.coleccionable.marcaId ?? r.coleccionable.marca_id ?? r.coleccionable.marca?.id) : null);
     const getLineaId = (r) =>
@@ -32,9 +32,7 @@ export const fetchColeccionables = createAsyncThunk(
       if (!val) return '';
       if (typeof val === 'string') return val;
       if (typeof val === 'object' && typeof val.message === 'string') return val.message;
-      return Promise.resolve()
-        .then(() => JSON.stringify(val))
-        .catch(() => String(val));
+      try { return JSON.stringify(val); } catch (_) { return String(val); }
     };
 
     try {
@@ -42,19 +40,14 @@ export const fetchColeccionables = createAsyncThunk(
 
       const res = await api.get(url, {
         signal,
-        headers: authHeaders(token),
+        headers: undefined,
         validateStatus: () => true,
       });
       if (res.status !== 200) {
-        const msg = await asText(res?.data);
-        return rejectWithValue(msg || `HTTP ${res.status}`);
+        const msg = asText(res?.data) || `HTTP ${res.status}`;
+        return rejectWithValue(msg);
       }
       let rows = Array.isArray(res.data) ? res.data : [];
-      // respaldo: filtrar ocultos si vinieran
-      rows = rows.filter((r) => {
-        const vis = r?.visibilidad;
-        return vis === false || vis === 0 ? false : true;
-      });
 
       let filtered = rows;
       if (marcaId) {
@@ -87,13 +80,12 @@ export const fetchColeccionables = createAsyncThunk(
 
       return mapped;
     } catch (e) {
-      const msg = await asText(e?.response?.data);
-      return rejectWithValue(msg || e?.message || 'No se pudieron cargar los coleccionables');
+      return rejectWithValue(e?.message || 'No se pudieron cargar los coleccionables');
     }
   }
 );
 
-export const fetchDetalle = createAsyncThunk(
+export const fetchDetalle = createAsyncThunk(  //trae el detalle completo de un coleccionable por id
   'coleccionables/fetchDetalle',
   async ({ id, token }, { signal }) => {
     const res = await api.get(`${BASE}/coleccionable/${id}`, { signal, headers: undefined });
@@ -111,7 +103,7 @@ export const fetchDetalle = createAsyncThunk(
   }
 );
 
-export const fetchPricePreview = createAsyncThunk(
+export const fetchPricePreview = createAsyncThunk( //devuelve el calculo del precio de cuanto costara comprar cierta cantidad de un coleccionable
   'coleccionables/fetchPricePreview',
   async ({ id, qty = 1 }, { signal }) => {
     const res = await api.get(
@@ -122,14 +114,14 @@ export const fetchPricePreview = createAsyncThunk(
   }
 );
 
-export const fetchFirstImage = createAsyncThunk(
+export const fetchFirstImage = createAsyncThunk( //busca la primer imafen de un coleccionable 
   'coleccionables/fetchFirstImage',
   async ({ id, token }, { signal }) => {
     const res = await api.get(`${BASE}/coleccionable/${id}/imagenes/0`, {
       signal,
       headers: undefined,
       responseType: 'blob',
-      validateStatus: (s) => s === 200 || s === 404,
+      validateStatus: (s) => s === 200 || s === 404, //codigos validos para no lanzar error
     });
     if (res.status === 404) {
       return { id, imagenUrl: null };
@@ -140,7 +132,7 @@ export const fetchFirstImage = createAsyncThunk(
   }
 );
 
-const initialState = {
+const initialState = { //todos los detalles que guarda el store de un coleccionable
   items: [],
   status: 'idle',
   error: null,
@@ -150,7 +142,7 @@ const initialState = {
   previewsById: {},
 };
 
-const coleccionablesSlice = createSlice({
+const coleccionablesSlice = createSlice({ //lo que guarda el store de colecciona
   name: 'coleccionables',
   initialState,
   reducers: {},
@@ -195,7 +187,7 @@ const coleccionablesSlice = createSlice({
   },
 });
 
-export const selectColeccionables = (state) => state.coleccionables.items;
+export const selectColeccionables = (state) => state.coleccionables.items; //atajo para no tener que escribir todo el path
 export const selectColeccionablesStatus = (state) => state.coleccionables.status;
 export const selectColeccionablesError = (state) => state.coleccionables.error;
 export const selectMarcasCat = (state) => state.coleccionables.marcas;
@@ -205,5 +197,5 @@ export const selectLineasByMarcaCat = (state, marcaId) =>
 export const selectDetalleCat = (state, id) => state.coleccionables.detallesById[id];
 export const selectPreviewById = (state, id) => state.coleccionables.previewsById[id];
 
-export default coleccionablesSlice.reducer;
+export default coleccionablesSlice.reducer; //exporta todo y en el store lo guarda
 
