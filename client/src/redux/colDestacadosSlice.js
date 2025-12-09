@@ -4,11 +4,13 @@ import api from "./axiosClient";
 export const fetchDestacados = createAsyncThunk("colDestacados/fetchDestacados", async (colId, { rejectWithValue }) => {
     if (!colId) return rejectWithValue("Id del coleccionable invalido");
 
-    const asText = (val) => {
+    const asText = async (val) => {
         if (!val) return "";
         if (typeof val === "string") return val;
         if (typeof val === "object" && typeof val.message === "string") return val.message;
-        try { return JSON.stringify(val); } catch (_) { return String(val); }
+        return Promise.resolve()
+            .then(() => JSON.stringify(val))
+            .catch(() => String(val));
     };
 
     const URLColeccionable = `http://localhost:4002/coleccionable/${colId}`;
@@ -22,7 +24,8 @@ export const fetchDestacados = createAsyncThunk("colDestacados/fetchDestacados",
         .get(URLColeccionable, { headers, validateStatus: () => true })
         .then(async (res) => {
             if (res.status !== 200) {
-                return rejectWithValue(asText(res?.data) || `HTTP ${res.status}`);
+                const msg = await asText(res?.data);
+                return rejectWithValue(msg || `HTTP ${res.status}`);
             }
 
             let imgURL = null;
@@ -40,7 +43,10 @@ export const fetchDestacados = createAsyncThunk("colDestacados/fetchDestacados",
 
             return { colId, data: res.data, imgURL };
         })
-        .catch((err) => rejectWithValue(asText(err?.response?.data) || err?.message || "Error cargando destacados"));
+        .catch(async (err) => {
+            const msg = await asText(err?.response?.data);
+            return rejectWithValue(msg || err?.message || "Error cargando destacados");
+        });
 })
 
 const colDestacadosSlice = createSlice({

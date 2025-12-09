@@ -10,34 +10,35 @@ export const fetchMisCompras = createAsyncThunk(
     const token = getState().login.token;
     if (!token) return rejectWithValue("No auth token");
 
-    try {
-      const res = await api.get(`${BASE}/mis-compras`, {
+    return api
+      .get(`${BASE}/mis-compras`, {
         signal,
         headers: { Authorization: `Bearer ${token}` },
         validateStatus: () => true,
+      })
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          return rejectWithValue("No autorizado");
+        }
+        const data = res.data;
+        if (Array.isArray(data)) return data;
+        const maybeArray =
+          data?.items ||
+          data?.content ||
+          data?.ordenes ||
+          data?.orders ||
+          data?.lista;
+        if (Array.isArray(maybeArray)) return maybeArray;
+        if (data && typeof data === "object") {
+          const vals = Object.values(data).find((v) => Array.isArray(v));
+          if (Array.isArray(vals)) return vals;
+        }
+        return rejectWithValue("Respuesta inesperada");
+      })
+      .catch((err) => {
+        const msg = err?.response?.data?.message || err?.message || "Error al cargar compras";
+        return rejectWithValue(msg);
       });
-
-      if (res.status === 401 || res.status === 403) {
-        return rejectWithValue("No autorizado");
-      }
-      const data = res.data;
-      if (Array.isArray(data)) return data;
-      const maybeArray =
-        data?.items ||
-        data?.content ||
-        data?.ordenes ||
-        data?.orders ||
-        data?.lista;
-      if (Array.isArray(maybeArray)) return maybeArray;
-      if (data && typeof data === "object") {
-        const vals = Object.values(data).find((v) => Array.isArray(v));
-        if (Array.isArray(vals)) return vals;
-      }
-      return rejectWithValue("Respuesta inesperada");
-    } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "Error al cargar compras";
-      return rejectWithValue(msg);
-    }
   }
 );
 
