@@ -8,14 +8,11 @@ const api = axios.create({
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Extract clean backend info
         const clean = {
             status: error.response?.status,
             message: error.response?.data?.title + ": " + error.response?.data?.detail,
             data: error.response?.data
         };
-
-        // Thunk will receive this as the thrown value
         throw clean;
     }
 );

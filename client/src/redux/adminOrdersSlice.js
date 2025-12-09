@@ -14,12 +14,7 @@ export const fetchAdminOrders = createAsyncThunk(
       return rejectWithValue("No hay token de autenticación");
     }
 
-    const res = await api.get(ORDERS_URL, {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-      validateStatus: () => true,
-    });
+    const res = await api.get(ORDERS_URL, { headers: {Authorization: `Bearer ${authToken}`, }, validateStatus: () => true,});
 
     if (res.status === 401 || res.status === 403) {
       return rejectWithValue(

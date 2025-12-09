@@ -17,7 +17,6 @@ const DetalleColeccionable = () => {
   const imagen = detalle?.imagenUrl;
 
   useEffect(() => {
-    // Evita spam: solo busca detalle/imagen si no está en store
     if (!detalle) {
       dispatch(fetchDetalle({ id, token }));
     }
