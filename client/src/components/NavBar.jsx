@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 import logo from "../../../assets/images/logoishimura.png";
 import { useEffect, useRef, useState } from "react";
@@ -35,6 +35,7 @@ const linkActive = "text-primary";
 
 const NavBar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
 
   // ---- LOGIN STATE ----
@@ -121,6 +122,7 @@ const handleLogout = () => {
   const [showSug, setShowSug] = useState(false);
   const [loadingSug, setLoadingSug] = useState(false);
   const searchRef = useRef(null);
+  const hideSearch = location.pathname === "/login" || location.pathname === "/register";
 
   function norm(s) {
     return String(s || "")
@@ -471,9 +473,10 @@ const handleLogout = () => {
       </header>
 
       {/* SEARCH BAR BELOW NAV */}
-      <div className="hidden lg:block w-full bg-transparent px-4 pt-3 pb-6">
-        <div className="relative z-[900] flex w-full justify-end pr-4" ref={searchRef}>
-          <form onSubmit={onSubmitSearch} className="relative w-[340px]">
+      {!hideSearch && (
+        <div className="hidden lg:block w-full bg-transparent px-4 pt-3 pb-6">
+          <div className="relative z-[900] flex w-full justify-end pr-4" ref={searchRef}>
+            <form onSubmit={onSubmitSearch} className="relative w-[340px]">
             <input
               type="search"
               value={q}
@@ -573,9 +576,10 @@ const handleLogout = () => {
                 </div>
               </div>
             ) : null}
-          </form>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 };
