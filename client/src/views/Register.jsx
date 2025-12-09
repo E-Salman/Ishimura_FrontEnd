@@ -59,7 +59,7 @@ export default function Register() {
         setTimeout(() => navigate("/home"), 700);
       })
       .catch(() => {
-     
+    
       });
   };
 

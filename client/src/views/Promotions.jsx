@@ -22,7 +22,7 @@ export default function Promotions() {
   const loading = status === 'loading';
   const wishlistIdSet = new Set(wishlistItems.map((w) => String(w.coleccionableId)));
 
-    const handleAddToWishlist = async ({ id }) => {
+    const handleAddToWishlist =  ({ id }) => {
 
     dispatch(addToWishlist(id)).unwrap()
       .then(() => {

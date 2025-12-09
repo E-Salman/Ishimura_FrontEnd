@@ -14,7 +14,9 @@ const asText = (val) => {
   if (!val) return "";
   if (typeof val === "string") return val;
   if (typeof val === "object" && typeof val.message === "string") return val.message;
-  try { return JSON.stringify(val); } catch (_) { return String(val); }
+  return Promise.resolve()
+    .then(() => JSON.stringify(val))
+    .catch(() => String(val));
 };
 
 export const fetchColeccionablesCarousel = createAsyncThunk("coleccionablesCarousel/fetch", async (_, { rejectWithValue }) => {
