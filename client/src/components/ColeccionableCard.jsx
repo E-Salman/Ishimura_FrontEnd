@@ -252,7 +252,8 @@ export default function ColeccionableCard({
             }}
             className={
               baseAddClass +
-              (outOfStock ? disabledAddClass : enabledAddClass) +
+              ((outOfStock || isAdmin) ? disabledAddClass : enabledAddClass) 
+              +
               (showWishlistButton ? "" : " w-full")
             }
           >

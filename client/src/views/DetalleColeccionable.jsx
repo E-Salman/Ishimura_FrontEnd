@@ -99,8 +99,15 @@ const DetalleColeccionable = () => {
 
               <div className="mt-8 flex gap-4">
                 <button
+                  disabled={isAdmin}
                   onClick={agregarAlCarrito}
-                  className="flex-1 flex items-center justify-center px-8 py-3 bg-[rgb(79_255_207_/var(--tw-bg-opacity,1))] border border-transparent text-base font-bold rounded-lg text-background-dark hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent dark:focus:ring-offset-background-dark transition-all duration-200"
+//                  className="flex-1 flex items-center justify-center px-8 py-3 bg-[rgb(79_255_207_/var(--tw-bg-opacity,1))] border border-transparent text-base font-bold rounded-lg text-background-dark hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent dark:focus:ring-offset-background-dark transition-all duration-200"
+                  className={`${!isAdmin
+                    ? "flex-1 flex items-center justify-center px-8 py-3 bg-[rgb(79_255_207_/var(--tw-bg-opacity,1))] border border-transparent text-base font-bold rounded-lg text-background-dark hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent dark:focus:ring-offset-background-dark transition-all duration-200"
+                    : "flex-1 flex items-center justify-center px-8 py-3 bg-grey-500 hover:bg-grey-600 border border-transparent text-base font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent dark:focus:ring-offset-background-dark transition-all duration-200"
+                    }
+              `}
+                  
                 >
                   Agregar al carrito
                 </button>
@@ -108,7 +115,12 @@ const DetalleColeccionable = () => {
                 <button
                   disabled={isAdmin}
                   onClick={agregarAWishlist}
-                  className="px-4 py-3 border border-gray-700 rounded-lg hover:bg-gray-800 hover:border-accent hover:text-accent transition-colors"
+
+                  className={`${!isAdmin
+                    ? "px-4 py-3 border border-gray-700 rounded-lg hover:bg-gray-800 hover:border-accent hover:text-accent transition-colors"
+                    : "bg-grey-500 hover:bg-grey-600"
+                    }
+              `}
                 >
                   <span className="material-symbols-outlined text-gray-300">
                     favorite_border

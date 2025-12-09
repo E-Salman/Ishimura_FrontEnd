@@ -9,57 +9,45 @@ export const fetchPromotions = createAsyncThunk(
   "promotions/fetch",
   async (_, { signal, rejectWithValue }) => {
     const revokedUrls = [];
-    try {
-      const all = await getColeccionables({}, signal);
+    const all = await getColeccionables({}, signal);
 
-      const withPreview = await Promise.all(
-        all.map(async (it) => {
-          try {
-            const quote = await getPricePreview(it.id, { qty: 1 }, signal);
-            const lista = Number(quote?.precioLista ?? 0);
-            const efectivo = Number(quote?.precioEfectivo ?? 0);
-            const discount = Number(quote?.discount ?? 0);
-            const hasPromo = discount > 0 || Boolean(quote?.promocionId);
-            if (!hasPromo) return null;
+    const withPreview = await Promise.all(
+      all.map(async (it) => {
+        const quote = await getPricePreview(it.id, { qty: 1 }, signal);
+        const lista = Number(quote?.precioLista ?? 0);
+        const efectivo = Number(quote?.precioEfectivo ?? 0);
+        const discount = Number(quote?.discount ?? 0);
+        const hasPromo = discount > 0 || Boolean(quote?.promocionId);
+        if (!hasPromo) return null;
 
-            const precio = efectivo || it.precio || null;
-            const precioAnterior = lista || it.precioAnterior || null;
+        const precio = efectivo || it.precio || null;
+        const precioAnterior = lista || it.precioAnterior || null;
 
-            return {
-              ...it,
-              precio,
-              precioAnterior,
-              _discount: discount || (lista && efectivo ? lista - efectivo : 0),
-            };
-          } catch (_) {
-            return null;
-          }
-        })
-      );
+        return {
+          ...it,
+          precio,
+          precioAnterior,
+          _discount: discount || (lista && efectivo ? lista - efectivo : 0),
+        };
+      })
+    );
 
-      const filtered = withPreview.filter(Boolean);
+    const filtered = withPreview.filter(Boolean);
 
-      const enriched = await Promise.all(
-        filtered.map(async (it) => {
-          if (it?.imagen) return it;
-          try {
-            const url = await getColeccionableFirstImageUrl(it.id, signal);
-            if (url?.startsWith?.("blob:")) revokedUrls.push(url);
-            return { ...it, imagen: url };
-          } catch (_) {
-            return it;
-          }
-        })
-      );
-      
-      enriched.sort((a, b) => (b._discount || 0) - (a._discount || 0));
+    const enriched = await Promise.all(
+      filtered.map(async (it) => {
+        if (it?.imagen) return it;
+        const url = await getColeccionableFirstImageUrl(it.id, signal);
+        if (url?.startsWith?.("blob:")) revokedUrls.push(url);
+        return { ...it, imagen: url };
 
-      return { items: enriched, revokedUrls };
-    } catch (error) {
-      return rejectWithValue(
-        error?.message || "No se pudieron cargar las promociones"
-      );
-    }
+      })
+    );
+
+    enriched.sort((a, b) => (b._discount || 0) - (a._discount || 0));
+
+    return { items: enriched, revokedUrls };
+
   }
 );
 
@@ -75,11 +63,9 @@ const promotionsSlice = createSlice({
     clearPromotions: (state) => {
       if (Array.isArray(state.revokedUrls)) {
         state.revokedUrls.forEach((url) => {
-          try {
             if (typeof URL !== "undefined" && url?.startsWith?.("blob:")) {
               URL.revokeObjectURL(url);
             }
-          } catch (_) { }
         });
       }
       state.items = [];
