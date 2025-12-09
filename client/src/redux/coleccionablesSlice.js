@@ -32,7 +32,9 @@ export const fetchColeccionables = createAsyncThunk(
       if (!val) return '';
       if (typeof val === 'string') return val;
       if (typeof val === 'object' && typeof val.message === 'string') return val.message;
-      try { return JSON.stringify(val); } catch (_) { return String(val); }
+      return Promise.resolve()
+        .then(() => JSON.stringify(val))
+        .catch(() => String(val));
     };
 
     try {
@@ -44,8 +46,8 @@ export const fetchColeccionables = createAsyncThunk(
         validateStatus: () => true,
       });
       if (res.status !== 200) {
-        const msg = asText(res?.data) || `HTTP ${res.status}`;
-        return rejectWithValue(msg);
+        const msg = await asText(res?.data);
+        return rejectWithValue(msg || `HTTP ${res.status}`);
       }
       let rows = Array.isArray(res.data) ? res.data : [];
       // respaldo: filtrar ocultos si vinieran
@@ -85,7 +87,8 @@ export const fetchColeccionables = createAsyncThunk(
 
       return mapped;
     } catch (e) {
-      return rejectWithValue(e?.message || 'No se pudieron cargar los coleccionables');
+      const msg = await asText(e?.response?.data);
+      return rejectWithValue(msg || e?.message || 'No se pudieron cargar los coleccionables');
     }
   }
 );

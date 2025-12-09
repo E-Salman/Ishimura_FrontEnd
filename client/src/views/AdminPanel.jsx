@@ -88,7 +88,7 @@ export default function AdminPanel() {
   useEffect(() => {
     return () => {
       if (newMarcaPreview) {
-        try { URL.revokeObjectURL(newMarcaPreview); } catch (_) { }
+        URL.revokeObjectURL(newMarcaPreview)
       }
     };
   }, [newMarcaPreview, detallesStore, dispatch]);
@@ -134,16 +134,7 @@ export default function AdminPanel() {
     }
   }, [adminError]);
 
-  const refreshMarcas = useCallback(
-    async () => {
-      try {
-        await dispatch(fetchMarcas());
-      } catch (e) {
-        return null;
-      }
-    },
-    [dispatch]
-  );
+  const refreshMarcas = useCallback(() => dispatch(fetchMarcas()), [dispatch]);
 
   // Cargar marcas para filtros y gestión (Redux)
   useEffect(() => {
@@ -191,15 +182,16 @@ export default function AdminPanel() {
     dispatch(clearAdminError());
   }
 
-  async function adjustStock(id, mode, value) {
-    try {
-      setBusyFlag(id, true);
-      await dispatch(updateStockThunk({ id, mode, value, token })).unwrap();
-    } catch (e) {
-      alert(`No se pudo actualizar el stock: ${e?.message || e}`);
-    } finally {
-      setBusyFlag(id, false);
-    }
+  function adjustStock(id, mode, value) {
+    setBusyFlag(id, true);
+    dispatch(updateStockThunk({ id, mode, value, token }))
+      .unwrap()
+      .catch((e) => {
+        alert(`No se pudo actualizar el stock: ${e?.message || e}`);
+      })
+      .finally(() => {
+        setBusyFlag(id, false);
+      });
   }
 
   function toggleVisibility(row) {
@@ -240,76 +232,87 @@ export default function AdminPanel() {
       .finally(() => setBusyFlag(row.id, false));
   }
 
-  async function deleteLinea(id) {
+  function deleteLinea(id) {
     const sure = confirm(`¿Borrar linea ${id}? Esto elimina sus coleccionables e imágenes.`);
     if (!sure) return;
-    try {
-      await dispatch(deleteLineaThunk({ id, token })).unwrap();
-      if (String(marcaId)) {
-        dispatch(fetchLineasByMarca({ marcaId }));
-      }
-    } catch (e) {
-      alert(`No se pudo borrar la linea: ${e?.message || e}`);
-    }
+    dispatch(deleteLineaThunk({ id, token }))
+      .unwrap()
+      .then(() => {
+        if (String(marcaId)) {
+          dispatch(fetchLineasByMarca({ marcaId }));
+        }
+      })
+      .catch((e) => {
+        alert(`No se pudo borrar la linea: ${e?.message || e}`);
+      });
   }
 
-  async function deleteMarca(id) {
+  function deleteMarca(id) {
     const sure = confirm(`¿Borrar marca ${id}? Esto elimina sus lineas y coleccionables.`);
     if (!sure) return;
-    try {
-      await dispatch(deleteMarcaThunk({ id, token })).unwrap();
-      await refreshMarcas();
-      if (String(marcaId) === String(id)) { setMarcaId(""); setLineaId(""); }
-    } catch (e) {
-      alert(`No se pudo borrar la marca: ${e?.message || e}`);
-    }
+    dispatch(deleteMarcaThunk({ id, token }))
+      .unwrap()
+      .then(() => {
+        refreshMarcas();
+        if (String(marcaId) === String(id)) { setMarcaId(""); setLineaId(""); }
+      })
+      .catch((e) => {
+        alert(`No se pudo borrar la marca: ${e?.message || e}`);
+      });
   }
 
-  async function handleCreateMarca(e) {
+    function handleCreateMarca(e) {
     e?.preventDefault?.();
     const nombre = newMarca.nombre?.trim();
     if (!nombre) {
-      setNewMarcaError("Ingresá un nombre para la marca.");
+      setNewMarcaError("Ingresa un nombre para la marca.");
       return;
     }
-    try {
-      setCreatingMarca(true);
-      setNewMarcaError(null);
-      const payload = {
-        nombre,
-      };
-      const created = await dispatch(createMarca({ nombre, token })).unwrap();
-      const newId = created?.id ?? created?._id ?? created?.marcaId ?? created?.marcaID ?? null;
 
-      let uploadNotice = null;
-      if (newMarcaFile && newId != null) {
-        try {
-          await dispatch(uploadMarcaImagesThunk({ marcaId: newId, files: [newMarcaFile], token })).unwrap();
-        } catch (err) {
-          uploadNotice = err?.message || "Marca creada, pero fallá la carga de imagen.";
+    setCreatingMarca(true);
+    setNewMarcaError(null);
+
+    const payload = { nombre };
+    let newId = null;
+    let uploadNotice = null;
+
+    dispatch(createMarca({ nombre, token }))
+      .unwrap()
+      .then((created) => {
+        newId = created?.id ?? created?._id ?? created?.marcaId ?? created?.marcaID ?? null;
+        if (newMarcaFile && newId != null) {
+          return dispatch(uploadMarcaImagesThunk({ marcaId: newId, files: [newMarcaFile], token }))
+            .unwrap()
+            .catch((err) => {
+              uploadNotice = err?.message || "Marca creada, pero falló la carga de imagen.";
+              return null;
+            });
         }
-      }
-
-      await refreshMarcas();
-      setNewMarca({ nombre: "" });
-      if (newMarcaPreview) {
-        try { URL.revokeObjectURL(newMarcaPreview); } catch (_) { }
-      }
-      setNewMarcaPreview(null);
-      setNewMarcaFile(null);
-      setNewMarcaFileKey((k) => k + 1);
-      showToast(uploadNotice ?? "Marca creada", uploadNotice ? "info" : "success");
-      setNewMarcaError(uploadNotice);
-    } catch (e) {
-      const msg = e?.message || "No se pudo crear la marca";
-      setNewMarcaError(msg);
-      showToast(msg, "error");
-    } finally {
-      setCreatingMarca(false);
-    }
+        return null;
+      })
+      .then(() => {
+        refreshMarcas();
+        setNewMarca({ nombre: "" });
+        if (newMarcaPreview) {
+          URL.revokeObjectURL(newMarcaPreview);
+        }
+        setNewMarcaPreview(null);
+        setNewMarcaFile(null);
+        setNewMarcaFileKey((k) => k + 1);
+        showToast(uploadNotice ?? "Marca creada", uploadNotice ? "info" : "success");
+        setNewMarcaError(uploadNotice);
+      })
+      .catch((e) => {
+        const msg = e?.message || "No se pudo crear la marca";
+        setNewMarcaError(msg);
+        showToast(msg, "error");
+      })
+      .finally(() => {
+        setCreatingMarca(false);
+      });
   }
 
-  async function handleCreateLinea(e) {
+  function handleCreateLinea(e) {
     e?.preventDefault?.();
     const nombre = newLinea.nombre?.trim();
     const targetMarcaId = newLinea.marcaId || marcaId;
@@ -323,20 +326,24 @@ export default function AdminPanel() {
       setNewLineaError("Ingresa un nombre para la linea.");
       return;
     }
-    try {
-      setCreatingLinea(true);
-      setNewLineaError(null);
-      const created = await dispatch(createLinea({ nombre, marcaId: targetMarcaId, token })).unwrap();
-      await dispatch(fetchLineasByMarca({ marcaId: targetMarcaId }));
-      setMarcaId(String(targetMarcaId));
-      setNewLinea({ nombre: "", marcaId: String(targetMarcaId) });
-      setNewLineaError(null);
-      showToast("Linea creada");
-    } catch (e) {
-      setNewLineaError(e?.message || String(e));
-    } finally {
-      setCreatingLinea(false);
-    }
+    setCreatingLinea(true);
+    setNewLineaError(null);
+
+    dispatch(createLinea({ nombre, marcaId: targetMarcaId, token }))
+      .unwrap()
+      .then(() => {
+        dispatch(fetchLineasByMarca({ marcaId: targetMarcaId }));
+        setMarcaId(String(targetMarcaId));
+        setNewLinea({ nombre: "", marcaId: String(targetMarcaId) });
+        setNewLineaError(null);
+        showToast("Linea creada");
+      })
+      .catch((e) => {
+        setNewLineaError(e?.message || String(e));
+      })
+      .finally(() => {
+        setCreatingLinea(false);
+      });
   }
 
   // TODO: Editar y Visibilidad: requerimos el shape exacto del ColeccionableDTO para PUT
@@ -504,7 +511,7 @@ export default function AdminPanel() {
                         onClick={() => {
                           requestEdit(r.id);
                         }}
-                        className="rounded bg-white/10 px-2 py-1 text-white hover:bg-white/20">✎</button>
+                        className="rounded bg-white/10 px-2 py-1 text-white hover:bg-white/20">?</button>
                       <button
                         title={visible ? "Ocultar" : "Mostrar"}
                         disabled={busy}
@@ -568,7 +575,7 @@ export default function AdminPanel() {
                   setNewMarcaFile(file);
                   setNewMarcaPreview((prev) => {
                     if (prev) {
-                      try { URL.revokeObjectURL(prev); } catch (_) { }
+                      URL.revokeObjectURL(prev);
                     }
                     return file ? URL.createObjectURL(file) : null;
                   });
@@ -599,7 +606,7 @@ export default function AdminPanel() {
                       setNewMarcaFile(null);
                       setNewMarcaPreview((prev) => {
                         if (prev) {
-                          try { URL.revokeObjectURL(prev); } catch (_) { }
+                          URL.revokeObjectURL(prev);
                         }
                         return null;
                       });
@@ -795,7 +802,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
     setLines(Array.isArray(linesStore) ? linesStore : []);
   }, [linesStore]);
 
-  async function onSubmit(e) {
+  function onSubmit(e) {
     e.preventDefault();
     setLocal((s) => ({ ...s, saving: true, error: null }));
     let newImgUrl = null;
@@ -985,7 +992,7 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
                       const list = Array.from(e.target.files || []);
                       const allowed = ["image/jpeg", "image/png", "image/jpg"];
                       const selected = list.filter((f) => allowed.includes(f.type) || /\.(jpe?g|png)$/i.test(f.name));
-                      try { previews.forEach((u) => URL.revokeObjectURL(u)); } catch { }
+                      previews.forEach((u) => URL.revokeObjectURL(u));
                       setFiles(selected);
                       setPreviews(selected.map((f) => URL.createObjectURL(f)));
                     }}
@@ -1078,6 +1085,9 @@ function EditModal({ edit, setEdit, base, token, onUpdated, onToast }) {
     </>
   );
 }
+
+
+
 
 
 
