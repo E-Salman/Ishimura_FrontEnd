@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import { addToWishlist } from "../redux/wishlistSlice";
 
 const BotonWishlist = ({ coleccionableId }) => {
@@ -9,9 +10,9 @@ const BotonWishlist = ({ coleccionableId }) => {
   const agregar = () => {
     dispatch(addToWishlist(coleccionableId)) //addToWishlist es la funcion createasynthunk que exporta wishlistSlice
       .unwrap()
-      .then(() => alert("Agregado a tu wishlist"))
+      .then(() => toast.success("Agregado a tu wishlist"))
       .catch((error) => {
-        alert(error.message)
+        toast.error(error?.message || "No se pudo agregar a la wishlist");
       })
   };
 

@@ -8,25 +8,18 @@ function normalizeOrder(raw) {
   const items = Array.isArray(base.items) ? base.items : [];
 
   const mappedItems = items.map((item, idx) => ({
-    key: item?.id ?? `${base.numeroOrden ?? "orden"}-${idx}`,
-    nombre: item?.nombre ?? `Item ${idx + 1}`,
-    cantidad: item?.cantidad ?? 1,
-    precioUnitario: item?.precioUnitario ?? null,
-    subtotal:
-      item?.subtotal ??
-      (item?.precioUnitario && item?.cantidad
-        ? Number(item.precioUnitario) * Number(item.cantidad)
-        : null),
+    key: item?.id,
+    nombre: item?.nombre,
+    cantidad: item?.cantidad,
+    precioUnitario: item?.precioUnitario,
   }));
 
   return {
-    id: base.numeroOrden ?? base.id ?? null,
-    fecha: base.creadaEn ?? null,
-    metodoPago: base.metodoPago ?? null,
-    total:
-      base.montoTotal ??
-      mappedItems.reduce((acc, it) => acc + Number(it.subtotal || 0), 0),
-    email: base.emailUsuario ?? base.userEmail ?? base.email ?? null,
+    id: base.numeroOrden,
+    fecha: base.creadaEn ,
+    metodoPago: base.metodoPago,
+    total: base.montoTotal,
+    email: base.emailUsuario,
     items: mappedItems,
     raw: base,
   };
@@ -85,7 +78,7 @@ export default function AdminCompras() {
     if (status === "idle") {
       dispatch(fetchAdminOrders(token));
     }
-  }, [isAdmin, token, status, dispatch]);
+  }, [isAdmin, token, status, dispatch]);// vuelve a ejecutar si cambia isAdmin, token, status o dispatch
 
   // Si no es admin, misma vista de antes
   if (!isAdmin) {
@@ -106,8 +99,9 @@ export default function AdminCompras() {
     );
   }
 
-  const orders = useMemo(() =>
-      Array.isArray(rawOrders) ? rawOrders.map((o) => normalizeOrder(o)) : [],
+  const orders = useMemo( //array que guarda todas las ordenes juntas
+    () =>
+      Array.isArray(rawOrders) ? rawOrders.map((o) => normalizeOrder(o)) : [], //normaliza una orden
     [rawOrders]
   );
 

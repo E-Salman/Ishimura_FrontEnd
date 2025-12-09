@@ -22,6 +22,8 @@ import NewArrivals from "./views/NewArrivals";
 import AdminPanel from "./views/AdminPanel";
 import Promotions from "./views/Promotions";
 import AdminCompras from "./views/AdminCompras";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 function App() {
@@ -41,6 +43,7 @@ function App() {
   return (
     <>
       <NavBar />
+      <ToastContainer position="top-right" autoClose={2000} />
       {/*<Navigation/>*/}
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />

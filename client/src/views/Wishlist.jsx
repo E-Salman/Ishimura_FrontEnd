@@ -52,26 +52,24 @@ const Wishlist = () => {
   }, [items, token, detallesById, dispatch]);
 
   const itemsForGrid = useMemo(() => {
-    return items.map((raw) => {
-      const rowId = raw.id;
-      const it = raw.coleccionable ?? {};
-      const coleccionableId = it.id ?? raw.coleccionableId;
-      if (coleccionableId == null) return null;
-      const det = detallesById[coleccionableId] || {};
-      return {
-        id: coleccionableId, // id del coleccionable (para carrito y navegación)
-        nombre: det.nombre ?? it.nombre ?? "Coleccionable",
-        descripcion: det.descripcion ?? it.descripcion ?? "",
-        precio: det.precio ?? it.precio ?? null,
-        imagen:
-          det.imagenUrl ??
-          det.imagen ??
-          it.imagen ??
-          it.imageUrl ??
-          null,
-        _rowId: rowId, // id de la fila en wishlist (solo para eliminar)
-      };
-    })
+    return items
+      .map((raw) => {
+        const rowId = raw.id;
+        const it = raw.coleccionable ?? {};
+        const coleccionableId = it.id ?? raw.coleccionableId;
+        if (coleccionableId == null) return null;
+        const det = detallesById[coleccionableId] || {};
+        return {
+          id: coleccionableId, // id del coleccionable (para carrito y navegación)
+          nombre: det.nombre,
+          descripcion: det.descripcion ?? "",
+          precio: det.precio ?? null,
+          imagen:
+            det.imagenUrl ??
+            null,
+          _rowId: rowId, // id de la fila en wishlist (solo para eliminar)
+        };
+      })
       .filter(Boolean);
   }, [items, detallesById]);
 
